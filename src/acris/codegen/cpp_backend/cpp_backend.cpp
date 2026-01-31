@@ -467,7 +467,12 @@ auto CppBackend::visit(AddressOf* t_addr_of) -> Any
 {
   const auto left{resolve(t_addr_of->left())};
 
-  return std::format("&({})", left);
+  auto type_variant{t_addr_of->get_type()};
+  if(type_variant.is_array()) {
+    return std::format("&({}.m_data[0])", left);
+  } else {
+    return std::format("&({})", left);
+  }
 }
 
 auto CppBackend::visit(Dereference* t_deref) -> Any

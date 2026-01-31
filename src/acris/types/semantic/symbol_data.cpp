@@ -90,23 +90,17 @@ auto SymbolData::as_var() const -> VarTypePtr
 
 auto SymbolData::is_struct() const -> bool
 {
-  const auto* struct_ptr{std::get_if<StructTypePtr>(this)};
-
-  return (struct_ptr != nullptr);
+  return std::holds_alternative<StructTypePtr>(*this);;
 }
 
 auto SymbolData::is_ptr() const -> bool
 {
-  const auto* ptr{std::get_if<PointerTypePtr>(this)};
-
-  return (ptr != nullptr);
+  return std::holds_alternative<PointerTypePtr>(*this);;
 }
 
 auto SymbolData::is_array() const -> bool
 {
-  const auto* ptr{std::get_if<ArrayTypePtr>(this)};
-
-  return (ptr != nullptr);
+  return std::holds_alternative<ArrayTypePtr>(*this);;
 }
 
 auto SymbolData::is_mutable() const -> bool

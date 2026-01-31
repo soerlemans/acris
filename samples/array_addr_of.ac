@@ -1,0 +1,11 @@
+module array_addr_of_sample
+
+// #include_once <core/linux/core.ac>
+
+func main() -> int {
+  var array: [int; 5]
+
+  let pointer = &array
+
+  return 0
+}

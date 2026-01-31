@@ -788,16 +788,20 @@ auto SemanticChecker::visit(AddressOf* t_addr_of) -> Any
 {
   using types::symbol::make_pointer;
 
-  // TODO: Maybe annotate the type data to the AST?
-  // TODO: Treat & on arrays differently.
-  // & Will make an array a pointer making it an explicit conversion.
-
   const auto left{get_symbol_data(t_addr_of->left())};
-  const auto resolved{left.resolve_result_type()};
+  auto resolved{left.resolve_result_type()};
+  if(resolved.is_array()) {
+    // When address off array cast to underlying element type.
+    resolved = resolved.as_array()->m_type;
+  }
 
   const bool readonly{left.is_mutable() == false};
+  auto pointer{make_pointer(resolved, 1, readonly)};
 
-  return make_pointer(resolved, 1, readonly);
+  // Annotate AST.
+  m_annot_queue.push({t_addr_of, pointer});
+
+  return pointer;
 }
 
 auto SemanticChecker::visit(Dereference* t_deref) -> Any
