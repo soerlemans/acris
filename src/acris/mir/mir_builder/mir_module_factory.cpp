@@ -32,12 +32,16 @@ MirModuleFactory::MirModuleFactory()
 auto MirModuleFactory::push_env() -> void
 {
   m_var_env.push_env();
+
+  // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.push_env();
 }
 
 auto MirModuleFactory::pop_env() -> void
 {
   m_var_env.pop_env();
+
+  // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.pop_env();
 }
 
@@ -220,7 +224,10 @@ auto MirModuleFactory::create_var_binding(std::string_view t_name,
                                           SsaVarPtr t_var) -> void
 {
   // TODO: Check for errors.
-  const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, t_var});
+  auto& block{last_block()};
+  SsaVarSite site{&block, t_var};
+
+  const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, site});
   if(!inserted) {
     using lib::stdexcept::throw_runtime_error;
 
@@ -283,7 +290,6 @@ auto MirModuleFactory::add_variable_definition(const std::string_view t_name,
     create_var_binding(t_name, result_var);
   }
 
-
   return assign_instr;
 }
 
@@ -303,7 +309,7 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
     return load_instr;
   } else {
     // Get the previous ssa variable associated with the name.
-    auto prev_var{m_var_env.get_value(t_name)};
+    auto prev_var{m_var_env.get_value(t_name).m_var};
 
     return add_update(t_name, prev_var);
   }
@@ -322,7 +328,9 @@ auto MirModuleFactory::add_update(std::string_view t_name, SsaVarPtr t_prev_var)
 
   // Update with the new result var.
   // For the next variable reference.
-  m_var_env.update(t_name, result_var);
+  auto& block{last_block()};
+  SsaVarSite site{&block, result_var};
+  m_var_env.update(t_name, site);
 
   return update_instr;
 }
@@ -498,8 +506,7 @@ auto MirModuleFactory::last_function() -> FunctionPtr&
 }
 
 // TODO: Maybe find a way to optimize the implementation.
-auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
-                                  const SsaVarEnvState& t_env1,
+auto MirModuleFactory::merge_envs(const SsaVarEnvState& t_env1,
                                   const SsaVarEnvState& t_env2)
   -> SsaVarEnvState
 {
@@ -508,6 +515,11 @@ auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
   // Loop through layers of both t_env1 and t_env2.
   // And insert phi nodes and update variable binding.
   // For creation and setting of the new env state.
+
+  // TODO:
+  // Important to note the nested nature can be used for optimization.
+  // As we only create a new env when going into a possible scenario.
+  // Where phi merging might be needed.
 
   // Create a new environment from the base environment.
   SsaVarEnvState merge_env{t_env1};
@@ -525,10 +537,12 @@ auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
     // elements.
     const EnvMap& map2{*iter2};
 
-    for(auto& [merge_key, merge_ssa] : merge_map) {
+    for(auto& [merge_key, merge_site] : merge_map) {
+      auto& [merge_block, merge_ssa] = merge_site;
+
       const auto map_iter{map2.find(merge_key)};
       if(map_iter != map2.end()) {
-        const auto ssa2{map_iter->second};
+        const auto& [block2, ssa2] = map_iter->second;
 
         // If the SSA variables differ for an entry.
         // Then we have variable references in two different branches.
@@ -540,10 +554,16 @@ auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
           const auto type{merge_ssa->m_type};
           const auto phi_result{add_result_var(type)};
 
+          // TODO: Are phi instructions must depend on basic blocks.
           // Add operands, for the phi instruction.
-          phi_instr.add_operand({t_cond});
-          phi_instr.add_operand({merge_ssa});
-          phi_instr.add_operand({ssa2});
+          // phi_instr.add_operand({t_cond});
+          // phi_instr.add_operand({merge_ssa});
+          // phi_instr.add_operand({ssa2});
+
+          // TODO: Insert type specification for result var.
+          // phi_instr.add_operand(PhiArg{merge_block, merge_ssa});
+          phi_instr.add_operand(PhiArg{merge_block, merge_ssa});
+          phi_instr.add_operand(PhiArg{block2, ssa2});
 
           // Update the ssa binding to the new result var.
           merge_ssa = phi_result;

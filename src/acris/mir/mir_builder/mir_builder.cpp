@@ -19,6 +19,16 @@ namespace mir::mir_builder {
 NODE_USING_ALL_NAMESPACES()
 
 // Methods:
+auto MirBuilder::traverse_in_new_env(NodePtr t_node) -> SsaVarEnvState
+{
+  m_factory->push_env();
+  traverse(t_node);
+  const auto new_env{m_factory->get_var_env()};
+  m_factory->pop_env();
+
+  return new_env;
+}
+
 // Public:
 MirBuilder::MirBuilder(): m_factory{nullptr}
 {}
@@ -50,10 +60,7 @@ auto MirBuilder::visit(If* t_if) -> Any
   cond_instr.add_operand({&then_block});
 
   // TODO: Save environment before, traversal for phi node insertion.
-  m_factory->push_env();
-  traverse(then);
-  const auto then_env{m_factory->get_var_env()};
-  m_factory->pop_env();
+  const auto then_env{traverse_in_new_env(then)};
   const auto then_jump{m_factory->create_instruction(Opcode::JUMP)};
 
   // Restore to main env.
@@ -65,11 +72,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     auto& alt_block{m_factory->add_block("if_alt")};
     cond_instr.add_operand({&alt_block});
 
-    m_factory->push_env();
-    traverse(alt);
-    const auto alt_env{m_factory->get_var_env()};
-    m_factory->pop_env();
-
+    const auto alt_env{traverse_in_new_env(alt)};
     const auto alt_jump{m_factory->create_instruction(Opcode::JUMP)};
 
     // Final block after the if statement.
@@ -78,8 +81,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     m_factory->insert_jump(alt_jump, alt_block, merge_block);
 
     // Insert phi nodes.
-    const auto merged_env{
-      m_factory->merge_envs(cond_result, then_env, alt_env)};
+    const auto merged_env{m_factory->merge_envs(then_env, alt_env)};
     m_factory->set_var_env(merged_env);
   } else {
     // Final block after the if statement.
@@ -87,8 +89,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     m_factory->insert_jump(then_jump, then_block, merge_block);
 
     // Insert phi nodes.
-    const auto merged_env{
-      m_factory->merge_envs(cond_result, main_env, then_env)};
+    const auto merged_env{m_factory->merge_envs(main_env, then_env)};
     m_factory->set_var_env(main_env);
   }
 
@@ -135,9 +136,7 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
 
   // TODO: Put in own basic block for looping.
   auto& body_block{m_factory->add_block("loop_body")};
-  m_factory->push_env();
-  traverse(body);
-  m_factory->pop_env();
+  traverse_in_new_env(body);
 
   const auto end_jump{m_factory->create_instruction(Opcode::JUMP)};
   m_factory->insert_jump(end_jump, body_block, expr_block);

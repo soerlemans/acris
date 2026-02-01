@@ -14,6 +14,7 @@ namespace mir::mir_builder {
 using types::core::TypeVariant;
 
 // Forward Declarations:
+struct SsaVarSite;
 template<typename T>
 struct MirEntity;
 class MirModuleFactory;
@@ -26,7 +27,7 @@ using GlobalMirEntity = MirEntity<GlobalVarPtr>;
 
 //! Globals can be forward declared, regular variables not.
 using GlobalVarMap = std::unordered_map<std::string, GlobalMirEntity>;
-using SsaVarEnvState = MirEnvState<SsaVarPtr>;
+using SsaVarEnvState = MirEnvState<SsaVarSite>;
 using FunctionEnvState = MirEnvState<FunctionMirEntity>;
 
 // Enums:
@@ -38,6 +39,15 @@ enum class EntityStatus {
 };
 
 // Structs:
+/*!
+ * We need to keep track of the blocks ssa var's are in for phi merging.
+ * Which is also relevant for LLVM IR.
+ */
+struct SsaVarSite {
+  BasicBlock* m_block;
+  SsaVarPtr m_var;
+};
+
 /*!
  * Functions or structs could be forward declared.
  * For these kind of MirEntities we need something inbetween.
@@ -221,8 +231,8 @@ class MirModuleFactory {
    * Insert phi nodes where necessary.
    * Merge two @ref SsaVarEnvState's into a single one.
    */
-  auto merge_envs(SsaVarPtr t_cond, const SsaVarEnvState& t_env1,
-                  const SsaVarEnvState& t_env2) -> SsaVarEnvState;
+  auto merge_envs(const SsaVarEnvState& t_env1, const SsaVarEnvState& t_env2)
+    -> SsaVarEnvState;
 
   // Module operations:
   auto set_module_name(std::string_view t_name) -> void;

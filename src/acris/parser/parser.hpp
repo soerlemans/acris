@@ -61,6 +61,7 @@ class Parser {
 
   auto get_token_stream() -> TokenStream&;
 
+	// TODO: Someday use std::allocate_shared with an arena allocator.
   /*!
    * Wrapper method for std::make_shared() makes it easy to change smart
    * pointer type later down the line

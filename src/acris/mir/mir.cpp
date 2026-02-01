@@ -247,11 +247,15 @@ auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val)
   }};
 
   std::visit(print, t_val);
+
+  return t_os;
 }
 
 auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&
 {
   t_os << '[' << t_arg.m_label << ", " << t_arg.m_value << ']';
+
+  return t_os;
 }
 
 auto operator<<(std::ostream& t_os, const mir::Operand& t_operand)
