@@ -1,6 +1,18 @@
 #ifndef TEST_UTIL_HPP
 #define TEST_UTIL_HPP
 
+// STL Includes:
+#include <sstream>
+#include <string_view>
+
+// Absolute Includes:
+#include "acris/container/text_buffer.hpp"
+#include "acris/lexer/lexer.hpp"
+#include "acris/parser/acris/acris_parser.hpp"
+
+
+using namespace parser::acris;
+
 inline auto prep_parser(const std::string_view t_program) -> AcrisParser
 {
   using container::TextBuffer;

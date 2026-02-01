@@ -61,7 +61,7 @@ auto TypeParser::type_array() -> NodePtr
     PARSER_FOUND(TokenType::BRACKET_OPEN);
 
     const auto pos{token.position()};
-    auto target_type{type_id()};
+    auto target_type{type_expr()};
 
     if(!target_type) {
       throw_syntax_error("Expected a type expression after [.");

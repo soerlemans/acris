@@ -73,6 +73,8 @@ enum class TokenType {
   TRUE,
   FALSE,
 
+	// TODO: Define C types for interop.
+
   // Primitves:
   VOID,
 

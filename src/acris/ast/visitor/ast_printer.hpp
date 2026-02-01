@@ -8,6 +8,9 @@
 #include <sstream>
 #include <string_view>
 
+// Library Includes:
+#include <rang.hpp>
+
 // Absolute Includes:
 #include "lib/is_any_of.hpp"
 
@@ -43,6 +46,16 @@ class AstPrinter : public NodeVisitor {
 
     // Create the indentation level denoter
     m_os << " (indent: " << m_counter << ")\n";
+  }
+
+  template<typename... Args>
+  auto print_hl(Args&&... t_args) -> void
+  {
+    using namespace rang;
+
+    // Used to highlight nodes.
+    print(style::bold, style::underline, std::forward<Args>(t_args)...,
+          style::reset);
   }
 
   template<typename Base, typename Ptr, typename Fn>
