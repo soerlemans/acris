@@ -1,0 +1,12 @@
+module empty
+
+func main() -> int {
+  var ret_val = 0
+	if true {
+    ret_val = 1;
+  } else {
+    ret_val = -1;
+  }
+
+  return ret_val
+}

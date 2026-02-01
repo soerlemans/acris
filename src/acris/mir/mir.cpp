@@ -239,6 +239,21 @@ auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label)
   return t_os;
 }
 
+auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val)
+  -> std::ostream&
+{
+  auto print{[&](auto&& t_elem) {
+    t_os << t_elem;
+  }};
+
+  std::visit(print, t_val);
+}
+
+auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&
+{
+  t_os << '[' << t_arg.m_label << ", " << t_arg.m_value << ']';
+}
+
 auto operator<<(std::ostream& t_os, const mir::Operand& t_operand)
   -> std::ostream&
 {

@@ -29,6 +29,7 @@ using types::core::TypeVariant;
 struct Literal;
 struct GlobalVar;
 struct SsaVar;
+struct PhiArg;
 struct Label;
 struct FunctionLabel;
 struct Instruction;
@@ -64,6 +65,8 @@ using CfgSeq = std::list<BasicBlock*>;
 //! Variant containing all supported literal types.
 using LiteralValue = std::variant<uint, int, f64, std::string, bool>;
 
+using PhiArgValue = std::variant<GlobalVarPtr, SsaVarPtr, Literal>;
+
 /*!
  * The @ref FunctionPtr is needed for resolving function calls.
  * The @ref SsaVarPtr is needed for obtaining references to SSA variables.
@@ -71,7 +74,7 @@ using LiteralValue = std::variant<uint, int, f64, std::string, bool>;
  * The @ref Label is needed for obtaining references to basic blocks.
  */
 using Operand =
-  std::variant<GlobalVarPtr, SsaVarPtr, Literal, Label, FunctionLabel>;
+  std::variant<GlobalVarPtr, SsaVarPtr, Literal, Label, FunctionLabel, PhiArg>;
 using OperandSeq = std::vector<Operand>;
 
 using BasicBlockIter = BasicBlockSeq::iterator;
@@ -239,6 +242,17 @@ struct FunctionLabel {
   virtual ~FunctionLabel() = default;
 };
 
+//! Used for keeping track of which.
+struct PhiArg {
+  Label m_label;
+  PhiArgValue m_value; // Literal/global var/ssa var to prefer.
+
+  PhiArg(Label t_label, PhiArgValue t_value): m_label{t_label}, m_value{t_value}
+  {}
+
+  virtual ~PhiArg() = default;
+};
+
 struct Instruction {
   u64 m_id;
   Opcode m_opcode;
@@ -301,34 +315,29 @@ auto opcode2str(Opcode t_opcode) -> std::string_view;
 } // namespace mir
 
 // Functions:
+// clang-format off
 auto operator<<(std::ostream& t_os, const mir::Opcode t_op) -> std::ostream&;
+
 auto operator<<(std::ostream& t_os, const mir::Literal& t_lit) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Label& t_label) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::Operand& t_operand)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::Instruction& t_inst)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::Operand& t_operand) -> std::ostream&;
+
+auto operator<<(std::ostream& t_os, const mir::Instruction& t_inst) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionPtr& t_ptr)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionWeakPtr& t_ptr)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionWeakPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Module& t_mod) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod) -> std::ostream&;
+// clang-format on
 
 // Format specializations:
 // struct std::formatter<mir::SsaVar> { // Doesnt work for MacOS.

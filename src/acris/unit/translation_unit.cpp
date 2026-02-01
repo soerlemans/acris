@@ -160,8 +160,8 @@ auto TranslationUnit::mir([[maybe_unused]] NodePtr t_ast) -> ModulePtr
 
   // Check the semantics of the written program.
   MirBuilder builder{};
-  // const auto module_ptr{builder.translate(t_ast)};
-  const ModulePtr module_ptr{nullptr};
+  const auto module_ptr{builder.translate(t_ast)};
+  // const ModulePtr module_ptr{nullptr};
 
   if(module_ptr) {
     DBG_INFO("CLIR Module: ", module_ptr->m_name);

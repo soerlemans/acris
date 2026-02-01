@@ -174,7 +174,7 @@ auto SemanticValidator::validate_assignment(const BinaryOperationData& t_data)
 
   std::stringstream ss{};
 
-  if(lhs.is_mutable()) {
+  if(lhs.is_mutable() == false) {
     ss << "Reassigning a const variable is illegal.\n\n";
 
     ss << "<lhs> = <expr>\n";

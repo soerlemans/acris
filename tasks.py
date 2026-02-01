@@ -61,7 +61,7 @@ def cmake_parallel_arg(t_parallel: bool) -> str:
         # max_jobs = multiprocessing.cpu_count() // 3
         # arg = f'--parallel {max_jobs}'
 
-        arg = f"--parallel 6 "
+        arg = f"--parallel 3 "
         pass
 
     return arg
