@@ -18,6 +18,11 @@ enum class TokenType {
   LET,
   VAR,
 
+  // Variable interaction specifiers.
+  READONLY,
+  WRITEONLY,
+  READWRITE,
+
   // Package:
   MODULE,
   IMPORT,
@@ -35,6 +40,7 @@ enum class TokenType {
   // User Types:
   ALIAS,
   ENUM,
+  UNION,
   STRUCT,
   SELF,
 
@@ -44,6 +50,7 @@ enum class TokenType {
   FUNCTION,
   METHOD,
   MATCH,
+  SWITCH,
   IF,
   ELSE,
   ELIF,
@@ -66,7 +73,9 @@ enum class TokenType {
   TRUE,
   FALSE,
 
-	// Primitves:
+	// TODO: Define C types for interop.
+
+  // Primitves:
   VOID,
 
   //- Floats:

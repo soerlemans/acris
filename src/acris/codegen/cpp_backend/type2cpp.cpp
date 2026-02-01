@@ -89,9 +89,22 @@ inline auto fn2cpp([[maybe_unused]] const FnTypePtr& t_type) -> std::string
 
 inline auto pointer2cpp(const PointerTypePtr& t_ptr) -> std::string
 {
-  auto base_type{type_spec2cpp({t_ptr->m_type})};
+  std::ostringstream oss{};
 
-  return std::format("{}*", base_type);
+  if(t_ptr->m_readonly) {
+    oss << "const ";
+  }
+
+  auto base_type{type_spec2cpp({t_ptr->m_type})};
+  oss << base_type;
+
+  for(int index{0}; index < t_ptr->m_indirection; index++) {
+    oss << '*';
+  }
+
+
+  // return std::format("{}*", base_type);
+  return oss.str();
 }
 
 inline auto array2cpp(const ArrayTypePtr& t_arr) -> std::string

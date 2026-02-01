@@ -32,6 +32,7 @@ namespace keywords {
   // Variables:
   DEFINE_TERMINAL(g_let, "let", LET); // Immutable var init.
   DEFINE_TERMINAL(g_var, "var", VAR); // Mutable var init.
+  DEFINE_TERMINAL(g_readonly, "ro", READONLY); // Specify a pointer destination as not writeable.
 
   // Package:
   DEFINE_TERMINAL(g_module, "module", MODULE);
@@ -47,6 +48,7 @@ namespace keywords {
   // User Types:
   DEFINE_TERMINAL(g_alias,  "alias",  ALIAS);
   DEFINE_TERMINAL(g_enum,   "enum",   ENUM);
+  DEFINE_TERMINAL(g_union,   "union",   UNION);
   DEFINE_TERMINAL(g_struct, "struct", STRUCT);
   DEFINE_TERMINAL(g_self,   "self",   SELF);
 
@@ -116,10 +118,10 @@ namespace keywords {
   //    ;
 
   const std::map g_keywords {
-    g_let.pair(), g_var.pair(),
+    g_let.pair(), g_var.pair(), g_readonly.pair(),
     g_module.pair(), g_import.pair(), g_export.pair(),
     g_declare.pair(), g_macro.pair(), g_const.pair(),
-    g_alias.pair(), g_enum.pair(), g_struct.pair(), g_self.pair(),
+    g_alias.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
 		g_proto.pair(),
     g_func.pair(),
     g_match.pair(),

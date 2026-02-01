@@ -66,7 +66,7 @@ auto PointerType::resolve_result_type() const -> SymbolData
   using types::symbol::make_pointer;
 
   // Make sure to resolve underlying type.
-  return make_pointer(m_type.resolve_result_type());
+  return make_pointer(m_type.resolve_result_type(), m_indirection, m_readonly);
 }
 
 auto PointerType::native_type() const -> NativeTypeOpt
@@ -78,7 +78,7 @@ auto PointerType::type_variant() const -> TypeVariant
 {
   using types::core::make_pointer;
 
-  return {make_pointer(m_type.type_variant())};
+  return {make_pointer(m_type.type_variant(), m_indirection, m_readonly)};
 }
 
 // ArrayType:

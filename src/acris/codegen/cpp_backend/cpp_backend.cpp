@@ -298,10 +298,10 @@ auto CppBackend::visit(Let* t_let) -> Any
   if(init_expr) {
     const auto init_expr_str{resolve(init_expr, false)};
 
-    return std::format("const {} {} = {}{}", type, id, init_expr_str,
+    return std::format("{} const {} = {}{}", type, id, init_expr_str,
                        terminate_str);
   } else {
-    return std::format("const {} {}{{}}{}", type, id, terminate_str);
+    return std::format("{} const {}{{}}{}", type, id, terminate_str);
   }
 }
 
@@ -465,9 +465,18 @@ auto CppBackend::visit(Decrement* t_dec) -> Any
 
 auto CppBackend::visit(AddressOf* t_addr_of) -> Any
 {
-  const auto left{resolve(t_addr_of->left())};
+  auto left{t_addr_of->left()};
+  const auto elem{resolve(left)};
 
-  return std::format("&({})", left);
+  if(auto var_ptr{dynamic_cast<Variable*>(left.get())}; var_ptr) {
+    // For arrays we need to access .data().
+    auto type_var{var_ptr->get_type().as_var()};
+    if(type_var->m_type.is_array()) {
+      return std::format("({}.m_data)", elem);
+    }
+  }
+
+  return std::format("&({})", elem);
 }
 
 auto CppBackend::visit(Dereference* t_deref) -> Any

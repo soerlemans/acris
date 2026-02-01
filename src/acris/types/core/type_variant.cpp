@@ -12,6 +12,31 @@
 
 namespace types::core {
 // Methods:
+auto TypeVariant::is_struct() const -> bool
+{
+  return std::holds_alternative<StructTypePtr>(*this);
+}
+
+auto TypeVariant::is_function() const -> bool
+{
+  return std::holds_alternative<StructTypePtr>(*this);
+}
+
+auto TypeVariant::is_ptr() const -> bool
+{
+  return std::holds_alternative<PointerTypePtr>(*this);
+}
+
+auto TypeVariant::is_array() const -> bool
+{
+  return std::holds_alternative<ArrayTypePtr>(*this);
+}
+
+auto TypeVariant::is_var() const -> bool
+{
+  return std::holds_alternative<ArrayTypePtr>(*this);
+}
+
 auto TypeVariant::as_struct() const -> StructTypePtr
 {
   return std::get<StructTypePtr>(*this);

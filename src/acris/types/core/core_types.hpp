@@ -6,6 +6,9 @@
 #include <map>
 #include <string>
 
+// Absolute Includes:
+#include "lib/stdtypes.hpp"
+
 // Local Includes:
 #include "type_variant.hpp"
 
@@ -34,6 +37,8 @@ struct FnType {
 
 struct PointerType {
   TypeVariant m_type;
+  u8 m_indirection;
+  bool m_readonly;
 
   auto native_type() const -> core::NativeTypeOpt;
 };

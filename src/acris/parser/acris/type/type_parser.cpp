@@ -22,18 +22,30 @@ auto TypeParser::type_pointer() -> NodePtr
   NodePtr node{};
 
   const auto token{get_token()};
+  const auto pos{token.position()};
   if(next_if(TokenType::ASTERISK)) {
     PARSER_FOUND(TokenType::ASTERISK);
 
-    const auto pos{token.position()};
+    // Consume more asterisks to add to indirection.
+    usz indirection{1};
+    while(next_if(TokenType::ASTERISK)) {
+      indirection++;
+    }
+
+    // Check if readonly is applied..
+    bool readonly{false};
+    if(next_if(TokenType::READONLY)) {
+      readonly = true;
+    }
+
     auto target_type{type_expr()};
 
     if(!target_type) {
       throw_syntax_error("Expected a type expression after *.");
     }
 
-    // TODO: For now we always expect a typename.
-    node = make_node<Pointer>(pos, std::move(target_type));
+    node =
+      make_node<Pointer>(pos, std::move(target_type), indirection, readonly);
   }
 
   return node;
@@ -49,7 +61,7 @@ auto TypeParser::type_array() -> NodePtr
     PARSER_FOUND(TokenType::BRACKET_OPEN);
 
     const auto pos{token.position()};
-    auto target_type{type_id()};
+    auto target_type{type_expr()};
 
     if(!target_type) {
       throw_syntax_error("Expected a type expression after [.");

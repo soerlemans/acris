@@ -106,12 +106,12 @@ def cmake_mode_args(t_mode: str) -> str:
 def cmake(
     t_ctx,
     t_mode: str,
-    t_static: bool,
-    t_parallel: bool,
-    t_platform: str,
-    t_arch: str,
-    t_lint: bool,
-    t_ci_build: bool,
+    t_static=False,
+    t_parallel=False,
+    t_platform="",
+    t_arch="",
+    t_lint=False,
+    t_ci_build=False,
 ):
     "TODO: Document."
     parallel_arg = cmake_parallel_arg(t_parallel)
@@ -166,13 +166,13 @@ def all(ctx, parallel=True, lint=False):
 
 
 @task
-def install(ctx, mode="", parallel=True, lint=False):
+def install(ctx, mode="", static=False, parallel=True, lint=False):
     log("Building project.")
     log_args(mode=mode, parallel=parallel, lint=lint)
 
     enum_values = [item.value for item in BuildProfile]
     mode = mode if mode in enum_values else "build"
-    cmake(ctx, mode, parallel, lint)
+    cmake(ctx, mode, t_static=static, t_parallel=parallel, t_lint=lint)
 
     # TODO: Check if the build made it or not.
     # TODO: Copy transpiler from Mode install location to /usr/local/bin/
@@ -241,6 +241,7 @@ def build(
 
     cmake(ctx, mode, static, parallel, platform, arch, lint, ci_build)
     pass
+
 
 def release(
     ctx,

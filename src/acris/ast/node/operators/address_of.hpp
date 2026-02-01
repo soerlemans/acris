@@ -12,10 +12,11 @@
 
 namespace ast::node::operators {
 // Using Statements:
+using node_traits::TypeData;
 using node_traits::UnaryOperator;
 
 // Classes:
-class AddressOf : public UnaryOperator {
+class AddressOf : public UnaryOperator, public TypeData {
   public:
   AddressOf(NodePtr&& t_left);
 

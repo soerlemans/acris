@@ -75,6 +75,8 @@ struct FnType {
 
 struct PointerType {
   SymbolData m_type;
+	u8 m_indirection;
+  bool m_readonly; // Pointer to readonly data.
 
   auto resolve_result_type() const -> SymbolData;
 

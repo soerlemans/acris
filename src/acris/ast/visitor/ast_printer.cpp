@@ -27,7 +27,7 @@
   {                                                             \
     COUNTG_INIT();                                              \
                                                                 \
-    print(#t_type);                                             \
+    print_hl(#t_type);                                          \
     print_traits(t_ptr);                                        \
                                                                 \
     return {};                                                  \
@@ -101,7 +101,7 @@ auto AstPrinter::visit(Variable* t_var) -> Any
 {
   COUNTG_INIT();
 
-  print("Variable: ", t_var->identifier());
+  print_hl("Variable: ", t_var->identifier());
   print_traits(t_var);
 
   return {};
@@ -111,7 +111,7 @@ auto AstPrinter::visit(Subscript* t_subscript) -> Any
 {
   COUNTG_INIT();
 
-  print("Subscript");
+  print_hl("Subscript");
   print_traits(t_subscript);
 
   return {};
@@ -165,7 +165,7 @@ auto AstPrinter::visit(Arithmetic* t_arith) -> Any
 
   const auto str{t_arith->op2str()};
 
-  print("Arithmetic");
+  print_hl("Arithmetic");
   print("| Op: ", str); // TODO: Make part of print_traits.
   print_traits(t_arith);
 
@@ -178,7 +178,7 @@ auto AstPrinter::visit(Assignment* t_assign) -> Any
 
   const auto str{t_assign->op2str()};
 
-  print("Assignment");
+  print_hl("Assignment");
   print("| Op: ", str); // TODO: Make part of print_traits.
   print_traits(t_assign);
 
@@ -191,7 +191,7 @@ auto AstPrinter::visit(Comparison* t_comp) -> Any
 
   const auto str{t_comp->op2str()};
 
-  print("Comparison");
+  print_hl("Comparison");
   print("| Op: ", str); // TODO: Make part of print_traits.
   print_traits(t_comp);
 
@@ -202,7 +202,7 @@ auto AstPrinter::visit(Increment* t_inc) -> Any
 {
   COUNTG_INIT();
 
-  print("Increment");
+  print_hl("Increment");
   print_traits(t_inc);
 
   return {};
@@ -212,7 +212,7 @@ auto AstPrinter::visit(Decrement* t_dec) -> Any
 {
   COUNTG_INIT();
 
-  print("Decrement");
+  print_hl("Decrement");
   print_traits(t_dec);
 
   return {};
@@ -222,7 +222,7 @@ auto AstPrinter::visit(AddressOf* t_addr_of) -> Any
 {
   COUNTG_INIT();
 
-  print("AddressOf");
+  print_hl("AddressOf");
   print_traits(t_addr_of);
 
   return {};
@@ -232,7 +232,7 @@ auto AstPrinter::visit(Dereference* t_deref) -> Any
 {
   COUNTG_INIT();
 
-  print("Dereference");
+  print_hl("Dereference");
   print_traits(t_deref);
 
   return {};
@@ -244,7 +244,7 @@ auto AstPrinter::visit(UnaryPrefix* t_up) -> Any
 
   const auto str{t_up->op2str()};
 
-  print("UnaryPrefix");
+  print_hl("UnaryPrefix");
   print("| Op: ", str); // TODO: Make part of print_traits.
   print_traits(t_up);
 
@@ -260,7 +260,7 @@ auto AstPrinter::visit(Ternary* t_ternary) -> Any
 {
   COUNTG_INIT();
 
-  print("Ternary");
+  print_hl("Ternary");
   print_traits(t_ternary);
 
   return {};
@@ -328,7 +328,7 @@ auto AstPrinter::visit(ArrayExpr* t_arr) -> Any
 {
   COUNTG_INIT();
 
-  print("ArrayExpr");
+  print_hl("ArrayExpr");
   print_traits(t_arr);
 
   return {};
@@ -348,7 +348,7 @@ auto AstPrinter::visit(Pointer* t_ptr) -> Any
 {
   COUNTG_INIT();
 
-  print("Pointer");
+  print_hl("Pointer");
   print_traits(t_ptr);
 
   return {};
@@ -358,7 +358,7 @@ auto AstPrinter::visit(Array* t_arr) -> Any
 {
   COUNTG_INIT();
 
-  print("Array");
+  print_hl("Array");
   print_traits(t_arr);
   print("| ArraySize: ", t_arr->size());
 
@@ -369,7 +369,7 @@ auto AstPrinter::visit(TypeName* t_type) -> Any
 {
   COUNTG_INIT();
 
-  print("TypeName");
+  print_hl("TypeName");
   print_traits(t_type);
 
   return {};
@@ -380,7 +380,7 @@ auto AstPrinter::visit(Method* t_meth) -> Any
 {
   COUNTG_INIT();
 
-  print("Method");
+  print_hl("Method");
   print("Receiver Type: ", t_meth->get_receiver());
   print_traits(t_meth);
 
@@ -391,7 +391,7 @@ auto AstPrinter::visit(MethodCall* t_meth_call) -> Any
 {
   COUNTG_INIT();
 
-  print("MethodCall");
+  print_hl("MethodCall");
   print_traits(t_meth_call);
 
   return {};
@@ -405,7 +405,7 @@ auto AstPrinter::visit(Self* t_self) -> Any
 {
   COUNTG_INIT();
 
-  print("Self");
+  print_hl("Self");
   print_traits(t_self);
 
   return {};
@@ -419,7 +419,7 @@ auto AstPrinter::visit(List* t_list) -> Any
 {
   COUNTG_INIT();
 
-  print("List");
+  print_hl("List");
   for(NodePtr& node : *t_list) {
     traverse(node);
   }
@@ -431,7 +431,7 @@ auto AstPrinter::visit([[maybe_unused]] Nil* t_nil) -> Any
 {
   COUNTG_INIT();
 
-  print("Nil");
+  print_hl("Nil");
 
   return {};
 }

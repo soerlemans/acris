@@ -73,7 +73,11 @@ auto TypeNodeEvaluator::visit(Pointer* t_ptr) -> Any
   const auto left{t_ptr->left()};
   const auto pointer_to{resolve(left)};
 
-  return SymbolData{types::symbol::make_pointer(pointer_to)};
+  const auto indirection{t_ptr->indirection()};
+  const auto readonly{t_ptr->readonly()};
+
+  return SymbolData{
+    types::symbol::make_pointer(pointer_to, indirection, readonly)};
 }
 
 auto TypeNodeEvaluator::visit(Array* t_arr) -> Any

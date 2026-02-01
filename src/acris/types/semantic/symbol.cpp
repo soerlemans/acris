@@ -67,7 +67,15 @@ auto operator<<(std::ostream& t_os, FnTypePtr t_fn) -> std::ostream&
 auto operator<<(std::ostream& t_os, PointerTypePtr t_ptr) -> std::ostream&
 {
   if(t_ptr) {
-    t_os << "*" << t_ptr->m_type;
+    for(int index{0}; index < t_ptr->m_indirection; index++) {
+      t_os << '*';
+    }
+
+    if(t_ptr->m_readonly) {
+      t_os << "ro";
+    }
+
+    t_os << t_ptr->m_type;
   } else {
     DBG_ERROR("(PointerTypePtr) nullptr!");
 
@@ -89,7 +97,6 @@ auto operator<<(std::ostream& t_os, ArrayTypePtr t_arr) -> std::ostream&
 
   return t_os;
 }
-
 
 auto operator<<(std::ostream& t_os, VarTypePtr t_var) -> std::ostream&
 {

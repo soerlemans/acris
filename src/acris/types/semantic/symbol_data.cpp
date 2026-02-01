@@ -90,23 +90,17 @@ auto SymbolData::as_var() const -> VarTypePtr
 
 auto SymbolData::is_struct() const -> bool
 {
-  const auto* struct_ptr{std::get_if<StructTypePtr>(this)};
-
-  return (struct_ptr != nullptr);
+  return std::holds_alternative<StructTypePtr>(*this);;
 }
 
 auto SymbolData::is_ptr() const -> bool
 {
-  const auto* ptr{std::get_if<PointerTypePtr>(this)};
-
-  return (ptr != nullptr);
+  return std::holds_alternative<PointerTypePtr>(*this);;
 }
 
 auto SymbolData::is_array() const -> bool
 {
-  const auto* ptr{std::get_if<ArrayTypePtr>(this)};
-
-  return (ptr != nullptr);
+  return std::holds_alternative<ArrayTypePtr>(*this);;
 }
 
 auto SymbolData::is_mutable() const -> bool
@@ -118,7 +112,7 @@ auto SymbolData::is_mutable() const -> bool
   const auto var_type{[&](const VarTypePtr& t_data) {
     nullptr_check("Variable", t_data);
 
-    return (t_data->m_mutability == Mutability::IMMUTABLE);
+    return (t_data->m_mutability == Mutability::MUTABLE);
   }};
 
   const auto immutable_types{[]([[maybe_unused]] const auto& t_data) {
@@ -217,13 +211,13 @@ auto SymbolData::operator==(const SymbolData& t_rhs) const -> bool
       } else if constexpr(std::is_same_v<L, NativeType>) {
         // NativeType is just a simple compare.
         return (t_l == t_r);
-				// clang-format off
+        // clang-format off
       } else if constexpr(
 				 lib::IsAnyOf<L,
 					 StructTypePtr, FnTypePtr,
            PointerTypePtr, ArrayTypePtr, VarTypePtr
 				 >) {
-				// clang-format on
+        // clang-format on
         if(t_l && t_r) {
           // Compare resolved pointers.
           return (*t_l == *t_r);
