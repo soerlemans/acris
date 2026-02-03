@@ -221,6 +221,11 @@ auto LlvmBackend::dump_ir(std::ostream& t_os) -> void
   t_os << str;
 }
 
+auto LlvmBackend::requires_mir() -> bool
+{
+  return true;
+}
+
 //! FIXME: For now we do nothing with the @ref SymbolTable
 auto LlvmBackend::compile(CompileParams& t_params) -> void
 {

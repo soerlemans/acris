@@ -173,6 +173,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
    */
   auto codegen(NodePtr t_ast, const fs::path& t_out) -> void;
 
+  auto requires_mir() -> bool override;
   auto compile(CompileParams& t_params) -> void override;
 
   virtual ~CppBackend() = default;

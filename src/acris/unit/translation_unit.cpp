@@ -157,18 +157,21 @@ auto TranslationUnit::mir([[maybe_unused]] NodePtr t_ast) -> ModulePtr
   m_phase = TranslationUnitPhase::MIR_GENERATION;
 
   DBG_PRINTLN("<ir_generation>");
+  const auto mir_required{m_build_unit->backend_requires_mir()};
+  if(mir_required == false) {
+    DBG_INFO("Skipping MIR generation, as backend does not require it.");
+    DBG_PRINTLN("</ir_generation>");
+
+    // Return nullptr.
+    return {nullptr};
+  }
 
   // Check the semantics of the written program.
   MirBuilder builder{};
   const auto module_ptr{builder.translate(t_ast)};
-  // const ModulePtr module_ptr{nullptr};
 
-  if(module_ptr) {
-    DBG_INFO("CLIR Module: ", module_ptr->m_name);
-    DBG_PRINTLN(module_ptr);
-  } else {
-    // TODO: Throw?
-  }
+  DBG_INFO("CLIR Module: ", module_ptr->m_name);
+  DBG_PRINTLN(module_ptr);
 
   DBG_PRINTLN("</ir_generation>");
 

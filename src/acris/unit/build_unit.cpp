@@ -9,6 +9,11 @@ BuildUnit::BuildUnit(BackendPtr&& t_backend, fs::path t_build_dir)
   : m_backend{std::move(t_backend)}, m_build_dir{t_build_dir}
 {}
 
+auto BuildUnit::backend_requires_mir() -> bool
+{
+  return m_backend->requires_mir();
+}
+
 auto BuildUnit::compile(codegen::CompileParams& t_params) -> void
 {
   m_backend->compile(t_params);

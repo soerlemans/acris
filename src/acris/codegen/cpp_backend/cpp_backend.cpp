@@ -849,6 +849,11 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
   ofs << epilogue() << '\n';
 }
 
+auto CppBackend::requires_mir() -> bool
+{
+  return false;
+}
+
 auto CppBackend::compile(CompileParams& t_params) -> void
 {
   const auto& [ast, mir, build_dir, source_path] = t_params;

@@ -60,6 +60,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
   //! LLVM backend as of writing supports no interop.
   auto register_interop_backend([[maybe_unused]] InteropBackendType t_type)
     -> void override {};
+
+	auto requires_mir() -> bool override;
   auto compile(CompileParams& t_params) -> void override;
 
   virtual ~LlvmBackend() = default;
