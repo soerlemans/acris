@@ -4,6 +4,7 @@
 // STL Includes:
 #include <filesystem>
 #include <memory>
+#include <unordered_map>
 
 // Library Includes:
 #include <llvm/IR/IRBuilder.h>
@@ -29,6 +30,8 @@ namespace codegen::llvm_backend {
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
+using mir::GlobalVarHandle;
+using mir::LocalVarHandle;
 using mir::FunctionPtr;
 using mir::Instruction;
 using mir::ModulePtr;
@@ -41,6 +44,8 @@ using LlvmModulePtr = std::shared_ptr<llvm::Module>;
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
   private:
+	// std::unordered_map<, llvm::Value*> m_var_env;
+	
   LlvmContextPtr m_context;
   LlvmIrBuilderPtr m_builder;
   LlvmModulePtr m_module;
@@ -61,7 +66,7 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto register_interop_backend([[maybe_unused]] InteropBackendType t_type)
     -> void override {};
 
-	auto requires_mir() -> bool override;
+  auto requires_mir() -> bool override;
   auto compile(CompileParams& t_params) -> void override;
 
   virtual ~LlvmBackend() = default;

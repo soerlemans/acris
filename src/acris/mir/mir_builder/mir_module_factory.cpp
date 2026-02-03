@@ -164,6 +164,10 @@ auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
       opcode = Opcode::CONST_INT;
       break;
 
+    case NativeType::CSTR:
+      opcode = Opcode::CONST_STRING;
+      break;
+
     case NativeType::BOOL:
       opcode = Opcode::CONST_BOOL;
       break;
@@ -498,7 +502,7 @@ auto MirModuleFactory::last_function() -> FunctionPtr&
   if(functions.empty()) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error("There are no functions in the CLIR "
+    throw_runtime_error("There are no functions in the MIR "
                         "module, cant retrieve last function.");
   }
 

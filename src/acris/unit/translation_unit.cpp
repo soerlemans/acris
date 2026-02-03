@@ -170,7 +170,7 @@ auto TranslationUnit::mir([[maybe_unused]] NodePtr t_ast) -> ModulePtr
   MirBuilder builder{};
   const auto module_ptr{builder.translate(t_ast)};
 
-  DBG_INFO("CLIR Module: ", module_ptr->m_name);
+  DBG_INFO("MIR Module: ", module_ptr->m_name);
   DBG_PRINTLN(module_ptr);
 
   DBG_PRINTLN("</ir_generation>");

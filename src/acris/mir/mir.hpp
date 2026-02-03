@@ -21,10 +21,6 @@
 #include "lib/stdtypes.hpp"
 
 namespace mir {
-// Using:
-using types::core::NativeType;
-using types::core::TypeVariant;
-
 // Forward Declarations:
 struct Literal;
 struct GlobalVar;
@@ -36,6 +32,14 @@ struct Instruction;
 struct BasicBlock;
 struct Function;
 struct Module;
+
+// Using:
+using types::core::NativeType;
+using types::core::TypeVariant;
+
+// Local variables and global variables get treated very differently.
+using LocalVarHandle = u64;
+using GlobalVarHandle = u64;
 
 // Aliases:
 using ModulePtr = std::shared_ptr<Module>;
@@ -197,7 +201,7 @@ struct Literal {
 
 // TODO: Figure this out.
 struct GlobalVar {
-  u64 m_id;
+  GlobalVarHandle m_id;
   std::string m_name;
   TypeVariant m_type;
 
@@ -208,8 +212,9 @@ struct GlobalVar {
   virtual ~GlobalVar() = default;
 };
 
+// Rename to LocalVar.
 struct SsaVar {
-  u64 m_id;
+  LocalVarHandle m_id;
   TypeVariant m_type;
 
   SsaVar(u64 t_id, TypeVariant t_type): m_id{t_id}, m_type{t_type}

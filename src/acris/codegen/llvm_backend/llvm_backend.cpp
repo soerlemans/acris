@@ -109,8 +109,14 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::CONST_INT:
       break;
-    case Opcode::CONST_STRING:
+    case Opcode::CONST_STRING: {
+      mir::Literal literal{std::get<mir::Literal>(operands.front())};
+      auto str{std::get<std::string>(literal.m_value)};
+
+      llvm::Constant* strConstant{
+        llvm::ConstantDataArray::getString(*m_context, str, true)};
       break;
+    }
     case Opcode::CONST_BOOL:
       break;
     case Opcode::IADD:

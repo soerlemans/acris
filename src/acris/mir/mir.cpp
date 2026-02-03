@@ -10,6 +10,7 @@
 
 // Absolute Includes:
 #include "lib/check_nullptr.hpp"
+#include "lib/overload.hpp"
 #include "lib/stdexcept/stdexcept.hpp"
 #include "lib/stdprint.hpp"
 
@@ -172,11 +173,20 @@ auto operator<<(std::ostream& t_os, const mir::Opcode t_op) -> std::ostream&
 
 auto operator<<(std::ostream& t_os, const mir::Literal& t_val) -> std::ostream&
 {
-  std::visit(
-    [&](auto&& t_value) {
-      t_os << t_value << ":" << t_val.m_type;
-    },
-    t_val.m_value);
+  using lib::Overload;
+
+  // clang-format off
+  std::visit(Overload{
+			[&](std::string&& t_str) {
+				t_os << std::quoted(t_str);
+			},
+				[&](auto&& t_value) {
+					t_os << t_value;
+				}},
+		t_val.m_value);
+  // clang-format on
+
+  t_os << ":" << t_val.m_type;
 
   return t_os;
 }

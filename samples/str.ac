@@ -1,7 +1,12 @@
-module str_
+module str_sample
 
-func ret_str_lit() -> bool {
+
+func testFunc() -> void {
+  let g_str = "Somewhere"
+}
+
+func main() -> int {
   let str_lit = "Test"
 
-  return str_lit
+  return 0
 }
