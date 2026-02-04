@@ -61,13 +61,13 @@ class LlvmBackend : public MirPass, public BackendInterface {
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
 
-  llvm::BasicBlock* m_current_bblock;
+  llvm::BasicBlock* m_last_bblock;
 
   public:
   LlvmBackend();
 
-  auto set_current_bblock();
-  auto current_bblock();
+  auto set_last_bblock(llvm::BasicBlock* t_bblock) -> void;
+  llvm::BasicBlock* last_bblock();
 
   auto on_module(ModulePtr& t_module) -> void override;
   auto on_function(FunctionPtr& t_fn) -> void override;

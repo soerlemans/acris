@@ -42,6 +42,16 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
 
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
+  // Create a global variable to hold the constant string
+  // llvm::GlobalVariable* globalVar = new llvm::GlobalVariable(
+  //     module,
+  //     constString->getType(),
+  //     true,  // isConstant
+  //     llvm::GlobalValue::PrivateLinkage,
+  //     constString,
+  //     "myConstString"
+  // );
+
   switch(opcode) {
     case Opcode::CONST_F32:
       break;
@@ -53,8 +63,9 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       mir::Literal literal{std::get<mir::Literal>(operands.front())};
       auto str{std::get<std::string>(literal.m_value)};
 
-      llvm::Constant* strConstant{
+      llvm::Constant* constant{
         llvm::ConstantDataArray::getString(*m_context, str, true)};
+
       break;
     }
     case Opcode::CONST_BOOL:
@@ -109,11 +120,13 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       const auto result_id{result->m_id};
 
       // Allocate memory for a local integer variable test.
-      llvm::AllocaInst* allocX = new llvm::AllocaInst(
-        llvm::Type::getInt32Ty(*m_context), 0, "test", m_current_bblock);
+      // TODO: Deduce type.
+      llvm::AllocaInst* alloc{
+        new llvm::AllocaInst(llvm::Type::getInt32Ty(*m_context), 0,
+                             std::to_string(result_id), m_last_bblock)};
 
       // Initialize the variable with the value 42 for now.
-      m_builder->CreateStore(m_builder->getInt32(42), allocX);
+      m_builder->CreateStore(m_builder->getInt32(42), alloc);
 
       // m_locals.insert(result_id, );
       break;
@@ -198,15 +211,23 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
                                   fn_name, m_module.get())};
 
-  auto* main_block{llvm::BasicBlock::Create(*m_context, "entry", fn)};
-  m_builder->SetInsertPoint(main_block);
-
-  m_current_bblock = main_block;
-
   // Codegen for the body
   for(BasicBlock& block : t_fn->m_blocks) {
+    auto block_label{block.m_label};
+    auto* basic_block{llvm::BasicBlock::Create(*m_context, block_label, fn)};
+    m_builder->SetInsertPoint(basic_block);
+
+    m_last_bblock = basic_block;
+
     // Set and update current bblock.
     on_block(block);
+
+		// Insert bogus return value for now.
+    auto ret_val{
+      llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_context), 42)};
+    m_builder->CreateRet(ret_val);
+
+    m_last_bblock = nullptr;
   }
 
   llvm::verifyFunction(*fn);

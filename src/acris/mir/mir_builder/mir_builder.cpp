@@ -241,7 +241,7 @@ auto MirBuilder::visit(node::function::Function* t_fn) -> Any
   fn->m_return_type = fn_type->m_return_type;
 
   m_factory->add_function_definition(fn);
-  m_factory->add_block("main");
+  m_factory->add_block("entry");
 
   m_factory->push_env();
   // Visit all the parameters, this adds them to the parameter list.
@@ -940,7 +940,7 @@ auto MirBuilder::visit(List* t_list) -> Any
 // Implementation:
 auto MirBuilder::get_call_args(NodeListPtr t_list) -> LocalVarVec
 {
-	// TODO: Check nullptr?
+  // TODO: Check nullptr?
 
   LocalVarVec vec{t_list->size()};
 
