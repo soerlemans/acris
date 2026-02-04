@@ -14,7 +14,7 @@ namespace mir::mir_builder {
 using types::core::TypeVariant;
 
 // Forward Declarations:
-struct SsaVarSite;
+struct LocalVarSite;
 template<typename T>
 struct MirEntity;
 class MirModuleFactory;
@@ -27,7 +27,7 @@ using GlobalMirEntity = MirEntity<GlobalVarPtr>;
 
 //! Globals can be forward declared, regular variables not.
 using GlobalVarMap = std::unordered_map<std::string, GlobalMirEntity>;
-using SsaVarEnvState = MirEnvState<SsaVarSite>;
+using LocalVarEnvState = MirEnvState<LocalVarSite>;
 using FunctionEnvState = MirEnvState<FunctionMirEntity>;
 
 // Enums:
@@ -43,9 +43,9 @@ enum class EntityStatus {
  * We need to keep track of the blocks ssa var's are in for phi merging.
  * Which is also relevant for LLVM IR.
  */
-struct SsaVarSite {
+struct LocalVarSite {
   BasicBlock* m_block;
-  SsaVarPtr m_var;
+  LocalVarPtr m_var;
 };
 
 /*!
@@ -86,7 +86,7 @@ class MirModuleFactory {
   // We need two separate environments to prevent IR temporaries from clashing.
   // Semantic pass should prevent any variables and functions from conflicting.
   FunctionEnvState m_fn_env;
-  SsaVarEnvState m_var_env;
+  LocalVarEnvState m_var_env;
 
   // We need to increment these to prevent collisions.
   u64 m_block_id;
@@ -102,27 +102,27 @@ class MirModuleFactory {
   auto pop_env() -> void;
   auto clear_env() -> void;
 
-  auto set_var_env(const SsaVarEnvState& t_env) -> void;
-  auto get_var_env() const -> const SsaVarEnvState&;
+  auto set_var_env(const LocalVarEnvState& t_env) -> void;
+  auto get_var_env() const -> const LocalVarEnvState&;
 
-  // SsaVar operations:
+  // LocalVar operations:
   [[nodiscard("Must use created ssa var.")]]
-  auto create_var(TypeVariant t_type) -> SsaVarPtr;
-  auto add_result_var(TypeVariant t_type) -> SsaVarPtr;
+  auto create_var(TypeVariant t_type) -> LocalVarPtr;
+  auto add_result_var(TypeVariant t_type) -> LocalVarPtr;
 
   /*!
-   * Returns the result @ref SsaVarPtr from the last @ref Instruction.
+   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
    *
    * @remark Can be a nullptr if last instruction has no result variable.
    */
-  auto last_var() -> SsaVarPtr;
+  auto last_var() -> LocalVarPtr;
 
   /*!
-   * Returns the result @ref SsaVarPtr from the last @ref Instruction.
+   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
    *
    * @remark Throws if the last instruction has no result variable.
    */
-  auto require_last_var() -> SsaVarPtr;
+  auto require_last_var() -> LocalVarPtr;
 
   // Instruction operations:
   [[nodiscard("Must use created instruction.")]]
@@ -146,7 +146,7 @@ class MirModuleFactory {
   /*!
    * Bind a ssa variable to a source variable name.
    */
-  auto create_var_binding(std::string_view t_name, SsaVarPtr t_var) -> void;
+  auto create_var_binding(std::string_view t_name, LocalVarPtr t_var) -> void;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -188,7 +188,7 @@ class MirModuleFactory {
    * This instruction is always an update instruction.
    * So we can reference the last SSA var.
    */
-  auto add_update(std::string_view t_name, SsaVarPtr t_prev_var)
+  auto add_update(std::string_view t_name, LocalVarPtr t_prev_var)
     -> Instruction&;
 
   /*!
@@ -196,7 +196,7 @@ class MirModuleFactory {
    * @param t_name Name of the function to call.
    * @param t_args Arguments to pass to the function.
    */
-  auto add_call(std::string_view t_name, const SsaVarVec& t_args)
+  auto add_call(std::string_view t_name, const LocalVarVec& t_args)
     -> Instruction&;
 
   auto last_instruction() -> Instruction&;
@@ -229,10 +229,10 @@ class MirModuleFactory {
 
   /*!
    * Insert phi nodes where necessary.
-   * Merge two @ref SsaVarEnvState's into a single one.
+   * Merge two @ref LocalVarEnvState's into a single one.
    */
-  auto merge_envs(const SsaVarEnvState& t_env1, const SsaVarEnvState& t_env2)
-    -> SsaVarEnvState;
+  auto merge_envs(const LocalVarEnvState& t_env1,
+                  const LocalVarEnvState& t_env2) -> LocalVarEnvState;
 
   // Module operations:
   auto set_module_name(std::string_view t_name) -> void;

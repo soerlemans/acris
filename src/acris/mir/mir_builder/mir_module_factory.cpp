@@ -52,26 +52,26 @@ auto MirModuleFactory::clear_env() -> void
   m_fn_env.clear();
 }
 
-auto MirModuleFactory::set_var_env(const SsaVarEnvState& t_env) -> void
+auto MirModuleFactory::set_var_env(const LocalVarEnvState& t_env) -> void
 {
   m_var_env = t_env;
 }
 
-auto MirModuleFactory::get_var_env() const -> const SsaVarEnvState&
+auto MirModuleFactory::get_var_env() const -> const LocalVarEnvState&
 {
   return m_var_env;
 }
 
-auto MirModuleFactory::create_var(TypeVariant t_type) -> SsaVarPtr
+auto MirModuleFactory::create_var(TypeVariant t_type) -> LocalVarPtr
 {
-  auto ptr{std::make_shared<SsaVar>(m_var_id, t_type)};
+  auto ptr{std::make_shared<LocalVar>(m_var_id, t_type)};
 
   m_var_id++;
 
   return ptr;
 }
 
-auto MirModuleFactory::add_result_var(TypeVariant t_type) -> SsaVarPtr
+auto MirModuleFactory::add_result_var(TypeVariant t_type) -> LocalVarPtr
 {
   auto ssa_var{create_var(t_type)};
   auto& instr{last_instruction()};
@@ -82,14 +82,14 @@ auto MirModuleFactory::add_result_var(TypeVariant t_type) -> SsaVarPtr
   return ssa_var;
 }
 
-auto MirModuleFactory::last_var() -> SsaVarPtr
+auto MirModuleFactory::last_var() -> LocalVarPtr
 {
   auto& instr{last_instruction()};
 
   return instr.m_result;
 }
 
-auto MirModuleFactory::require_last_var() -> SsaVarPtr
+auto MirModuleFactory::require_last_var() -> LocalVarPtr
 {
   auto var{last_var()};
   if(!var) {
@@ -192,8 +192,8 @@ auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
   Literal lit{t_type, t_value};
   instr.add_operand(lit);
 
-  auto ssaVar{create_var({t_type})};
-  instr.m_result = std::move(ssaVar);
+  auto LocalVar{create_var({t_type})};
+  instr.m_result = std::move(LocalVar);
 
   return instr;
 }
@@ -225,11 +225,11 @@ auto MirModuleFactory::insert_jump(BasicBlock& t_block, BasicBlock& t_target)
 }
 
 auto MirModuleFactory::create_var_binding(std::string_view t_name,
-                                          SsaVarPtr t_var) -> void
+                                          LocalVarPtr t_var) -> void
 {
   // TODO: Check for errors.
   auto& block{last_block()};
-  SsaVarSite site{&block, t_var};
+  LocalVarSite site{&block, t_var};
 
   const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, site});
   if(!inserted) {
@@ -319,8 +319,8 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
   }
 }
 
-auto MirModuleFactory::add_update(std::string_view t_name, SsaVarPtr t_prev_var)
-  -> Instruction&
+auto MirModuleFactory::add_update(std::string_view t_name,
+                                  LocalVarPtr t_prev_var) -> Instruction&
 {
   auto& update_instr{add_instruction(Opcode::UPDATE)};
 
@@ -333,14 +333,14 @@ auto MirModuleFactory::add_update(std::string_view t_name, SsaVarPtr t_prev_var)
   // Update with the new result var.
   // For the next variable reference.
   auto& block{last_block()};
-  SsaVarSite site{&block, result_var};
+  LocalVarSite site{&block, result_var};
   m_var_env.update(t_name, site);
 
   return update_instr;
 }
 
 auto MirModuleFactory::add_call(const std::string_view t_name,
-                                const SsaVarVec& t_args) -> Instruction&
+                                const LocalVarVec& t_args) -> Instruction&
 {
   auto& call_instr{add_instruction(Opcode::CALL)};
 
@@ -355,7 +355,7 @@ auto MirModuleFactory::add_call(const std::string_view t_name,
   call_instr.add_operand({label});
 
   // The rest of the args.
-  for(const SsaVarPtr& var : t_args) {
+  for(const LocalVarPtr& var : t_args) {
     call_instr.add_operand({var});
   }
 
@@ -510,11 +510,11 @@ auto MirModuleFactory::last_function() -> FunctionPtr&
 }
 
 // TODO: Maybe find a way to optimize the implementation.
-auto MirModuleFactory::merge_envs(const SsaVarEnvState& t_env1,
-                                  const SsaVarEnvState& t_env2)
-  -> SsaVarEnvState
+auto MirModuleFactory::merge_envs(const LocalVarEnvState& t_env1,
+                                  const LocalVarEnvState& t_env2)
+  -> LocalVarEnvState
 {
-  using EnvMap = SsaVarEnvState::BaseEnvState::EnvMap;
+  using EnvMap = LocalVarEnvState::BaseEnvState::EnvMap;
 
   // Loop through layers of both t_env1 and t_env2.
   // And insert phi nodes and update variable binding.
@@ -526,7 +526,7 @@ auto MirModuleFactory::merge_envs(const SsaVarEnvState& t_env1,
   // Where phi merging might be needed.
 
   // Create a new environment from the base environment.
-  SsaVarEnvState merge_env{t_env1};
+  LocalVarEnvState merge_env{t_env1};
 
   // We need to loop through both environments at the same time.
   // Whilst merging the new one.

@@ -19,7 +19,7 @@ namespace mir::mir_builder {
 NODE_USING_ALL_NAMESPACES()
 
 // Methods:
-auto MirBuilder::traverse_in_new_env(NodePtr t_node) -> SsaVarEnvState
+auto MirBuilder::traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState
 {
   m_factory->push_env();
   traverse(t_node);
@@ -938,9 +938,11 @@ auto MirBuilder::visit(List* t_list) -> Any
 }
 
 // Implementation:
-auto MirBuilder::get_call_args(NodeListPtr t_list) -> SsaVarVec
+auto MirBuilder::get_call_args(NodeListPtr t_list) -> LocalVarVec
 {
-  SsaVarVec vec{};
+	// TODO: Check nullptr?
+
+  LocalVarVec vec{t_list->size()};
 
   for(const auto& ptr : *t_list) {
     // Traverse to generate a last var that we can get.

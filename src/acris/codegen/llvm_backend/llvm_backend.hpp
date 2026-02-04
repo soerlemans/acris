@@ -30,10 +30,10 @@ namespace codegen::llvm_backend {
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
-using mir::GlobalVarHandle;
-using mir::LocalVarHandle;
 using mir::FunctionPtr;
+using mir::GlobalVarHandle;
 using mir::Instruction;
+using mir::LocalVarHandle;
 using mir::ModulePtr;
 using mir::mir_pass::MirPass;
 
@@ -44,8 +44,8 @@ using LlvmModulePtr = std::shared_ptr<llvm::Module>;
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
   private:
-	// std::unordered_map<, llvm::Value*> m_var_env;
-	
+  // std::unordered_map<, llvm::Value*> m_var_env;
+
   LlvmContextPtr m_context;
   LlvmIrBuilderPtr m_builder;
   LlvmModulePtr m_module;

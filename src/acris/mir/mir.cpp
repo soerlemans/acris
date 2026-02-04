@@ -217,7 +217,7 @@ auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&
+auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
 
@@ -226,7 +226,7 @@ auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr)
+auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr)
   -> std::ostream&
 {
   using lib::stdprint::detail::print_smart_ptr;
@@ -338,7 +338,7 @@ auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock)
 auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 {
   using mir::BasicBlock;
-  using mir::SsaVarPtr;
+  using mir::LocalVarPtr;
 
   const auto& [name, params, bblocks, return_type] = t_fn;
 
@@ -346,7 +346,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 
   t_os << '(';
   std::string_view sep{};
-  for(const SsaVarPtr& ptr : params) {
+  for(const LocalVarPtr& ptr : params) {
     t_os << sep << ptr;
 
     sep = ", ";

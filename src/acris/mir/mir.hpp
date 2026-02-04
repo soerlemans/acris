@@ -24,7 +24,7 @@ namespace mir {
 // Forward Declarations:
 struct Literal;
 struct GlobalVar;
-struct SsaVar;
+struct LocalVar;
 struct PhiArg;
 struct Label;
 struct FunctionLabel;
@@ -45,7 +45,7 @@ using GlobalVarHandle = u64;
 using ModulePtr = std::shared_ptr<Module>;
 
 using GlobalVarPtr = std::shared_ptr<GlobalVar>;
-using SsaVarPtr = std::shared_ptr<SsaVar>;
+using LocalVarPtr = std::shared_ptr<LocalVar>;
 using FunctionPtr = std::shared_ptr<Function>;
 using FunctionWeakPtr = std::weak_ptr<Function>;
 // using BasicBlockPtr = std::shared_ptr<BasicBlock>;
@@ -62,23 +62,23 @@ using BasicBlockSeq = std::list<BasicBlock>;
 using InstructionSeq = std::list<Instruction>;
 
 using GlobalVarVec = std::vector<GlobalVarPtr>;
-using SsaVarVec = std::vector<SsaVarPtr>;
-using CfgSeq = std::list<BasicBlock*>;
+using LocalVarVec = std::vector<LocalVarPtr>;
+// using CfgSeq = std::list<BasicBlock*>;
 
 // TODO: Support more then just bool, add all other supported native_types.
 //! Variant containing all supported literal types.
 using LiteralValue = std::variant<uint, int, f64, std::string, bool>;
 
-using PhiArgValue = std::variant<GlobalVarPtr, SsaVarPtr, Literal>;
+using PhiArgValue = std::variant<GlobalVarPtr, LocalVarPtr, Literal>;
 
 /*!
  * The @ref FunctionPtr is needed for resolving function calls.
- * The @ref SsaVarPtr is needed for obtaining references to SSA variables.
+ * The @ref LocalVarPtr is needed for obtaining references to SSA variables.
  * The @ref Literal is needed for obtaining references to literals.
  * The @ref Label is needed for obtaining references to basic blocks.
  */
-using Operand =
-  std::variant<GlobalVarPtr, SsaVarPtr, Literal, Label, FunctionLabel, PhiArg>;
+using Operand = std::variant<GlobalVarPtr, LocalVarPtr, Literal, Label,
+                             FunctionLabel, PhiArg>;
 using OperandSeq = std::vector<Operand>;
 
 using BasicBlockIter = BasicBlockSeq::iterator;
@@ -213,14 +213,14 @@ struct GlobalVar {
 };
 
 // Rename to LocalVar.
-struct SsaVar {
+struct LocalVar {
   LocalVarHandle m_id;
   TypeVariant m_type;
 
-  SsaVar(u64 t_id, TypeVariant t_type): m_id{t_id}, m_type{t_type}
+  LocalVar(u64 t_id, TypeVariant t_type): m_id{t_id}, m_type{t_type}
   {}
 
-  virtual ~SsaVar() = default;
+  virtual ~LocalVar() = default;
 };
 
 //! Used for jump operations.
@@ -263,7 +263,7 @@ struct Instruction {
   Opcode m_opcode;
   OperandSeq m_operands;
 
-  SsaVarPtr m_result;
+  LocalVarPtr m_result;
 
   std::string m_comment;
 
@@ -290,7 +290,7 @@ struct BasicBlock {
 
 struct Function {
   std::string m_name;
-  SsaVarVec m_params;
+  LocalVarVec m_params;
   BasicBlockSeq m_blocks;
   TypeVariant m_return_type;
 
@@ -327,8 +327,8 @@ auto operator<<(std::ostream& t_os, const mir::Literal& t_lit) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Label& t_label) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val) -> std::ostream&;
@@ -345,11 +345,11 @@ auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod) -> std::ostream
 // clang-format on
 
 // Format specializations:
-// struct std::formatter<mir::SsaVar> { // Doesnt work for MacOS.
+// struct std::formatter<mir::LocalVar> { // Doesnt work for MacOS.
 template<>
-struct std::formatter<mir::SsaVar> : std::formatter<std::string_view> {
+struct std::formatter<mir::LocalVar> : std::formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const mir::SsaVar& t_var, FormatContext& ctx)
+  auto format(const mir::LocalVar& t_var, FormatContext& ctx)
     -> std::formatter<std::string_view>
   {
     // Reuse operator<<()
