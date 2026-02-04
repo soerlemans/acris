@@ -31,70 +31,10 @@ namespace codegen::llvm_backend {
 LlvmBackend::LlvmBackend()
   : m_context{std::make_shared<llvm::LLVMContext>()},
     m_builder{std::make_shared<llvm::IRBuilder<>>(*m_context)},
-    m_module{std::make_shared<llvm::Module>("Module", *m_context)}
+    m_module{std::make_shared<llvm::Module>("Module", *m_context)},
+    m_globals{},
+    m_locals{}
 {}
-
-auto LlvmBackend::on_module(ModulePtr& t_module) -> void
-{
-  for(FunctionPtr& fn : t_module->m_functions) {
-    on_function(fn);
-  }
-}
-
-auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
-{
-  const auto fn_name{t_fn->m_name};
-
-  auto llvm_params{std::vector<llvm::Type*>()};
-  const auto params{t_fn->m_params};
-  for(const auto& param : params) {
-    const auto opt{param->m_type.native_type()};
-    if(!opt) {
-      DBG_ERROR("Cancelling function LLVM IR generation, cause return type is "
-                "note resolvalbe to native type.");
-      return;
-    }
-    const auto native_type{opt.value()};
-    auto* llvm_type{native_type2llvm(m_context, native_type)};
-
-    llvm_params.push_back(llvm_type);
-  }
-
-  // FIXME: We only support native types right now.
-  auto return_type{t_fn->m_return_type};
-
-  // TODO: make a function for this.
-  const auto opt{return_type.native_type()};
-  if(!opt) {
-    DBG_ERROR("Cancelling function LLVM IR generation, cause return type is "
-              "note resolvalbe to native type.");
-    return;
-  }
-  const auto native_type{opt.value()};
-  auto* llvm_return_type{native_type2llvm(m_context, native_type)};
-
-  auto* fn_type{llvm::FunctionType::get(llvm_return_type, llvm_params, false)};
-
-  auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
-                                  fn_name, m_module.get())};
-
-  auto* main_block{llvm::BasicBlock::Create(*m_context, "main", fn)};
-  m_builder->SetInsertPoint(main_block);
-
-  // Codegen for the body
-  for(BasicBlock& block : t_fn->m_blocks) {
-    on_block(block);
-  }
-
-  llvm::verifyFunction(*fn);
-}
-
-auto LlvmBackend::on_block(BasicBlock& t_block) -> void
-{
-  for(Instruction& instr : t_block.m_instructions) {
-    on_instruction(instr);
-  }
-}
 
 auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
 {
@@ -200,6 +140,71 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       // For now we log as we are still implementing the IR.
       DBG_ERROR("Unhandled opcode: ", opcode);
       break;
+  }
+}
+
+auto LlvmBackend::on_block(BasicBlock& t_block) -> void
+{
+  for(Instruction& instr : t_block.m_instructions) {
+    on_instruction(instr);
+  }
+}
+
+auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
+{
+  const auto fn_name{t_fn->m_name};
+
+  auto llvm_params{std::vector<llvm::Type*>()};
+  const auto params{t_fn->m_params};
+  for(const auto& param : params) {
+    const auto opt{param->m_type.native_type()};
+    if(!opt) {
+      DBG_ERROR("Cancelling function LLVM IR generation, cause return type is "
+                "note resolvalbe to native type.");
+      return;
+    }
+    const auto native_type{opt.value()};
+    auto* llvm_type{native_type2llvm(m_context, native_type)};
+
+    llvm_params.push_back(llvm_type);
+  }
+
+  // FIXME: We only support native types right now.
+  auto return_type{t_fn->m_return_type};
+
+  // TODO: make a function for this.
+  const auto opt{return_type.native_type()};
+  if(!opt) {
+    DBG_ERROR("Cancelling function LLVM IR generation, cause return type is "
+              "note resolvalbe to native type.");
+    return;
+  }
+  const auto native_type{opt.value()};
+  auto* llvm_return_type{native_type2llvm(m_context, native_type)};
+
+  auto* fn_type{llvm::FunctionType::get(llvm_return_type, llvm_params, false)};
+
+  auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
+                                  fn_name, m_module.get())};
+
+  auto* main_block{llvm::BasicBlock::Create(*m_context, "main", fn)};
+  m_builder->SetInsertPoint(main_block);
+
+  // Codegen for the body
+  for(BasicBlock& block : t_fn->m_blocks) {
+    on_block(block);
+  }
+
+  llvm::verifyFunction(*fn);
+
+  // Clear local variables.
+  m_locals.clear();
+}
+
+auto LlvmBackend::on_module(ModulePtr& t_module) -> void
+{
+  for(FunctionPtr& fn : t_module->m_functions) {
+    on_function(fn);
   }
 }
 

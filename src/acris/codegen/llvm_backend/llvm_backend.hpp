@@ -33,6 +33,7 @@ using mir::BasicBlock;
 using mir::FunctionPtr;
 using mir::GlobalVarHandle;
 using mir::Instruction;
+using mir::InstructionHandle;
 using mir::LocalVarHandle;
 using mir::ModulePtr;
 using mir::mir_pass::MirPass;
@@ -40,6 +41,9 @@ using mir::mir_pass::MirPass;
 using LlvmContextPtr = std::shared_ptr<llvm::LLVMContext>;
 using LlvmIrBuilderPtr = std::shared_ptr<llvm::IRBuilder<>>;
 using LlvmModulePtr = std::shared_ptr<llvm::Module>;
+
+using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::Value*>;
+using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
 
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
@@ -49,6 +53,9 @@ class LlvmBackend : public MirPass, public BackendInterface {
   LlvmContextPtr m_context;
   LlvmIrBuilderPtr m_builder;
   LlvmModulePtr m_module;
+
+  GlobalVarMap m_globals;
+  LocalVarMap m_locals;
 
   public:
   LlvmBackend();

@@ -40,6 +40,7 @@ using types::core::TypeVariant;
 // Local variables and global variables get treated very differently.
 using LocalVarHandle = u64;
 using GlobalVarHandle = u64;
+using InstructionHandle = u64;
 
 // Aliases:
 using ModulePtr = std::shared_ptr<Module>;
@@ -205,8 +206,9 @@ struct GlobalVar {
   std::string m_name;
   TypeVariant m_type;
 
-  GlobalVar(u64 t_id, const std::string_view t_name, TypeVariant t_type)
-    : m_id{t_id}, m_name{t_name}, m_type{t_type}
+  GlobalVar(GlobalVarHandle t_id, const std::string_view t_name,
+            TypeVariant t_type)
+    : m_id{t_id}, m_name{t_name}, m_type{std::move(t_type)}
   {}
 
   virtual ~GlobalVar() = default;
@@ -217,7 +219,8 @@ struct LocalVar {
   LocalVarHandle m_id;
   TypeVariant m_type;
 
-  LocalVar(u64 t_id, TypeVariant t_type): m_id{t_id}, m_type{t_type}
+  LocalVar(LocalVarHandle t_id, TypeVariant t_type)
+    : m_id{t_id}, m_type{std::move(t_type)}
   {}
 
   virtual ~LocalVar() = default;
@@ -259,7 +262,7 @@ struct PhiArg {
 };
 
 struct Instruction {
-  u64 m_id;
+  InstructionHandle m_id;
   Opcode m_opcode;
   OperandSeq m_operands;
 
