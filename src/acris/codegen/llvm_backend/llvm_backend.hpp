@@ -30,6 +30,8 @@ namespace codegen::llvm_backend {
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
+using mir::BasicBlockHandle;
+using mir::FunctionHandle;
 using mir::FunctionPtr;
 using mir::GlobalVarHandle;
 using mir::Instruction;
@@ -44,6 +46,8 @@ using LlvmModulePtr = std::shared_ptr<llvm::Module>;
 
 using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::Value*>;
 using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
+using BasicBlockMap = std::unordered_map<BasicBlockHandle, llvm::BasicBlock*>;
+using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
 
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
@@ -57,8 +61,13 @@ class LlvmBackend : public MirPass, public BackendInterface {
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
 
+  llvm::BasicBlock* m_current_bblock;
+
   public:
   LlvmBackend();
+
+  auto set_current_bblock();
+  auto current_bblock();
 
   auto on_module(ModulePtr& t_module) -> void override;
   auto on_function(FunctionPtr& t_fn) -> void override;

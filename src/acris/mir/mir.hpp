@@ -41,6 +41,8 @@ using types::core::TypeVariant;
 using LocalVarHandle = u64;
 using GlobalVarHandle = u64;
 using InstructionHandle = u64;
+using BasicBlockHandle = std::string;
+using FunctionHandle = std::string;
 
 // Aliases:
 using ModulePtr = std::shared_ptr<Module>;

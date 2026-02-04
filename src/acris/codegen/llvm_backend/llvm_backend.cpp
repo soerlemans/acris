@@ -105,8 +105,19 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::FCMP_GTE:
       break;
-    case Opcode::INIT:
+    case Opcode::INIT: {
+      const auto result_id{result->m_id};
+
+      // Allocate memory for a local integer variable test.
+      llvm::AllocaInst* allocX = new llvm::AllocaInst(
+        llvm::Type::getInt32Ty(*m_context), 0, "test", m_current_bblock);
+
+      // Initialize the variable with the value 42 for now.
+      m_builder->CreateStore(m_builder->getInt32(42), allocX);
+
+      // m_locals.insert(result_id, );
       break;
+    }
     case Opcode::UPDATE:
       break;
     case Opcode::LOAD:
@@ -187,11 +198,14 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
                                   fn_name, m_module.get())};
 
-  auto* main_block{llvm::BasicBlock::Create(*m_context, "main", fn)};
+  auto* main_block{llvm::BasicBlock::Create(*m_context, "entry", fn)};
   m_builder->SetInsertPoint(main_block);
+
+  m_current_bblock = main_block;
 
   // Codegen for the body
   for(BasicBlock& block : t_fn->m_blocks) {
+    // Set and update current bblock.
     on_block(block);
   }
 
