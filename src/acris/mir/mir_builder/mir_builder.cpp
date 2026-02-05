@@ -219,7 +219,7 @@ auto MirBuilder::visit(Parameter* t_param) -> Any
   current_fn->m_params.push_back(param_var);
 
   // Insert an update statement for debugging.
-  m_factory->create_var_binding(name, param_var);
+  m_factory->var_bind(name, param_var);
 
   return {};
 }
@@ -276,8 +276,6 @@ auto MirBuilder::visit([[maybe_unused]] ReturnType* t_rt) -> Any
 // Lvalue:
 auto MirBuilder::visit(Let* t_let) -> Any
 {
-  // TODO: Cleanup messy.
-
   // The let and var keywords function the same in SSA.
   const auto name{t_let->identifier()};
   const auto type{t_let->get_type()};
@@ -287,12 +285,12 @@ auto MirBuilder::visit(Let* t_let) -> Any
   const auto source_line{t_let->position().m_line};
 
   traverse(init_expr);
+  auto& bind_instr{m_factory->last_instruction()};
   const auto last_var{m_factory->require_last_var()};
 
-  auto& init_instr{m_factory->add_variable_definition(name, type)};
   m_factory->add_comment(source_line);
 
-  init_instr.add_operand({last_var});
+  m_factory->var_bind(name, last_var);
 
   return {};
 }
@@ -310,12 +308,12 @@ auto MirBuilder::visit(Var* t_var) -> Any
   const auto source_line{t_var->position().m_line};
 
   traverse(init_expr);
+  auto& bind_instr{m_factory->last_instruction()};
   const auto last_var{m_factory->require_last_var()};
 
-  auto& init_instr{m_factory->add_variable_definition(name, type)};
   m_factory->add_comment(source_line);
 
-  init_instr.add_operand({last_var});
+  m_factory->var_bind(name, last_var);
 
   return {};
 }

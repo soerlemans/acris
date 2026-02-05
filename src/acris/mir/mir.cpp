@@ -71,30 +71,6 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
   std::string_view str{};
 
   switch(t_opcode) {
-    // Literals:
-    MATCH(CONST_F32, "const_f32");
-    MATCH(CONST_F64, "const_f64");
-
-    MATCH(CONST_INT, "const_int");
-
-    // FIXME: Unused as of writing as we dont support suffix literals yet.
-    // MATCH(CONST_I8, "const_i8");
-    // MATCH(CONST_I16, "const_i16");
-    // MATCH(CONST_I32, "const_i32");
-    // MATCH(CONST_I64, "const_i64");
-    // MATCH(CONST_ISIZE, "const_isize");
-
-    // MATCH(CONST_UINT, "const_uint");
-    // MATCH(CONST_U8, "const_u8");
-    // MATCH(CONST_U16, "const_u16");
-    // MATCH(CONST_U32, "const_u32");
-    // MATCH(CONST_U64, "const_u64");
-    // MATCH(CONST_USIZE, "const_usize");
-
-    MATCH(CONST_STRING, "const_string");
-
-    MATCH(CONST_BOOL, "const_bool");
-
     // Integer arithmetic:
     MATCH(IADD, "iadd");
     MATCH(ISUB, "isub");
@@ -126,11 +102,12 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(FCMP_GTE, "fcmp_gte");
 
     // Memory handling:
-    MATCH(INIT, "init");
+    MATCH(BIND, "bind");
     MATCH(UPDATE, "update");
 
     MATCH(LOAD, "load");
     MATCH(STORE, "store");
+    MATCH(ALLOC, "alloc");
     MATCH(LEA, "lea");
 
     // Control Flow:

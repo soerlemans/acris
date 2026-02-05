@@ -33,30 +33,41 @@ using mir::BasicBlock;
 using mir::BasicBlockHandle;
 using mir::FunctionHandle;
 using mir::FunctionPtr;
+using mir::GlobalVar;
 using mir::GlobalVarHandle;
+using mir::GlobalVarPtr;
 using mir::Instruction;
 using mir::InstructionHandle;
+using mir::Literal;
+using mir::LocalVar;
 using mir::LocalVarHandle;
+using mir::LocalVarPtr;
 using mir::ModulePtr;
+using mir::VarHandle;
 using mir::mir_pass::MirPass;
 
 using LlvmContextPtr = std::shared_ptr<llvm::LLVMContext>;
 using LlvmIrBuilderPtr = std::shared_ptr<llvm::IRBuilder<>>;
 using LlvmModulePtr = std::shared_ptr<llvm::Module>;
 
-using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::Value*>;
-using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
+// Literals are assigned.
+// FIXME: Globals and such share id/handle space in this case watchout.
+using LiteralMap = std::unordered_map<VarHandle, llvm::Value*>;
+
+using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::GlobalVariable*>;
+using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::AllocaInst*>;
+
 using BasicBlockMap = std::unordered_map<BasicBlockHandle, llvm::BasicBlock*>;
 using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
 
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
   private:
-  // std::unordered_map<, llvm::Value*> m_var_env;
-
   LlvmContextPtr m_context;
   LlvmIrBuilderPtr m_builder;
   LlvmModulePtr m_module;
+
+  LiteralMap m_literals;
 
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
@@ -69,10 +80,14 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto set_last_bblock(llvm::BasicBlock* t_bblock) -> void;
   llvm::BasicBlock* last_bblock();
 
-  auto on_module(ModulePtr& t_module) -> void override;
-  auto on_function(FunctionPtr& t_fn) -> void override;
-  auto on_block(BasicBlock& t_block) -> void override;
+	auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
+
+  auto on_bind(Instruction& t_instr) -> void;
+
   auto on_instruction(Instruction& t_instr) -> void override;
+  auto on_block(BasicBlock& t_block) -> void override;
+  auto on_function(FunctionPtr& t_fn) -> void override;
+  auto on_module(ModulePtr& t_module) -> void override;
 
   // Util:
   auto initialize_target() -> void;

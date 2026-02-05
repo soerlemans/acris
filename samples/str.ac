@@ -1,8 +1,12 @@
 module str_sample
 
+// let g_str = "Global"
+
 
 func testFunc() -> void {
-  let g_str = "Somewhere"
+  let l_str = "Somewhere"
+
+	let reassign = l_str
 }
 
 func main() -> int {

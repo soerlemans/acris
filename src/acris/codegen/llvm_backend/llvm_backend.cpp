@@ -1,6 +1,7 @@
 #include "llvm_backend.hpp"
 
 // STL Includes:
+#include <format>
 #include <iostream>
 #include <optional>
 #include <vector>
@@ -32,9 +33,162 @@ LlvmBackend::LlvmBackend()
   : m_context{std::make_shared<llvm::LLVMContext>()},
     m_builder{std::make_shared<llvm::IRBuilder<>>(*m_context)},
     m_module{std::make_shared<llvm::Module>("Module", *m_context)},
+    m_literals{},
     m_globals{},
-    m_locals{}
+    m_locals{},
+    m_last_bblock{nullptr}
 {}
+
+auto LlvmBackend::set_last_bblock(llvm::BasicBlock* t_bblock) -> void
+{
+  m_last_bblock = t_bblock;
+}
+
+auto LlvmBackend::last_bblock() -> llvm::BasicBlock*
+{
+  return m_last_bblock;
+}
+
+auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
+{
+  llvm::Value* value{nullptr};
+
+  switch(t_literal.m_type) {
+    case NativeType::VOID:
+      value = (llvm::Value*)llvm::Type::getVoidTy(*m_context);
+      break;
+
+    // Floats:
+    case NativeType::F32: {
+      auto lit_val{std::get<f64>(t_literal.m_value)};
+      auto* ftype{llvm::Type::getFloatTy(*m_context)};
+
+      value = (llvm::Value*)llvm::ConstantFP::get(ftype, lit_val);
+      break;
+    }
+
+    case NativeType::F64: {
+      auto lit_val{std::get<f64>(t_literal.m_value)};
+      auto* ftype{llvm::Type::getDoubleTy(*m_context)};
+
+      value = (llvm::Value*)llvm::ConstantFP::get(ftype, lit_val);
+      break;
+    }
+
+    // Integers:
+    case NativeType::INT: {
+      auto lit_val{std::get<int>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*m_context), lit_val);
+      break;
+    }
+
+    case NativeType::I8: {
+      auto lit_val{std::get<int>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt8Ty(*m_context), lit_val);
+      break;
+    }
+
+    case NativeType::I16: {
+
+      auto lit_val{std::get<int>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt16Ty(*m_context), lit_val);
+      break;
+    }
+
+    case NativeType::I32: {
+
+      auto lit_val{std::get<int>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*m_context), lit_val);
+      break;
+    }
+
+    case NativeType::I64: {
+      auto lit_val{std::get<int>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*m_context), lit_val);
+      break;
+    }
+
+    case NativeType::ISIZE:
+      break;
+
+      // LLVM Has no concept of unsigned, so deal with this later.
+      // MIR generation should have resolved all of this.
+    case NativeType::UINT:
+      break;
+    case NativeType::U8:
+      break;
+    case NativeType::U16:
+      break;
+    case NativeType::U32:
+      break;
+    case NativeType::U64:
+      break;
+    case NativeType::USIZE:
+      break;
+
+    // String:
+    case NativeType::CHAR:
+      break;
+    case NativeType::CSTR: {
+      auto str{std::get<std::string>(t_literal.m_value)};
+
+      value =
+        (llvm::Value*)llvm::ConstantDataArray::getString(*m_context, str, true);
+      break;
+    }
+
+    // Boolean:
+    case NativeType::BOOL: {
+      auto lit_val{std::get<bool>(t_literal.m_value)};
+
+      value = (llvm::Value*)llvm::ConstantInt::get(
+        llvm::Type::getInt1Ty(*m_context), (lit_val) ? 0x1 : 0x0);
+      break;
+    }
+
+    default:
+      // TOOD: Error out.
+      break;
+  }
+
+  return value;
+}
+
+auto LlvmBackend::on_bind(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto& first{operands.front()};
+
+  llvm::Value* val{nullptr};
+  if(std::holds_alternative<Literal>(first)) {
+    Literal lit(std::get<Literal>(first));
+
+    val = literal2llvm(lit);
+  }
+
+  const auto result_id{result->m_id};
+  const auto var_id{std::format("v{}", result_id)};
+
+  // Allocate memory for a local integer variable test.
+  llvm::AllocaInst* alloc{
+    new llvm::AllocaInst(val->getType(), 0, var_id, last_bblock())};
+
+  // Initialize the variable with the value 42 for now.
+  m_builder->CreateStore(val, alloc);
+
+  m_locals.emplace(result_id, alloc);
+}
 
 auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
 {
@@ -52,24 +206,19 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
   //     "myConstString"
   // );
 
+  // case Opcode::CONST_STRING: {
+  //   Literal literal{std::get<mir::Literal>(operands.front())};
+  //   auto str{std::get<std::string>(literal.m_value)};
+
+  //   llvm::Constant* constant{
+  //     llvm::ConstantDataArray::getString(*m_context, str, true)};
+
+  //   const auto result_id{result->m_id};
+  //   m_literals.emplace(result_id, (llvm::Value*)constant);
+  //   break;
+  // }
+
   switch(opcode) {
-    case Opcode::CONST_F32:
-      break;
-    case Opcode::CONST_F64:
-      break;
-    case Opcode::CONST_INT:
-      break;
-    case Opcode::CONST_STRING: {
-      mir::Literal literal{std::get<mir::Literal>(operands.front())};
-      auto str{std::get<std::string>(literal.m_value)};
-
-      llvm::Constant* constant{
-        llvm::ConstantDataArray::getString(*m_context, str, true)};
-
-      break;
-    }
-    case Opcode::CONST_BOOL:
-      break;
     case Opcode::IADD:
       break;
     case Opcode::ISUB:
@@ -116,28 +265,19 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::FCMP_GTE:
       break;
-    case Opcode::INIT: {
-      const auto result_id{result->m_id};
 
-      // Allocate memory for a local integer variable test.
-      // TODO: Deduce type.
-      llvm::AllocaInst* alloc{
-        new llvm::AllocaInst(llvm::Type::getInt32Ty(*m_context), 0,
-                             std::to_string(result_id), m_last_bblock)};
-
-      // Initialize the variable with the value 42 for now.
-      m_builder->CreateStore(m_builder->getInt32(42), alloc);
-
-      // m_locals.insert(result_id, );
+    case Opcode::BIND:
+      on_bind(t_instr);
       break;
-    }
+
     case Opcode::UPDATE:
       break;
+
     case Opcode::LOAD:
       break;
     case Opcode::STORE:
       break;
-    case Opcode::ALLOCA:
+    case Opcode::ALLOC:
       break;
     case Opcode::LEA:
       break;
@@ -222,7 +362,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     // Set and update current bblock.
     on_block(block);
 
-		// Insert bogus return value for now.
+    // Insert bogus return value for now.
     auto ret_val{
       llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_context), 42)};
     m_builder->CreateRet(ret_val);

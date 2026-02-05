@@ -38,8 +38,9 @@ using types::core::NativeType;
 using types::core::TypeVariant;
 
 // Local variables and global variables get treated very differently.
-using LocalVarHandle = u64;
-using GlobalVarHandle = u64;
+using VarHandle = u64;
+using LocalVarHandle = VarHandle;
+using GlobalVarHandle = VarHandle;
 using InstructionHandle = u64;
 using BasicBlockHandle = std::string;
 using FunctionHandle = std::string;
@@ -94,29 +95,6 @@ using FunctionIter = FunctionSeq::iterator;
  * The opcodes which are supported for IR.
  */
 enum class Opcode : u32 {
-  // Literals:
-  CONST_F32, // %<dest> = const_f32 <float32 literal>
-  CONST_F64, // %<dest> = const_f64 <float64 literal>
-
-  CONST_INT, // %<dest> = const_int <integer literal>
-
-  // FIXME: Unused as of writing as we dont support suffix literals yet.
-  // CONST_I8,
-  // CONST_I16,
-  // CONST_I32,
-  // CONST_I64,
-  // CONST_ISIZE,
-
-  // CONST_UINT,
-  // CONST_U8,
-  // CONST_U16,
-  // CONST_U32,
-  // CONST_U64,
-  // CONST_USIZE,
-
-  CONST_STRING, // %<dest> = const_string <string literal>
-  CONST_BOOL,   // %<dest> = const_bool <true|false>
-
   // Integer arithmetic:
   IADD, // %<dest> = iadd <src> <div>
   ISUB, // %<dest> = isub <src> <div>
@@ -152,12 +130,12 @@ enum class Opcode : u32 {
 
   // Memory handling:
   // clang-format off
-  INIT,      // %<dest> = init <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
+  BIND,      // %<dest> = bind <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
   UPDATE,    // %<dest> = update <src> ; dest = src. Adds a comment of the in source variable referenced.
 
   LOAD,      // %<dest> = load <src> ; dest = *src.
   STORE,     // %<dest> = store <src> ; *dest = src.
-  ALLOCA,    // %<dest> = alloca <count>; Allocate memory on the heap.
+  ALLOC,    // %<dest> = alloca <count>; Allocate memory on the heap.
   LEA,       // %<dest> = lea <src> ; dest = &src Load a calculated address, like load effective address.
   // clang-format on
 

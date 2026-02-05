@@ -83,7 +83,6 @@ class MirModuleFactory {
   // Environment for referencing globals.
   GlobalVarMap m_global_map;
 
-  // We need two separate environments to prevent IR temporaries from clashing.
   // Semantic pass should prevent any variables and functions from conflicting.
   FunctionEnvState m_fn_env;
   LocalVarEnvState m_var_env;
@@ -144,9 +143,10 @@ class MirModuleFactory {
   auto insert_jump(BasicBlock& t_block, BasicBlock& t_target) -> Instruction&;
 
   /*!
-   * Bind a ssa variable to a source variable name.
+   * Bind a source variable name to an IR var.
+   * For later reference/usage.
    */
-  auto create_var_binding(std::string_view t_name, LocalVarPtr t_var) -> void;
+  auto var_bind(std::string_view t_name, LocalVarPtr t_var) -> void;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -168,12 +168,10 @@ class MirModuleFactory {
     -> void;
 
   /*!
-   * Add the init opcode tied to a variable name.
-   * Or create a new global if we are at the toplevel.
-   *
-   * @note this binds a source variable name to an ssa var.
+   * Bind a variable name to a result var for later reference.
+   * By its corrseponding variable name.
    */
-  auto add_variable_definition(std::string_view t_name, TypeVariant t_type)
+  auto add_variable_bind(std::string_view t_name, Instruction& t_instr)
     -> Instruction&;
 
   /*!

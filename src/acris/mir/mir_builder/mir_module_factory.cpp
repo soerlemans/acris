@@ -147,46 +147,8 @@ auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
 {
   using types::core::nativetype2str;
 
-  Opcode opcode{};
-
-  // Translate native type to literal opcode.
-  // TODO: Create a separate helper function for this.
-  switch(t_type) {
-    case NativeType::F32:
-      opcode = Opcode::CONST_F32;
-      break;
-
-    case NativeType::F64:
-      opcode = Opcode::CONST_F64;
-      break;
-
-    case NativeType::INT:
-      opcode = Opcode::CONST_INT;
-      break;
-
-    case NativeType::CSTR:
-      opcode = Opcode::CONST_STRING;
-      break;
-
-    case NativeType::BOOL:
-      opcode = Opcode::CONST_BOOL;
-      break;
-
-    default: {
-      using lib::stdexcept::throw_invalid_argument;
-
-      // Be aware nativetyp2str() can also fail for the given type.
-      std::stringstream ss{};
-      ss << std::format(R"(Given native type is unsupported "{}".)",
-                        nativetype2str(t_type));
-
-      throw_invalid_argument(ss.str());
-      break;
-    }
-  }
-
   // Instruction insertion:
-  auto& instr{add_instruction(opcode)};
+  auto& instr{add_instruction(Opcode::BIND)};
 
   // Add the literal as an operand.
   Literal lit{t_type, t_value};
@@ -224,8 +186,8 @@ auto MirModuleFactory::insert_jump(BasicBlock& t_block, BasicBlock& t_target)
   return insert_jump(jmp_instr, t_block, t_target);
 }
 
-auto MirModuleFactory::create_var_binding(std::string_view t_name,
-                                          LocalVarPtr t_var) -> void
+auto MirModuleFactory::var_bind(std::string_view t_name, LocalVarPtr t_var)
+  -> void
 {
   // TODO: Check for errors.
   auto& block{last_block()};
@@ -270,31 +232,6 @@ auto MirModuleFactory::add_global_declaration(const std::string_view t_name,
     GlobalMirEntity entity{EntityStatus::DECLARED, global_var};
     m_global_map.insert({std::string{t_name}, entity});
   }
-}
-
-auto MirModuleFactory::add_variable_definition(const std::string_view t_name,
-                                               TypeVariant t_type)
-  -> Instruction&
-{
-  auto& assign_instr{add_instruction(Opcode::INIT)};
-  auto result_var{add_result_var(t_type)};
-
-  if(m_var_env.is_toplevel()) {
-    const auto global_var{create_global(t_name, t_type)};
-
-    // Insert into global environment tracking.
-    GlobalMirEntity entity{EntityStatus::DEFINED, global_var};
-    m_global_map.insert({std::string{t_name}, entity});
-
-    // Insert into globals section of module.
-    auto& global_vec{m_module->m_globals};
-    global_vec.push_back(global_var);
-  } else {
-    // Bind the source variable name to the ssa var.
-    create_var_binding(t_name, result_var);
-  }
-
-  return assign_instr;
 }
 
 auto MirModuleFactory::add_variable_ref(const std::string_view t_name)

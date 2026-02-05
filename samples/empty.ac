@@ -1,12 +1,7 @@
 module empty
 
 func main() -> int {
-  var ret_val = 0
-	if true {
-    ret_val = 1;
-  } else {
-    ret_val = -1;
-  }
+  var ret_val = 10
 
-  return ret_val
+	return 0
 }
