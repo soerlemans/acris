@@ -45,6 +45,8 @@ using mir::LocalVarPtr;
 using mir::ModulePtr;
 using mir::VarHandle;
 using mir::mir_pass::MirPass;
+using types::core::NativeType;
+using types::core::TypeVariant;
 
 using LlvmContextPtr = std::shared_ptr<llvm::LLVMContext>;
 using LlvmIrBuilderPtr = std::shared_ptr<llvm::IRBuilder<>>;
@@ -80,9 +82,13 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto set_last_bblock(llvm::BasicBlock* t_bblock) -> void;
   llvm::BasicBlock* last_bblock();
 
-	auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
+  auto native_type2llvm(NativeType& t_type) -> llvm::Type;
+  auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
+
+  auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
 
   auto on_bind(Instruction& t_instr) -> void;
+  auto on_return(Instruction& t_instr) -> void;
 
   auto on_instruction(Instruction& t_instr) -> void override;
   auto on_block(BasicBlock& t_block) -> void override;

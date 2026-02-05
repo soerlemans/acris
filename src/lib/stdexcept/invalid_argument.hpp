@@ -4,6 +4,13 @@
 // Local Includes:
 #include "exception.hpp"
 
+// TODO: Consider using?
+#define CHECK_UNHANDLED_CASE(...)                        \
+  default: {                                             \
+    lib::stdexcept::throw_invalid_argument(__VA_ARGS__); \
+    break;                                               \
+  }
+
 namespace lib::stdexcept {
 class InvalidArgument : public Exception {
   public:

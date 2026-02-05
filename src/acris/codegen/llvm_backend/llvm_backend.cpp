@@ -49,6 +49,81 @@ auto LlvmBackend::last_bblock() -> llvm::BasicBlock*
   return m_last_bblock;
 }
 
+auto LlvmBackend::native_type2llvm(NativeType& t_type) -> llvm::Type
+{
+  switch(t_type) {
+    case NativeType::VOID:
+      return llvm::Type::getVoidTy(*m_context);
+
+    // Floats:
+    case NativeType::F32:
+      return {llvm::Type::getFloatTy(*m_context)};
+
+    case NativeType::F64:
+      return {llvm::Type::getDoubleTy(*m_context)};
+
+    // Integers:
+    case NativeType::INT:
+      return llvm::Type::getInt32Ty(*m_context);
+
+    case NativeType::I8:
+      return llvm::Type::getInt8Ty(*m_context);
+
+    case NativeType::I16:
+      return llvm::Type::getInt16Ty(*m_context);
+
+    case NativeType::I32:
+      return llvm::Type::getInt32Ty(*m_context);
+
+    case NativeType::I64:
+      return llvm::Type::getInt64Ty(*m_context);
+
+    case NativeType::ISIZE:
+      break;
+
+      // LLVM Has no concept of unsigned, so deal with this later.
+      // MIR generation should have resolved all of this.
+    case NativeType::UINT:
+      break;
+    case NativeType::U8:
+      break;
+    case NativeType::U16:
+      break;
+    case NativeType::U32:
+      break;
+    case NativeType::U64:
+      break;
+    case NativeType::USIZE:
+      break;
+
+    // String:
+    case NativeType::CHAR:
+      break;
+
+    // case NativeType::CSTR: {
+    //   auto str{std::get<std::string>(t_literal.m_value)};
+
+    //   value =
+    //     (llvm::Value*)llvm::ConstantDataArray::getString(*m_context, str,
+    //     true);
+    //   break;
+    // }
+
+    // Boolean:
+    case NativeType::BOOL:
+      return llvm::Type::getInt1Ty(*m_context);
+
+    default:
+      // TOOD: Error out.
+      break;
+  }
+
+  return {};
+}
+
+auto type2llvm(TypeVariant& t_type) -> llvm::Value*
+{}
+
 auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
 {
   llvm::Value* value{nullptr};
@@ -190,6 +265,26 @@ auto LlvmBackend::on_bind(Instruction& t_instr) -> void
   m_locals.emplace(result_id, alloc);
 }
 
+auto LlvmBackend::on_return(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto& first{operands.front()};
+
+  llvm::Value* val{nullptr};
+  if(std::holds_alternative<LocalVarPtr>(first)) {
+    auto var_ptr(std::get<LocalVarPtr>(first));
+
+    auto opt{var_ptr->m_type.native_type()};
+
+    val = literal2llvm(opt.value());
+  }
+
+  // auto ret_val{llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_context),
+  // 42)};
+  m_builder->CreateRet(ret_val);
+}
+
 auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
 {
   using mir::Opcode;
@@ -290,7 +385,9 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
     case Opcode::BREAK:
       break;
     case Opcode::RETURN:
+      on_return(t_instr);
       break;
+
     case Opcode::PHI:
       break;
     case Opcode::LOOP:
@@ -363,8 +460,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     on_block(block);
 
     // Insert bogus return value for now.
-    auto ret_val{
-      llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_context), 42)};
+    auto ret_val{llvm::ConstantInt::get(llvm_return_type, 42)};
     m_builder->CreateRet(ret_val);
 
     m_last_bblock = nullptr;
