@@ -3,5 +3,11 @@ module empty
 func main() -> int {
   var ret_val = 10
 
+	if ret_val > 10 {
+    return -1
+  } else {
+    return -2
+  }
+
 	return ret_val
 }

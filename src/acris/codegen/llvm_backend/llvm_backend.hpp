@@ -76,6 +76,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
 
+	BasicBlockMap m_bblocks;
+
   llvm::BasicBlock* m_last_bblock;
 
   public:
@@ -91,6 +93,9 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   auto on_bind(Instruction& t_instr) -> void;
   auto on_update(Instruction& t_instr) -> void;
+  auto on_cond_jmp(Instruction& t_instr) -> void;
+  auto on_isub(Instruction& t_instr) -> void;
+  auto on_jmp(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
 
   auto on_instruction(Instruction& t_instr) -> void override;

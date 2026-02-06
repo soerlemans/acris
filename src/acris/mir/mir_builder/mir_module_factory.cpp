@@ -322,7 +322,7 @@ auto MirModuleFactory::create_block(const std::string_view t_label)
   // We want all blocks to have their own unique label.
   BasicBlock block{};
 
-  block.m_label = std::format("{}#{}", t_label, m_block_id);
+  block.m_label = std::format("{}_{}", t_label, m_block_id);
 
   m_block_id++;
 

@@ -279,12 +279,32 @@ auto LlvmBackend::on_update(Instruction& t_instr) -> void
   if(std::holds_alternative<LocalVarPtr>(first)) {
     auto local_var(std::get<LocalVarPtr>(first));
 
-    auto iter = m_locals.find(local_var->m_id);
-    alloc = iter->second;
+    alloc = m_locals.at(local_var->m_id);
   }
 
   auto result_id{result->m_id};
   m_locals.emplace(result_id, alloc);
+}
+
+auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto& first{operands.front()};
+}
+
+auto LlvmBackend::on_isub(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto& first{operands.front()};
+}
+
+auto LlvmBackend::on_jmp(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto& first{operands.front()};
 }
 
 auto LlvmBackend::on_return(Instruction& t_instr) -> void
@@ -301,13 +321,7 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
     val = literal2llvm(lit);
   } else if(std::holds_alternative<LocalVarPtr>(first)) {
     auto var_ptr(std::get<LocalVarPtr>(first));
-
-    auto opt{var_ptr->m_type.native_type()};
-    // val = native_type2llvm(opt.value());
-
-    auto iter = m_locals.find(var_ptr->m_id);
-    auto* alloca = iter->second;
-    // val = iter->second;
+    auto* alloca = m_locals.at(var_ptr->m_id);
 
     // Dereference return value.
     val = m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
@@ -347,8 +361,11 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
   switch(opcode) {
     case Opcode::IADD:
       break;
+
     case Opcode::ISUB:
+      on_isub(t_instr);
       break;
+
     case Opcode::IMUL:
       break;
     case Opcode::IDIV:
@@ -408,10 +425,15 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::LEA:
       break;
+
     case Opcode::COND_JUMP:
+      on_cond_jmp(t_instr);
       break;
+
     case Opcode::JUMP:
+      on_jmp(t_instr);
       break;
+
     case Opcode::CONTINUE:
       break;
     case Opcode::BREAK:
@@ -486,7 +508,14 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     auto* basic_block{llvm::BasicBlock::Create(*m_context, block_label, fn)};
     m_builder->SetInsertPoint(basic_block);
 
-    m_last_bblock = basic_block;
+    m_bblocks.emplace(block_label, basic_block);
+  }
+
+  // Walk through body.
+  for(BasicBlock& block : t_fn->m_blocks) {
+    auto block_label{block.m_label};
+
+    m_last_bblock = m_bblocks.at(block_label);
 
     // Set and update current bblock.
     on_block(block);
@@ -496,8 +525,9 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
 
   llvm::verifyFunction(*fn);
 
-  // Clear local variables.
+  // Cleanup resources.
   m_locals.clear();
+  m_bblocks.clear();
 }
 
 auto LlvmBackend::on_module(ModulePtr& t_module) -> void
