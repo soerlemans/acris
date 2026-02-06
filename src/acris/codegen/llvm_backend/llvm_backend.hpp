@@ -52,6 +52,8 @@ using LlvmContextPtr = std::shared_ptr<llvm::LLVMContext>;
 using LlvmIrBuilderPtr = std::shared_ptr<llvm::IRBuilder<>>;
 using LlvmModulePtr = std::shared_ptr<llvm::Module>;
 
+using LlvmTypePtr = std::unique_ptr<llvm::Type>;
+
 // Literals are assigned.
 // FIXME: Globals and such share id/handle space in this case watchout.
 using LiteralMap = std::unordered_map<VarHandle, llvm::Value*>;
@@ -82,12 +84,13 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto set_last_bblock(llvm::BasicBlock* t_bblock) -> void;
   llvm::BasicBlock* last_bblock();
 
-  auto native_type2llvm(NativeType& t_type) -> llvm::Type;
-  auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
+  auto native_type2llvm(NativeType t_type) -> llvm::Type*;
 
   auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
+  auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
 
   auto on_bind(Instruction& t_instr) -> void;
+  auto on_update(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
 
   auto on_instruction(Instruction& t_instr) -> void override;

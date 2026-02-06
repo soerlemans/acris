@@ -3,5 +3,5 @@ module empty
 func main() -> int {
   var ret_val = 10
 
-	return 0
+	return ret_val
 }
