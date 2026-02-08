@@ -37,7 +37,6 @@ struct Module;
 using types::core::NativeType;
 using types::core::TypeVariant;
 
-// Local variables and global variables get treated very differently.
 using VarHandle = u64;
 using LocalVarHandle = VarHandle;
 using GlobalVarHandle = VarHandle;
@@ -45,29 +44,26 @@ using InstructionHandle = u64;
 using BasicBlockHandle = std::string;
 using FunctionHandle = std::string;
 
-// Aliases:
-using ModulePtr = std::shared_ptr<Module>;
-
-using GlobalVarPtr = std::shared_ptr<GlobalVar>;
 using LocalVarPtr = std::shared_ptr<LocalVar>;
+using GlobalVarPtr = std::shared_ptr<GlobalVar>;
+// using BasicBlockPtr = std::shared_ptr<BasicBlock>;
+// using BasicBlockWeakPtr = std::weak_ptr<BasicBlock>;
 using FunctionPtr = std::shared_ptr<Function>;
 using FunctionWeakPtr = std::weak_ptr<Function>;
-// using BasicBlockPtr = std::shared_ptr<BasicBlock>;
-// using BasicBlockWeakPtr = std::shared_ptr<BasicBlock>;
+using ModulePtr = std::shared_ptr<Module>;
 
 // We use lists for instructions and basic blocks.
 // This is to prevent any iterator or reference invalidation.
 // During the building of the IR.
 // Or the modifying of it afterwards.
-using ModuleSeq = std::list<Module>;
-using FunctionSeq = std::list<FunctionPtr>;
-
-using BasicBlockSeq = std::list<BasicBlock>;
-using InstructionSeq = std::list<Instruction>;
-
-using GlobalVarVec = std::vector<GlobalVarPtr>;
 using LocalVarVec = std::vector<LocalVarPtr>;
+using GlobalVarVec = std::vector<GlobalVarPtr>;
+using InstructionSeq = std::list<Instruction>;
+using BasicBlockSeq = std::list<BasicBlock>;
 // using CfgSeq = std::list<BasicBlock*>;
+using FunctionSeq = std::list<FunctionPtr>;
+using ModuleSeq = std::list<Module>;
+
 
 // TODO: Support more then just bool, add all other supported native_types.
 //! Variant containing all supported literal types.

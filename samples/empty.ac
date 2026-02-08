@@ -4,9 +4,9 @@ func main() -> int {
   var ret_val = 10
 
 	if ret_val > 10 {
-    return -1
+    ret_val = -1
   } else {
-    return -2
+    ret_val = -2
   }
 
 	return ret_val

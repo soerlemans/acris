@@ -30,6 +30,7 @@ namespace codegen::llvm_backend {
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
+using mir::PhiArg;
 using mir::BasicBlockHandle;
 using mir::FunctionHandle;
 using mir::FunctionPtr;
@@ -101,6 +102,7 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto on_cond_jmp(Instruction& t_instr) -> void;
   auto on_jmp(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
+  auto on_phi(Instruction& t_instr) -> void;
 
   auto on_instruction(Instruction& t_instr) -> void override;
   auto on_block(BasicBlock& t_block) -> void override;

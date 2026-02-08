@@ -3,6 +3,7 @@
 
 // STL Includes:
 #include <format>
+#include <string_view>
 
 // Local Includes:
 #include "bad_any_cast.hpp"
@@ -16,7 +17,7 @@
 
 namespace lib::stdexcept {
 template<typename ExceptType = lib::stdexcept::Exception, typename... Args>
-inline auto throwf(const std::string t_fmt, Args&&... t_args) -> void
+inline auto throwf(std::format_string<Args...> t_fmt, Args&&... t_args) -> void
 {
   const auto msg{std::format(t_fmt, std::forward<Args>(t_args)...)};
 

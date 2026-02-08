@@ -22,6 +22,7 @@
 #include "acris/debug/log.hpp"
 #include "acris/mir/mir.hpp"
 #include "lib/filesystem.hpp"
+#include "lib/stdexcept/stdexcept.hpp"
 #include "lib/stdtypes.hpp"
 
 // Local Includes:
@@ -32,6 +33,10 @@ namespace codegen::llvm_backend {
 using mir::Label;
 
 using llvm::dyn_cast;
+
+using lib::stdexcept::InvalidArgument;
+using lib::stdexcept::throw_invalid_argument;
+using lib::stdexcept::throwf;
 
 // Methods:
 LlvmBackend::LlvmBackend()
@@ -128,13 +133,39 @@ auto LlvmBackend::native_type2llvm(const NativeType t_type) -> llvm::Type*
 
 auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 {
+  TODO("Must still implement.");
 
 
   return {};
 }
 
 auto LlvmBackend::operand2llvm(const Operand& t_operand) -> llvm::Value*
-{}
+{
+  llvm::Value* val{nullptr};
+  if(std::holds_alternative<Literal>(t_operand)) {
+    auto lit(std::get<Literal>(t_operand));
+
+    val = literal2llvm(lit);
+  } else if(std::holds_alternative<LocalVarPtr>(t_operand)) {
+    auto var(std::get<LocalVarPtr>(t_operand));
+    auto* stored_val = m_locals.at(var->m_id);
+
+    if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+      // Dereference stack address if its the case.
+      val =
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "sub_lhs");
+    } else {
+      val = stored_val;
+    }
+  } else if(std::holds_alternative<Label>(t_operand)) {
+    auto label(std::get<Label>(t_operand));
+    auto& target_block{label.m_target};
+
+    val = m_bblocks.at(target_block->m_label);
+  } else {
+    throwf<InvalidArgument>("Unsupported operand to llvm Value conversion.");
+  }
+}
 
 auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
 {
@@ -271,7 +302,7 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
     if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
       // Dereference stack address if its the case.
       lhs =
-        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "sub_lhs");
     } else {
       lhs = stored_val;
     }
@@ -289,7 +320,7 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
     if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
       // Dereference stack address if its the case.
       rhs =
-        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "sub_lhs");
     } else {
       rhs = stored_val;
     }
@@ -408,26 +439,49 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
 
   auto& first{operands.front()};
 
-
-  llvm::Value* val{nullptr};
-  if(std::holds_alternative<Literal>(first)) {
-    auto lit(std::get<Literal>(first));
-
-    val = literal2llvm(lit);
-  } else if(std::holds_alternative<LocalVarPtr>(first)) {
-    auto var_ptr(std::get<LocalVarPtr>(first));
-    auto* stored_val = m_locals.at(var_ptr->m_id);
-
-    if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
-      // Dereference stack address if its the case.
-      val =
-        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
-    } else {
-      val = stored_val;
-    }
-  }
+  llvm::Value* val{operand2llvm(first)};
 
   m_builder->CreateRet(val);
+}
+
+auto LlvmBackend::on_phi(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  auto result_id{result->m_id};
+
+  llvm::PHINode* phi = m_builder->CreatePHI(m_builder->getInt32Ty(), 2, "phi");
+
+  for(const Operand& operand : operands) {
+    auto arg{std::get<PhiArg>(operand)};
+    auto& [label, value] = arg;
+
+    auto target_block{label.m_target};
+    auto* bblock{m_bblocks.at(target_block->m_label)};
+
+    llvm::Value* val{nullptr};
+    if(std::holds_alternative<Literal>(value)) {
+      auto lit(std::get<Literal>(value));
+
+      val = literal2llvm(lit);
+    } else if(std::holds_alternative<LocalVarPtr>(value)) {
+      auto var(std::get<LocalVarPtr>(value));
+      auto* stored_val = m_locals.at(var->m_id);
+
+      if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+        // Dereference stack address if its the case.
+        val =
+          m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "sub_lhs");
+      } else {
+        val = stored_val;
+      }
+    } else {
+      TODO("Implement.");
+    }
+
+    phi->addIncoming(val, bblock);
+  }
+
+  m_locals.emplace(result_id, phi);
 }
 
 auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
@@ -547,7 +601,9 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
     case Opcode::PHI:
+      on_phi(t_instr);
       break;
+
     case Opcode::LOOP:
       break;
     case Opcode::CALL:

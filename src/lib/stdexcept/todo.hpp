@@ -4,9 +4,9 @@
 // Local Includes:
 #include "exception.hpp"
 
-#define TODO(t_msg)                    \
-  do {                                 \
-    lib::stdexcept::throw_todo(t_msg); \
+#define TODO(t_msg)                                      \
+  do {                                                   \
+    lib::stdexcept::throwf<lib::stdexcept::Todo>(t_msg); \
   } while(false)
 
 /*
@@ -23,13 +23,6 @@ class Todo : public Exception {
 
   virtual ~Todo() = default;
 };
-
-// Functions:
-template<typename... Args>
-inline auto throw_todo(Args&&... t_args) -> void
-{
-  throw_exception<Todo>(std::forward<Args>(t_args)...);
-}
 } // namespace lib::stdexcept
 
 #endif // TODO_HPP
