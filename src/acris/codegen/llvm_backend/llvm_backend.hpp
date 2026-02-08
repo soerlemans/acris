@@ -26,7 +26,7 @@
 
 
 namespace codegen::llvm_backend {
-// Aliases:
+// Using:
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
@@ -43,6 +43,7 @@ using mir::LocalVar;
 using mir::LocalVarHandle;
 using mir::LocalVarPtr;
 using mir::ModulePtr;
+using mir::Operand;
 using mir::VarHandle;
 using mir::mir_pass::MirPass;
 using types::core::NativeType;
@@ -59,7 +60,7 @@ using LlvmTypePtr = std::unique_ptr<llvm::Type>;
 using LiteralMap = std::unordered_map<VarHandle, llvm::Value*>;
 
 using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::GlobalVariable*>;
-using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::AllocaInst*>;
+using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
 
 using BasicBlockMap = std::unordered_map<BasicBlockHandle, llvm::BasicBlock*>;
 using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
@@ -76,7 +77,7 @@ class LlvmBackend : public MirPass, public BackendInterface {
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
 
-	BasicBlockMap m_bblocks;
+  BasicBlockMap m_bblocks;
 
   llvm::BasicBlock* m_last_bblock;
 
@@ -90,11 +91,14 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
   auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
+  auto operand2llvm(const Operand& t_operand) -> llvm::Value*;
 
+  auto on_isub(Instruction& t_instr) -> void;
+  auto on_icmp_gt(Instruction& t_instr) -> void;
+  auto on_icmp_gte(Instruction& t_instr) -> void;
   auto on_bind(Instruction& t_instr) -> void;
   auto on_update(Instruction& t_instr) -> void;
   auto on_cond_jmp(Instruction& t_instr) -> void;
-  auto on_isub(Instruction& t_instr) -> void;
   auto on_jmp(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
 

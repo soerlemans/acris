@@ -28,6 +28,11 @@
 #include "type2llvm.hpp"
 
 namespace codegen::llvm_backend {
+// Using:
+using mir::Label;
+
+using llvm::dyn_cast;
+
 // Methods:
 LlvmBackend::LlvmBackend()
   : m_context{std::make_shared<llvm::LLVMContext>()},
@@ -127,6 +132,9 @@ auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 
   return {};
 }
+
+auto LlvmBackend::operand2llvm(const Operand& t_operand) -> llvm::Value*
+{}
 
 auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
 {
@@ -243,6 +251,87 @@ auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
   return value;
 }
 
+auto LlvmBackend::on_isub(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.front()};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{nullptr};
+  if(std::holds_alternative<Literal>(second)) {
+    auto lit(std::get<Literal>(second));
+
+    lhs = literal2llvm(lit);
+  } else if(std::holds_alternative<LocalVarPtr>(second)) {
+    auto var_ptr(std::get<LocalVarPtr>(second));
+    auto* stored_val = m_locals.at(var_ptr->m_id);
+
+    if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+      // Dereference stack address if its the case.
+      lhs =
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+    } else {
+      lhs = stored_val;
+    }
+  }
+
+  llvm::Value* rhs{nullptr};
+  if(std::holds_alternative<Literal>(second)) {
+    auto lit(std::get<Literal>(second));
+
+    rhs = literal2llvm(lit);
+  } else if(std::holds_alternative<LocalVarPtr>(second)) {
+    auto var_ptr(std::get<LocalVarPtr>(second));
+    auto* stored_val = m_locals.at(var_ptr->m_id);
+
+    if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+      // Dereference stack address if its the case.
+      rhs =
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+    } else {
+      rhs = stored_val;
+    }
+  }
+
+  llvm::Value* sub_result = m_builder->CreateSub(lhs, rhs, "sub_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
+
+  auto* lhs{m_locals.at(first)};
+  auto* rhs{m_locals.at(second)};
+
+  llvm::Value* cmp_result = m_builder->CreateICmpSGT(lhs, rhs, "sgt_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
+
+  auto* lhs{m_locals.at(first)};
+  auto* rhs{m_locals.at(second)};
+
+  llvm::Value* cond = m_builder->CreateICmpSGE(lhs, rhs, "sge_tmp");
+
+  m_locals.emplace(result_id, cond);
+}
+
 auto LlvmBackend::on_bind(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
@@ -275,29 +364,35 @@ auto LlvmBackend::on_update(Instruction& t_instr) -> void
 
   auto& first{operands.front()};
 
-  llvm::AllocaInst* alloc{nullptr};
+  llvm::Value* val{nullptr};
   if(std::holds_alternative<LocalVarPtr>(first)) {
     auto local_var(std::get<LocalVarPtr>(first));
 
-    alloc = m_locals.at(local_var->m_id);
+    val = m_locals.at(local_var->m_id);
   }
 
   auto result_id{result->m_id};
-  m_locals.emplace(result_id, alloc);
+  m_locals.emplace(result_id, val);
 }
 
 auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
 
   auto& first{operands.front()};
-}
+  auto var_ptr(std::get<LocalVarPtr>(first));
+  auto* val = m_locals.at(var_ptr->m_id);
 
-auto LlvmBackend::on_isub(Instruction& t_instr) -> void
-{
-  const auto& [id, opcode, operands, result, comment] = t_instr;
+  auto second_label{std::get<mir::Label>(operands.at(1)).m_target->m_label};
+  auto third_label{std::get<mir::Label>(operands.at(2)).m_target->m_label};
 
-  auto& first{operands.front()};
+  auto true_bblock{m_bblocks.at(second_label)};
+  auto false_bblock{m_bblocks.at(third_label)};
+
+  // TODO: Figure this shit out.
+
+  m_builder->CreateCondBr(val, true_bblock, false_bblock);
 }
 
 auto LlvmBackend::on_jmp(Instruction& t_instr) -> void
@@ -321,10 +416,15 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
     val = literal2llvm(lit);
   } else if(std::holds_alternative<LocalVarPtr>(first)) {
     auto var_ptr(std::get<LocalVarPtr>(first));
-    auto* alloca = m_locals.at(var_ptr->m_id);
+    auto* stored_val = m_locals.at(var_ptr->m_id);
 
-    // Dereference return value.
-    val = m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+    if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+      // Dereference stack address if its the case.
+      val =
+        m_builder->CreateLoad(alloca->getAllocatedType(), alloca, "ret_tmp");
+    } else {
+      val = stored_val;
+    }
   }
 
   m_builder->CreateRet(val);
@@ -383,9 +483,13 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
     case Opcode::ICMP_NQ:
       break;
     case Opcode::ICMP_GT:
+      on_icmp_gt(t_instr);
       break;
+
     case Opcode::ICMP_GTE:
+      on_icmp_gte(t_instr);
       break;
+
     case Opcode::FADD:
       break;
     case Opcode::FSUB:
@@ -506,7 +610,6 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   for(BasicBlock& block : t_fn->m_blocks) {
     auto block_label{block.m_label};
     auto* basic_block{llvm::BasicBlock::Create(*m_context, block_label, fn)};
-    m_builder->SetInsertPoint(basic_block);
 
     m_bblocks.emplace(block_label, basic_block);
   }
@@ -516,6 +619,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     auto block_label{block.m_label};
 
     m_last_bblock = m_bblocks.at(block_label);
+    m_builder->SetInsertPoint(m_last_bblock);
 
     // Set and update current bblock.
     on_block(block);
