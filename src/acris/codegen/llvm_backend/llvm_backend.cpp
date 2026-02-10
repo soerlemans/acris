@@ -1,6 +1,7 @@
 #include "llvm_backend.hpp"
 
 // STL Includes:
+#include <csignal>
 #include <format>
 #include <iostream>
 #include <optional>
@@ -46,17 +47,12 @@ LlvmBackend::LlvmBackend()
     m_literals{},
     m_globals{},
     m_locals{},
-    m_last_bblock{nullptr}
+    m_entry_bblock{nullptr}
 {}
 
-auto LlvmBackend::set_last_bblock(llvm::BasicBlock* t_bblock) -> void
+auto LlvmBackend::entry_bblock() -> llvm::BasicBlock*
 {
-  m_last_bblock = t_bblock;
-}
-
-auto LlvmBackend::last_bblock() -> llvm::BasicBlock*
-{
-  return m_last_bblock;
+  return m_entry_bblock;
 }
 
 auto LlvmBackend::native_type2llvm(const NativeType t_type) -> llvm::Type*
@@ -133,7 +129,6 @@ auto LlvmBackend::native_type2llvm(const NativeType t_type) -> llvm::Type*
 
 auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 {
-  TODO("Must still implement.");
 
 
   return {};
@@ -142,7 +137,7 @@ auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 auto LlvmBackend::operand2llvm(const Operand& t_operand,
                                const std::string_view t_id) -> llvm::Value*
 {
-  DBG_WARNING(t_id, t_operand.index());
+  DBG_WARNING("Operand: ", t_operand);
 
   llvm::Value* val{nullptr};
   if(std::holds_alternative<Literal>(t_operand)) {
@@ -300,6 +295,18 @@ auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
   return value;
 }
 
+auto LlvmBackend::on_const_int(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.front()};
+
+  llvm::Value* val_lit{operand2llvm(first)};
+
+  m_locals.emplace(result_id, val_lit);
+}
+
 auto LlvmBackend::on_isub(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
@@ -321,11 +328,17 @@ auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto first{std::get<LocalVarPtr>(operands.front())->m_id};
-  auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
+  // auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  // auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
 
-  auto* lhs{m_locals.at(first)};
-  auto* rhs{m_locals.at(second)};
+  auto first{operands.front()};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
 
   llvm::Value* cmp_result = m_builder->CreateICmpSGT(lhs, rhs, "sgt_tmp");
 
@@ -354,24 +367,23 @@ auto LlvmBackend::on_bind(Instruction& t_instr) -> void
 
   auto& first{operands.front()};
 
-  llvm::Value* val{nullptr};
-  if(std::holds_alternative<Literal>(first)) {
-    Literal lit(std::get<Literal>(first));
-
-    val = literal2llvm(lit);
-  }
+  llvm::Value* val{operand2llvm(first)};
 
   const auto result_id{result->m_id};
   const auto var_id{std::format("v{}", result_id)};
 
+  // Preallocated at start of function.
+  llvm::Value* alloca{m_locals.at(result_id)};
+
+  // Sigsegv.
   // Allocate memory for a local integer variable test.
-  llvm::AllocaInst* alloc{
-    new llvm::AllocaInst(val->getType(), 0, var_id, last_bblock())};
+  // llvm::AllocaInst* alloca{
+  // new llvm::AllocaInst(val->getType(), 0, var_id, last_bblock())};
 
-  // Initialize the variable with the value 42 for now.
-  m_builder->CreateStore(val, alloc);
+  // Store in memory.
+  m_builder->CreateStore(val, alloca);
 
-  m_locals.emplace(result_id, alloc);
+  m_locals.emplace(result_id, alloca);
 }
 
 auto LlvmBackend::on_update(Instruction& t_instr) -> void
@@ -481,7 +493,13 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
   //   break;
   // }
 
+  DBG_VERBOSE("Instruction: ", t_instr);
+
   switch(opcode) {
+    case Opcode::CONST_INT:
+      on_const_int(t_instr);
+      break;
+
     case Opcode::IADD:
       break;
 
@@ -634,22 +652,47 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   // Codegen for the body
   for(BasicBlock& block : t_fn->m_blocks) {
     auto block_label{block.m_label};
-    auto* basic_block{llvm::BasicBlock::Create(*m_context, block_label, fn)};
+    auto* bblock{llvm::BasicBlock::Create(*m_context, block_label, fn)};
 
-    m_bblocks.emplace(block_label, basic_block);
+    if(!m_entry_bblock) {
+      m_entry_bblock = bblock;
+    }
+
+    m_bblocks.emplace(block_label, bblock);
+  }
+
+  const auto locals{t_fn->m_locals};
+  for(const auto& local : locals) {
+    // TODO: Make work with TypeVariant.
+    const auto opt{local->m_type.native_type()};
+    if(!opt) {
+      DBG_ERROR(
+        "Cancelling function LLVM IR generation, cause  type of local is "
+        "not resolvalbe to native type.");
+      return;
+    }
+
+    auto* type{native_type2llvm(opt.value())};
+
+    const auto local_id{local->m_id};
+    const auto var_id{std::format("v{}", local_id)};
+
+    llvm::AllocaInst* alloc{
+      new llvm::AllocaInst(type, 0, var_id, m_entry_bblock)};
+
+    m_locals.emplace(local_id, (llvm::Value*)alloc);
   }
 
   // Walk through body.
   for(BasicBlock& block : t_fn->m_blocks) {
     auto block_label{block.m_label};
 
-    m_last_bblock = m_bblocks.at(block_label);
-    m_builder->SetInsertPoint(m_last_bblock);
+    // Update insert point.
+    llvm::BasicBlock* bblock = m_bblocks.at(block_label);
+    m_builder->SetInsertPoint(bblock);
 
     // Set and update current bblock.
     on_block(block);
-
-    m_last_bblock = nullptr;
   }
 
   llvm::verifyFunction(*fn);
@@ -657,6 +700,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   // Cleanup resources.
   m_locals.clear();
   m_bblocks.clear();
+  m_entry_bblock = nullptr;
 }
 
 auto LlvmBackend::on_module(ModulePtr& t_module) -> void

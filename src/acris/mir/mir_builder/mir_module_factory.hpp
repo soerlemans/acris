@@ -214,6 +214,7 @@ class MirModuleFactory {
   auto last_block() -> BasicBlock&;
 
   // Function operations:
+  auto add_local(LocalVarPtr& t_var) -> void;
   auto add_function_declaration(FunctionPtr t_fn) -> void;
   auto add_function_definition(FunctionPtr t_fn) -> void;
 

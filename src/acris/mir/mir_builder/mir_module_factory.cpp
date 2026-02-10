@@ -180,6 +180,8 @@ auto MirModuleFactory::to_opcode(NativeType t_type) -> Opcode
       break;
     }
   }
+
+  return opcode;
 }
 
 auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
@@ -231,7 +233,16 @@ auto MirModuleFactory::var_bind(std::string_view t_name, LocalVarPtr t_var)
 {
   // TODO: Check for errors.
   auto& block{last_block()};
-  LocalVarSite site{&block, t_var};
+
+  auto& instr{add_instruction(Opcode::BIND)};
+  add_result_var(t_var->m_type);
+
+  instr.add_operand(t_var);
+
+  auto& local{instr.m_result};
+
+  add_local(local);
+  LocalVarSite site{&block, local};
 
   const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, site});
   if(!inserted) {
@@ -421,6 +432,13 @@ auto MirModuleFactory::last_block() -> BasicBlock&
   }
 
   return fn->m_blocks.back();
+}
+
+auto MirModuleFactory::add_local(LocalVarPtr& t_var) -> void
+{
+  auto& fn{last_function()};
+
+  fn->m_locals.emplace_back(t_var);
 }
 
 auto MirModuleFactory::add_function_declaration(FunctionPtr t_fn) -> void

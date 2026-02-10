@@ -81,13 +81,12 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   BasicBlockMap m_bblocks;
 
-  llvm::BasicBlock* m_last_bblock;
+  llvm::BasicBlock* m_entry_bblock;
 
   public:
   LlvmBackend();
 
-  auto set_last_bblock(llvm::BasicBlock* t_bblock) -> void;
-  llvm::BasicBlock* last_bblock();
+  llvm::BasicBlock* entry_bblock();
 
   auto native_type2llvm(NativeType t_type) -> llvm::Type*;
 
@@ -98,6 +97,7 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto phi_arg_val2llvm(const PhiArgValue& t_phi_arg,
                         std::string_view t_id = "phi") -> llvm::Value*;
 
+  auto on_const_int(Instruction& t_instr) -> void;
   auto on_isub(Instruction& t_instr) -> void;
   auto on_icmp_gt(Instruction& t_instr) -> void;
   auto on_icmp_gte(Instruction& t_instr) -> void;

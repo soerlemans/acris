@@ -340,7 +340,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   // Local vars, for forward declare:
   t_os << "locals {\n";
   for(const LocalVarPtr& local : locals) {
-    t_os << local << '\n';
+    t_os << '\t' << local << " : " << local->m_type << '\n';
   }
   t_os << "}\n\n";
 

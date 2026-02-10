@@ -30,12 +30,14 @@ class TypeVariant : public Variant {
   // Use the constructors of the parent class.
   using Variant::Variant;
 
+  auto is_native_type() const -> bool;
   auto is_struct() const -> bool;
   auto is_function() const -> bool;
   auto is_ptr() const -> bool;
   auto is_array() const -> bool;
   auto is_var() const -> bool;
 
+  auto as_native_type() const -> NativeType;
   auto as_struct() const -> StructTypePtr;
   auto as_function() const -> FnTypePtr;
   auto as_ptr() const -> PointerTypePtr;
