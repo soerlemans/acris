@@ -71,6 +71,13 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
   std::string_view str{};
 
   switch(t_opcode) {
+    // Literals:
+    MATCH(CONST_FLOAT, "const_float");
+    MATCH(CONST_INT, "const_int");
+    MATCH(CONST_UINT, "const_uint");
+    MATCH(CONST_STRING, "const_string");
+    MATCH(CONST_BOOL, "const_bool");
+
     // Integer arithmetic:
     MATCH(IADD, "iadd");
     MATCH(ISUB, "isub");
@@ -317,7 +324,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   using mir::BasicBlock;
   using mir::LocalVarPtr;
 
-  const auto& [name, params, bblocks, return_type] = t_fn;
+  const auto& [name, params, return_type, locals, blocks] = t_fn;
 
   t_os << std::format("function {}", name);
 
@@ -328,12 +335,17 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 
     sep = ", ";
   }
-  t_os << ") -> " << return_type << '\n';
+  t_os << ") -> " << return_type << "{\n";
 
-  // TODO: Print return type.
+  // Local vars, for forward declare:
+  t_os << "locals {\n";
+  for(const LocalVarPtr& local : locals) {
+    t_os << local << '\n';
+  }
+  t_os << "}\n\n";
 
-  for(const BasicBlock& bblock : bblocks) {
-    t_os << bblock << "\n";
+  for(const BasicBlock& block : blocks) {
+    t_os << block << "\n";
   }
 
   t_os << "}\n";

@@ -67,7 +67,7 @@ using ModuleSeq = std::list<Module>;
 
 // TODO: Support more then just bool, add all other supported native_types.
 //! Variant containing all supported literal types.
-using LiteralValue = std::variant<uint, int, f64, std::string, bool>;
+using LiteralValue = std::variant<f64, int, uint, std::string, bool>;
 
 using PhiArgValue = std::variant<GlobalVarPtr, LocalVarPtr, Literal>;
 
@@ -91,6 +91,12 @@ using FunctionIter = FunctionSeq::iterator;
  * The opcodes which are supported for IR.
  */
 enum class Opcode : u32 {
+  CONST_FLOAT,  // %<dest> = const_float <value>
+  CONST_INT,    // %<dest> = const_int <value>
+  CONST_UINT,   // %<dest> = const_uint <value>
+  CONST_STRING, // %<dest> = const_string <value>
+  CONST_BOOL,   // %<dest> = const_bool <value>
+
   // Integer arithmetic:
   IADD, // %<dest> = iadd <src> <div>
   ISUB, // %<dest> = isub <src> <div>
@@ -270,8 +276,9 @@ struct BasicBlock {
 struct Function {
   std::string m_name;
   LocalVarVec m_params;
-  BasicBlockSeq m_blocks;
   TypeVariant m_return_type;
+  LocalVarVec m_locals;
+  BasicBlockSeq m_blocks;
 
   Function() = default;
 

@@ -130,6 +130,8 @@ class MirModuleFactory {
   auto add_instruction(Opcode t_opcode) -> Instruction&;
   auto add_comment(std::string t_comment) -> void;
 
+  auto to_opcode(NativeType t_type) -> Opcode;
+
   //! Add a literal which also creates the proper instruction for it.
   auto add_literal(NativeType t_type, LiteralValue t_value) -> Instruction&;
 

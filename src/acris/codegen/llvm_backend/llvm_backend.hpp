@@ -30,7 +30,6 @@ namespace codegen::llvm_backend {
 namespace fs = std::filesystem;
 
 using mir::BasicBlock;
-using mir::PhiArg;
 using mir::BasicBlockHandle;
 using mir::FunctionHandle;
 using mir::FunctionPtr;
@@ -45,6 +44,8 @@ using mir::LocalVarHandle;
 using mir::LocalVarPtr;
 using mir::ModulePtr;
 using mir::Operand;
+using mir::PhiArg;
+using mir::PhiArgValue;
 using mir::VarHandle;
 using mir::mir_pass::MirPass;
 using types::core::NativeType;
@@ -92,7 +93,10 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   auto literal2llvm(const Literal& t_literal) -> llvm::Value*;
   auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
-  auto operand2llvm(const Operand& t_operand) -> llvm::Value*;
+  auto operand2llvm(const Operand& t_operand, std::string_view t_id = "")
+    -> llvm::Value*;
+  auto phi_arg_val2llvm(const PhiArgValue& t_phi_arg,
+                        std::string_view t_id = "phi") -> llvm::Value*;
 
   auto on_isub(Instruction& t_instr) -> void;
   auto on_icmp_gt(Instruction& t_instr) -> void;

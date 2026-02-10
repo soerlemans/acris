@@ -2,9 +2,9 @@
 name = "Sample acris project."
 version = "0.1"
 
-# sources = ["samples/add.cw"]
+# sources = ["samples/add.ac"]
 # backend = "cpp"
-# backend = "llvm"
+backend = "llvm"
 
 # interop_backends = ["python"]
 # interop_backends = ["lua"]
