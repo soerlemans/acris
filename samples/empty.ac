@@ -1,9 +1,11 @@
 module empty
 
+#<include_once <core/core.ac>
+
 func main() -> int {
   var ret_val = 10
 
-	if ret_val > 10 {
+  if ret_val > 10 {
     // ret_val = -1
     ret_val = 1
   } else {

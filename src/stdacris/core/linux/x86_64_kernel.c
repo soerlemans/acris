@@ -1,4 +1,4 @@
-#include "core.h"
+#include "kernel.h"
 
 #if !(defined(linux) || defined(__linux) || defined(__linux__) \
       || defined(__gnu_linux__))

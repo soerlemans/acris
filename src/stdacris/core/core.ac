@@ -1,0 +1,7 @@
+// Choose
+
+#<ifdef NO_LIBC
+#<include_once <core/linux/kernel.ac>
+#<else
+#<include_once <core/libc.ac>
+#<endif

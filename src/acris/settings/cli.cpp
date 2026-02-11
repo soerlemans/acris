@@ -20,13 +20,6 @@ namespace {
 using settings::Settings;
 
 // Functions:
-auto add_positional_flags(CLI::App& t_app, Settings& t_settings) -> void
-{
-  // Program source files:
-  t_app.add_option("{}", t_settings.m_source_paths, "Files to compile.")
-    ->check(CLI::ExistingFile);
-}
-
 auto add_loglevel_flag([[maybe_unused]] CLI::App& t_app, Settings& t_settings)
   -> void
 {
@@ -52,6 +45,29 @@ auto add_log_multiline_flag([[maybe_unused]] CLI::App& t_app) -> void
     "Enable printing objects over multiple lines, when logging.");
 
 #endif // NDEBUG
+}
+
+auto add_macro_definitions_flag(CLI::App& t_app, Settings& t_settings) -> void
+{
+  // Program source files:
+  t_app.add_option(
+    "-D,--define",
+    [&](CLI::results_t res) {
+      for(const auto& str : res) {
+        std::size_t eq_pos = str.find('=');
+        if(eq_pos == std::string::npos) {
+          return false;
+        }
+
+        auto key{str.substr(0, eq_pos)};
+        auto val{str.substr(eq_pos + 1)};
+
+        t_settings.m_macro_definitions.emplace(key, value);
+      }
+
+      return true;
+    },
+    "Key value macros to define (KEY=VALUE).");
 }
 
 auto add_backend_flag(CLI::App& t_app, Settings& t_settings) -> void
@@ -105,8 +121,8 @@ auto add_version_flag(CLI::App& t_app) -> void
 
 auto add_build_subcommand(CLI::App& t_app) -> void
 {
-  auto* build_subcom{
-    t_app.add_subcommand("build", "Compile a project according to acris.toml.")};
+  auto* build_subcom{t_app.add_subcommand(
+    "build", "Compile a project according to acris.toml.")};
 
   DBG_WARNING("FIXME: Not implemented.");
 }
@@ -117,6 +133,13 @@ auto add_compile_subcommand(CLI::App& t_app) -> void
     t_app.add_subcommand("compile", "Compile a single acris source file.")};
 
   DBG_WARNING("FIXME: Not implemented.");
+}
+
+auto add_positional_flags(CLI::App& t_app, Settings& t_settings) -> void
+{
+  // Program source files:
+  t_app.add_option("{}", t_settings.m_source_paths, "Files to compile.")
+    ->check(CLI::ExistingFile);
 }
 } // namespace
 
@@ -130,15 +153,15 @@ auto read_cli_settings(CliParams& t_params, Settings& t_settings) -> void
   auto fmt{std::make_shared<BannerFormatter>()};
   app.formatter(fmt);
 
-  // Add flags:
-  add_positional_flags(app, t_settings);
-
-  add_backend_flag(app, t_settings);
-  add_bindings_flag(app, t_settings);
-
   // Log specific flags:
   add_loglevel_flag(app, t_settings);
   add_log_multiline_flag(app);
+
+  //
+  add_macro_definitions_flag(app, t_settings);
+  add_backend_flag(app, t_settings);
+  add_bindings_flag(app, t_settings);
+
 
   // Misc. flags:
   add_nocolor_flag(app);
@@ -147,6 +170,9 @@ auto read_cli_settings(CliParams& t_params, Settings& t_settings) -> void
   // Subcommands:
   add_build_subcommand(app);
   add_compile_subcommand(app);
+
+  // Add positional flags:
+  add_positional_flags(app, t_settings);
 
   // Parse all set flags.
   app.parse(argc, argv);
