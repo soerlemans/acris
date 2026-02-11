@@ -21,14 +21,11 @@
 #include "lib/stdtypes.hpp"
 
 namespace mir {
-// Using:
-using types::core::NativeType;
-using types::core::TypeVariant;
-
 // Forward Declarations:
 struct Literal;
 struct GlobalVar;
-struct SsaVar;
+struct LocalVar;
+struct PhiArg;
 struct Label;
 struct FunctionLabel;
 struct Instruction;
@@ -36,42 +33,52 @@ struct BasicBlock;
 struct Function;
 struct Module;
 
-// Aliases:
-using ModulePtr = std::shared_ptr<Module>;
+// Using:
+using types::core::NativeType;
+using types::core::TypeVariant;
 
+using VarHandle = u64;
+using LocalVarHandle = VarHandle;
+using GlobalVarHandle = VarHandle;
+using InstructionHandle = u64;
+using BasicBlockHandle = std::string;
+using FunctionHandle = std::string;
+
+using LocalVarPtr = std::shared_ptr<LocalVar>;
 using GlobalVarPtr = std::shared_ptr<GlobalVar>;
-using SsaVarPtr = std::shared_ptr<SsaVar>;
+// using BasicBlockPtr = std::shared_ptr<BasicBlock>;
+// using BasicBlockWeakPtr = std::weak_ptr<BasicBlock>;
 using FunctionPtr = std::shared_ptr<Function>;
 using FunctionWeakPtr = std::weak_ptr<Function>;
-// using BasicBlockPtr = std::shared_ptr<BasicBlock>;
-// using BasicBlockWeakPtr = std::shared_ptr<BasicBlock>;
+using ModulePtr = std::shared_ptr<Module>;
 
 // We use lists for instructions and basic blocks.
 // This is to prevent any iterator or reference invalidation.
 // During the building of the IR.
 // Or the modifying of it afterwards.
-using ModuleSeq = std::list<Module>;
-using FunctionSeq = std::list<FunctionPtr>;
-
-using BasicBlockSeq = std::list<BasicBlock>;
-using InstructionSeq = std::list<Instruction>;
-
+using LocalVarVec = std::vector<LocalVarPtr>;
 using GlobalVarVec = std::vector<GlobalVarPtr>;
-using SsaVarVec = std::vector<SsaVarPtr>;
-using CfgSeq = std::list<BasicBlock*>;
+using InstructionSeq = std::list<Instruction>;
+using BasicBlockSeq = std::list<BasicBlock>;
+// using CfgSeq = std::list<BasicBlock*>;
+using FunctionSeq = std::list<FunctionPtr>;
+using ModuleSeq = std::list<Module>;
+
 
 // TODO: Support more then just bool, add all other supported native_types.
 //! Variant containing all supported literal types.
-using LiteralValue = std::variant<uint, int, f64, std::string, bool>;
+using LiteralValue = std::variant<f64, int, uint, std::string, bool>;
+
+using PhiArgValue = std::variant<GlobalVarPtr, LocalVarPtr, Literal>;
 
 /*!
  * The @ref FunctionPtr is needed for resolving function calls.
- * The @ref SsaVarPtr is needed for obtaining references to SSA variables.
+ * The @ref LocalVarPtr is needed for obtaining references to SSA variables.
  * The @ref Literal is needed for obtaining references to literals.
  * The @ref Label is needed for obtaining references to basic blocks.
  */
-using Operand =
-  std::variant<GlobalVarPtr, SsaVarPtr, Literal, Label, FunctionLabel>;
+using Operand = std::variant<GlobalVarPtr, LocalVarPtr, Literal, Label,
+                             FunctionLabel, PhiArg>;
 using OperandSeq = std::vector<Operand>;
 
 using BasicBlockIter = BasicBlockSeq::iterator;
@@ -84,28 +91,11 @@ using FunctionIter = FunctionSeq::iterator;
  * The opcodes which are supported for IR.
  */
 enum class Opcode : u32 {
-  // Literals:
-  CONST_F32, // %<dest> = const_f32 <float32 literal>
-  CONST_F64, // %<dest> = const_f64 <float64 literal>
-
-  CONST_INT, // %<dest> = const_int <integer literal>
-
-  // FIXME: Unused as of writing as we dont support suffix literals yet.
-  // CONST_I8,
-  // CONST_I16,
-  // CONST_I32,
-  // CONST_I64,
-  // CONST_ISIZE,
-
-  // CONST_UINT,
-  // CONST_U8,
-  // CONST_U16,
-  // CONST_U32,
-  // CONST_U64,
-  // CONST_USIZE,
-
-  CONST_STRING, // %<dest> = const_string <string literal>
-  CONST_BOOL,   // %<dest> = const_bool <true|false>
+  CONST_FLOAT,  // %<dest> = const_float <value>
+  CONST_INT,    // %<dest> = const_int <value>
+  CONST_UINT,   // %<dest> = const_uint <value>
+  CONST_STRING, // %<dest> = const_string <value>
+  CONST_BOOL,   // %<dest> = const_bool <value>
 
   // Integer arithmetic:
   IADD, // %<dest> = iadd <src> <div>
@@ -142,12 +132,12 @@ enum class Opcode : u32 {
 
   // Memory handling:
   // clang-format off
-  INIT,      // %<dest> = init <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
+  BIND,      // %<dest> = bind <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
   UPDATE,    // %<dest> = update <src> ; dest = src. Adds a comment of the in source variable referenced.
 
   LOAD,      // %<dest> = load <src> ; dest = *src.
   STORE,     // %<dest> = store <src> ; *dest = src.
-  ALLOCA,    // %<dest> = alloca <count>; Allocate memory on the heap.
+  ALLOC,    // %<dest> = alloca <count>; Allocate memory on the heap.
   LEA,       // %<dest> = lea <src> ; dest = &src Load a calculated address, like load effective address.
   // clang-format on
 
@@ -194,25 +184,28 @@ struct Literal {
 
 // TODO: Figure this out.
 struct GlobalVar {
-  u64 m_id;
+  GlobalVarHandle m_id;
   std::string m_name;
   TypeVariant m_type;
 
-  GlobalVar(u64 t_id, const std::string_view t_name, TypeVariant t_type)
-    : m_id{t_id}, m_name{t_name}, m_type{t_type}
+  GlobalVar(GlobalVarHandle t_id, const std::string_view t_name,
+            TypeVariant t_type)
+    : m_id{t_id}, m_name{t_name}, m_type{std::move(t_type)}
   {}
 
   virtual ~GlobalVar() = default;
 };
 
-struct SsaVar {
-  u64 m_id;
+// Rename to LocalVar.
+struct LocalVar {
+  LocalVarHandle m_id;
   TypeVariant m_type;
 
-  SsaVar(u64 t_id, TypeVariant t_type): m_id{t_id}, m_type{t_type}
+  LocalVar(LocalVarHandle t_id, TypeVariant t_type)
+    : m_id{t_id}, m_type{std::move(t_type)}
   {}
 
-  virtual ~SsaVar() = default;
+  virtual ~LocalVar() = default;
 };
 
 //! Used for jump operations.
@@ -239,12 +232,23 @@ struct FunctionLabel {
   virtual ~FunctionLabel() = default;
 };
 
+//! Used for keeping track of which.
+struct PhiArg {
+  Label m_label;
+  PhiArgValue m_value; // Literal/global var/ssa var to prefer.
+
+  PhiArg(Label t_label, PhiArgValue t_value): m_label{t_label}, m_value{t_value}
+  {}
+
+  virtual ~PhiArg() = default;
+};
+
 struct Instruction {
-  u64 m_id;
+  InstructionHandle m_id;
   Opcode m_opcode;
   OperandSeq m_operands;
 
-  SsaVarPtr m_result;
+  LocalVarPtr m_result;
 
   std::string m_comment;
 
@@ -271,9 +275,10 @@ struct BasicBlock {
 
 struct Function {
   std::string m_name;
-  SsaVarVec m_params;
-  BasicBlockSeq m_blocks;
+  LocalVarVec m_params;
   TypeVariant m_return_type;
+  LocalVarVec m_locals;
+  BasicBlockSeq m_blocks;
 
   Function() = default;
 
@@ -301,41 +306,36 @@ auto opcode2str(Opcode t_opcode) -> std::string_view;
 } // namespace mir
 
 // Functions:
+// clang-format off
 auto operator<<(std::ostream& t_os, const mir::Opcode t_op) -> std::ostream&;
+
 auto operator<<(std::ostream& t_os, const mir::Literal& t_lit) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Label& t_label) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::Operand& t_operand)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::Instruction& t_inst)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::Operand& t_operand) -> std::ostream&;
+
+auto operator<<(std::ostream& t_os, const mir::Instruction& t_inst) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionPtr& t_ptr)
-  -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::FunctionWeakPtr& t_ptr)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::FunctionWeakPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Module& t_mod) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod) -> std::ostream&;
+// clang-format on
 
 // Format specializations:
-// struct std::formatter<mir::SsaVar> { // Doesnt work for MacOS.
+// struct std::formatter<mir::LocalVar> { // Doesnt work for MacOS.
 template<>
-struct std::formatter<mir::SsaVar> : std::formatter<std::string_view> {
+struct std::formatter<mir::LocalVar> : std::formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const mir::SsaVar& t_var, FormatContext& ctx)
+  auto format(const mir::LocalVar& t_var, FormatContext& ctx)
     -> std::formatter<std::string_view>
   {
     // Reuse operator<<()

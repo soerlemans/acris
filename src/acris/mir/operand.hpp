@@ -13,18 +13,20 @@ using types::core::TypeVariant;
 
 // Forward Declarations:
 struct Literal;
-struct SsaVar;
+struct GlobalVar;
+struct LocalVar;
 struct Label;
-struct Instruction;
-struct BasicBlock;
-struct Function;
-struct Module;
+struct FunctioNLabel;
+struct FunctioNLabel;
 
 class Operand;
 
-// Aliases:
-using SsaVarPtr = std::shared_ptr<SsaVar>;
-using OperandVariant = std::variant<SsaVarPtr, Literal, Label>;
+// Using:
+using GlobalVarPtr = std::shared_ptr<GlobalVar>;
+using LocalVarPtr = std::shared_ptr<LocalVar>;
+
+using OperandVariant = std::variant<GlobalVarPtr, LocalVarPtr, Literal, Label,
+                                    FunctionLabel, PhiArg>;
 using OperandSeq = std::vector<Operand>;
 
 // Classes:

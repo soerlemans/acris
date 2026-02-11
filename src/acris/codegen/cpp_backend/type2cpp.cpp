@@ -17,6 +17,8 @@
 namespace {
 // Using:
 using codegen::cpp_backend::type_spec2cpp;
+using lib::stdexcept::InvalidArgument;
+using lib::stdexcept::throwf;
 using types::core::ArrayTypePtr;
 using types::core::FnTypePtr;
 using types::core::NativeType;
@@ -61,14 +63,10 @@ inline auto native_type2cpp(const NativeType t_type) -> std::string
 
     MATCH(BOOL, "bool");
 
-    default: {
-      const auto msg{
-        std::format("NativeType could not be converted to C++ type: ",
-                    nativetype2str(t_type))};
-
-      throw_invalid_argument(msg);
+    default:
+      throwf<InvalidArgument>("NativeType could not be converted to C++ type: ",
+                              nativetype2str(t_type));
       break;
-    }
   }
 
   return str;

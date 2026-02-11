@@ -19,6 +19,16 @@ namespace mir::mir_builder {
 NODE_USING_ALL_NAMESPACES()
 
 // Methods:
+auto MirBuilder::traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState
+{
+  m_factory->push_env();
+  traverse(t_node);
+  const auto new_env{m_factory->get_var_env()};
+  m_factory->pop_env();
+
+  return new_env;
+}
+
 // Public:
 MirBuilder::MirBuilder(): m_factory{nullptr}
 {}
@@ -50,10 +60,7 @@ auto MirBuilder::visit(If* t_if) -> Any
   cond_instr.add_operand({&then_block});
 
   // TODO: Save environment before, traversal for phi node insertion.
-  m_factory->push_env();
-  traverse(then);
-  const auto then_env{m_factory->get_var_env()};
-  m_factory->pop_env();
+  const auto then_env{traverse_in_new_env(then)};
   const auto then_jump{m_factory->create_instruction(Opcode::JUMP)};
 
   // Restore to main env.
@@ -65,11 +72,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     auto& alt_block{m_factory->add_block("if_alt")};
     cond_instr.add_operand({&alt_block});
 
-    m_factory->push_env();
-    traverse(alt);
-    const auto alt_env{m_factory->get_var_env()};
-    m_factory->pop_env();
-
+    const auto alt_env{traverse_in_new_env(alt)};
     const auto alt_jump{m_factory->create_instruction(Opcode::JUMP)};
 
     // Final block after the if statement.
@@ -78,8 +81,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     m_factory->insert_jump(alt_jump, alt_block, merge_block);
 
     // Insert phi nodes.
-    const auto merged_env{
-      m_factory->merge_envs(cond_result, then_env, alt_env)};
+    const auto merged_env{m_factory->merge_envs(then_env, alt_env)};
     m_factory->set_var_env(merged_env);
   } else {
     // Final block after the if statement.
@@ -87,8 +89,7 @@ auto MirBuilder::visit(If* t_if) -> Any
     m_factory->insert_jump(then_jump, then_block, merge_block);
 
     // Insert phi nodes.
-    const auto merged_env{
-      m_factory->merge_envs(cond_result, main_env, then_env)};
+    const auto merged_env{m_factory->merge_envs(main_env, then_env)};
     m_factory->set_var_env(main_env);
   }
 
@@ -135,9 +136,7 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
 
   // TODO: Put in own basic block for looping.
   auto& body_block{m_factory->add_block("loop_body")};
-  m_factory->push_env();
-  traverse(body);
-  m_factory->pop_env();
+  traverse_in_new_env(body);
 
   const auto end_jump{m_factory->create_instruction(Opcode::JUMP)};
   m_factory->insert_jump(end_jump, body_block, expr_block);
@@ -220,7 +219,7 @@ auto MirBuilder::visit(Parameter* t_param) -> Any
   current_fn->m_params.push_back(param_var);
 
   // Insert an update statement for debugging.
-  m_factory->create_var_binding(name, param_var);
+  m_factory->var_bind(name, param_var);
 
   return {};
 }
@@ -242,7 +241,7 @@ auto MirBuilder::visit(node::function::Function* t_fn) -> Any
   fn->m_return_type = fn_type->m_return_type;
 
   m_factory->add_function_definition(fn);
-  m_factory->add_block("main");
+  m_factory->add_block("entry");
 
   m_factory->push_env();
   // Visit all the parameters, this adds them to the parameter list.
@@ -277,8 +276,6 @@ auto MirBuilder::visit([[maybe_unused]] ReturnType* t_rt) -> Any
 // Lvalue:
 auto MirBuilder::visit(Let* t_let) -> Any
 {
-  // TODO: Cleanup messy.
-
   // The let and var keywords function the same in SSA.
   const auto name{t_let->identifier()};
   const auto type{t_let->get_type()};
@@ -288,12 +285,12 @@ auto MirBuilder::visit(Let* t_let) -> Any
   const auto source_line{t_let->position().m_line};
 
   traverse(init_expr);
+  auto& bind_instr{m_factory->last_instruction()};
   const auto last_var{m_factory->require_last_var()};
 
-  auto& init_instr{m_factory->add_variable_definition(name, type)};
   m_factory->add_comment(source_line);
 
-  init_instr.add_operand({last_var});
+  m_factory->var_bind(name, last_var);
 
   return {};
 }
@@ -311,12 +308,12 @@ auto MirBuilder::visit(Var* t_var) -> Any
   const auto source_line{t_var->position().m_line};
 
   traverse(init_expr);
+  auto& bind_instr{m_factory->last_instruction()};
   const auto last_var{m_factory->require_last_var()};
 
-  auto& init_instr{m_factory->add_variable_definition(name, type)};
   m_factory->add_comment(source_line);
 
-  init_instr.add_operand({last_var});
+  m_factory->var_bind(name, last_var);
 
   return {};
 }
@@ -939,9 +936,11 @@ auto MirBuilder::visit(List* t_list) -> Any
 }
 
 // Implementation:
-auto MirBuilder::get_call_args(NodeListPtr t_list) -> SsaVarVec
+auto MirBuilder::get_call_args(NodeListPtr t_list) -> LocalVarVec
 {
-  SsaVarVec vec{};
+  // TODO: Check nullptr?
+
+  LocalVarVec vec{t_list->size()};
 
   for(const auto& ptr : *t_list) {
     // Traverse to generate a last var that we can get.

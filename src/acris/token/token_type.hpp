@@ -36,6 +36,7 @@ enum class TokenType {
   DECLARE,
   MACRO,
   CONST,
+  COMP,
 
   // User Types:
   ALIAS,
@@ -47,6 +48,7 @@ enum class TokenType {
   PROTO,
 
   // Control statements:
+  SLOT,
   FUNCTION,
   METHOD,
   MATCH,
@@ -72,8 +74,9 @@ enum class TokenType {
   // Logical:
   TRUE,
   FALSE,
+  NULL_LIT,
 
-	// TODO: Define C types for interop.
+  // TODO: Define C types for interop.
 
   // Primitves:
   VOID,

@@ -10,6 +10,9 @@
     break
 
 namespace ast::node::operators {
+using lib::stdexcept::InvalidArgument;
+using lib::stdexcept::throwf;
+
 // Methods:
 Assignment::Assignment(TextPosition t_pos, const AssignmentOp t_op,
                        NodePtr&& t_left, NodePtr&& t_right)
@@ -39,13 +42,10 @@ auto assignment_op2str(const AssignmentOp t_op) -> std::string_view
 
     MATCH(REGULAR, "=");
 
-    default: {
-      using lib::stdexcept::throw_invalid_argument;
-
-      throw_invalid_argument(
+    default:
+      throwf<InvalidArgument>(
         "AssignmentOp could not be converted to std::string_view.");
       break;
-    }
   }
 
   return str;

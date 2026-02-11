@@ -52,6 +52,7 @@ class BuildUnit {
   public:
   BuildUnit(BackendPtr&& t_backend, fs::path t_build_dir);
 
+  auto backend_requires_mir() -> bool;
   auto compile(codegen::CompileParams& t_params) -> void;
   auto build_dir() -> const fs::path&;
 

@@ -33,11 +33,11 @@ enum class TranslationUnitPhase {
   PREPROCESSING,
   LEXING,
   PARSING,
+  MACRO_EXPANSION,
   SEMANTIC_ANALYSIS,
   MIR_GENERATION,
   CODE_GENERATION,
-  COMPLETED,
-  FAILED
+  COMPLETED
 };
 
 // Classes:
@@ -52,6 +52,11 @@ enum class TranslationUnitPhase {
 class TranslationUnit {
   private:
   TranslationUnitPhase m_phase;
+
+  // TODO: Settings should be passed to TranslationUnit as a shared_ptr.
+  // So we can actually start passing CLI options to other phases of
+  // compilation.
+	// For example passing through options to clang, via -X.
 
   // Config:
   BuildUnitPtr m_build_unit;

@@ -14,6 +14,7 @@ namespace mir::mir_builder {
 using types::core::TypeVariant;
 
 // Forward Declarations:
+struct LocalVarSite;
 template<typename T>
 struct MirEntity;
 class MirModuleFactory;
@@ -26,7 +27,7 @@ using GlobalMirEntity = MirEntity<GlobalVarPtr>;
 
 //! Globals can be forward declared, regular variables not.
 using GlobalVarMap = std::unordered_map<std::string, GlobalMirEntity>;
-using SsaVarEnvState = MirEnvState<SsaVarPtr>;
+using LocalVarEnvState = MirEnvState<LocalVarSite>;
 using FunctionEnvState = MirEnvState<FunctionMirEntity>;
 
 // Enums:
@@ -38,6 +39,15 @@ enum class EntityStatus {
 };
 
 // Structs:
+/*!
+ * We need to keep track of the blocks ssa var's are in for phi merging.
+ * Which is also relevant for LLVM IR.
+ */
+struct LocalVarSite {
+  BasicBlock* m_block;
+  LocalVarPtr m_var;
+};
+
 /*!
  * Functions or structs could be forward declared.
  * For these kind of MirEntities we need something inbetween.
@@ -73,10 +83,9 @@ class MirModuleFactory {
   // Environment for referencing globals.
   GlobalVarMap m_global_map;
 
-  // We need two separate environments to prevent IR temporaries from clashing.
   // Semantic pass should prevent any variables and functions from conflicting.
   FunctionEnvState m_fn_env;
-  SsaVarEnvState m_var_env;
+  LocalVarEnvState m_var_env;
 
   // We need to increment these to prevent collisions.
   u64 m_block_id;
@@ -92,27 +101,27 @@ class MirModuleFactory {
   auto pop_env() -> void;
   auto clear_env() -> void;
 
-  auto set_var_env(const SsaVarEnvState& t_env) -> void;
-  auto get_var_env() const -> const SsaVarEnvState&;
+  auto set_var_env(const LocalVarEnvState& t_env) -> void;
+  auto get_var_env() const -> const LocalVarEnvState&;
 
-  // SsaVar operations:
+  // LocalVar operations:
   [[nodiscard("Must use created ssa var.")]]
-  auto create_var(TypeVariant t_type) -> SsaVarPtr;
-  auto add_result_var(TypeVariant t_type) -> SsaVarPtr;
+  auto create_var(TypeVariant t_type) -> LocalVarPtr;
+  auto add_result_var(TypeVariant t_type) -> LocalVarPtr;
 
   /*!
-   * Returns the result @ref SsaVarPtr from the last @ref Instruction.
+   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
    *
    * @remark Can be a nullptr if last instruction has no result variable.
    */
-  auto last_var() -> SsaVarPtr;
+  auto last_var() -> LocalVarPtr;
 
   /*!
-   * Returns the result @ref SsaVarPtr from the last @ref Instruction.
+   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
    *
    * @remark Throws if the last instruction has no result variable.
    */
-  auto require_last_var() -> SsaVarPtr;
+  auto require_last_var() -> LocalVarPtr;
 
   // Instruction operations:
   [[nodiscard("Must use created instruction.")]]
@@ -120,6 +129,8 @@ class MirModuleFactory {
   auto add_instruction_to(Opcode t_opcode, BasicBlock& t_block) -> Instruction&;
   auto add_instruction(Opcode t_opcode) -> Instruction&;
   auto add_comment(std::string t_comment) -> void;
+
+  auto to_opcode(NativeType t_type) -> Opcode;
 
   //! Add a literal which also creates the proper instruction for it.
   auto add_literal(NativeType t_type, LiteralValue t_value) -> Instruction&;
@@ -134,9 +145,10 @@ class MirModuleFactory {
   auto insert_jump(BasicBlock& t_block, BasicBlock& t_target) -> Instruction&;
 
   /*!
-   * Bind a ssa variable to a source variable name.
+   * Bind a source variable name to an IR var.
+   * For later reference/usage.
    */
-  auto create_var_binding(std::string_view t_name, SsaVarPtr t_var) -> void;
+  auto var_bind(std::string_view t_name, LocalVarPtr t_var) -> void;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -158,12 +170,10 @@ class MirModuleFactory {
     -> void;
 
   /*!
-   * Add the init opcode tied to a variable name.
-   * Or create a new global if we are at the toplevel.
-   *
-   * @note this binds a source variable name to an ssa var.
+   * Bind a variable name to a result var for later reference.
+   * By its corrseponding variable name.
    */
-  auto add_variable_definition(std::string_view t_name, TypeVariant t_type)
+  auto add_variable_bind(std::string_view t_name, Instruction& t_instr)
     -> Instruction&;
 
   /*!
@@ -178,7 +188,7 @@ class MirModuleFactory {
    * This instruction is always an update instruction.
    * So we can reference the last SSA var.
    */
-  auto add_update(std::string_view t_name, SsaVarPtr t_prev_var)
+  auto add_update(std::string_view t_name, LocalVarPtr t_prev_var)
     -> Instruction&;
 
   /*!
@@ -186,7 +196,7 @@ class MirModuleFactory {
    * @param t_name Name of the function to call.
    * @param t_args Arguments to pass to the function.
    */
-  auto add_call(std::string_view t_name, const SsaVarVec& t_args)
+  auto add_call(std::string_view t_name, const LocalVarVec& t_args)
     -> Instruction&;
 
   auto last_instruction() -> Instruction&;
@@ -204,6 +214,7 @@ class MirModuleFactory {
   auto last_block() -> BasicBlock&;
 
   // Function operations:
+  auto add_local(LocalVarPtr& t_var) -> void;
   auto add_function_declaration(FunctionPtr t_fn) -> void;
   auto add_function_definition(FunctionPtr t_fn) -> void;
 
@@ -219,10 +230,10 @@ class MirModuleFactory {
 
   /*!
    * Insert phi nodes where necessary.
-   * Merge two @ref SsaVarEnvState's into a single one.
+   * Merge two @ref LocalVarEnvState's into a single one.
    */
-  auto merge_envs(SsaVarPtr t_cond, const SsaVarEnvState& t_env1,
-                  const SsaVarEnvState& t_env2) -> SsaVarEnvState;
+  auto merge_envs(const LocalVarEnvState& t_env1,
+                  const LocalVarEnvState& t_env2) -> LocalVarEnvState;
 
   // Module operations:
   auto set_module_name(std::string_view t_name) -> void;

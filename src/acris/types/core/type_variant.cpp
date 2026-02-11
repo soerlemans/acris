@@ -12,6 +12,11 @@
 
 namespace types::core {
 // Methods:
+auto TypeVariant::is_native_type() const -> bool
+{
+  return std::holds_alternative<NativeType>(*this);
+}
+
 auto TypeVariant::is_struct() const -> bool
 {
   return std::holds_alternative<StructTypePtr>(*this);
@@ -36,6 +41,12 @@ auto TypeVariant::is_var() const -> bool
 {
   return std::holds_alternative<ArrayTypePtr>(*this);
 }
+
+auto TypeVariant::as_native_type() const -> NativeType
+{
+  return std::get<NativeType>(*this);
+}
+
 
 auto TypeVariant::as_struct() const -> StructTypePtr
 {

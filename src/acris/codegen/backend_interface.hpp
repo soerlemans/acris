@@ -59,6 +59,11 @@ class BackendInterface {
    */
   virtual auto register_interop_backend(InteropBackendType t_type) -> void = 0;
 
+  /*!
+   * Check if MIR is required for compilation.
+   */
+  virtual auto requires_mir() -> bool = 0;
+
   //! Compile the AST for the selected backend.
   virtual auto compile(CompileParams& t_params) -> void = 0;
 

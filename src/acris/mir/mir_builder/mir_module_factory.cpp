@@ -2,6 +2,7 @@
 
 // STL Includes:
 #include <algorithm>
+#include <format>
 #include <iomanip>
 #include <memory>
 #include <ranges>
@@ -9,6 +10,7 @@
 // Absolute Includes:
 #include "acris/debug/log.hpp"
 #include "lib/check_nullptr.hpp"
+#include "lib/overload.hpp"
 #include "lib/stdexcept/stdexcept.hpp"
 #include "lib/string_util.hpp"
 
@@ -32,12 +34,16 @@ MirModuleFactory::MirModuleFactory()
 auto MirModuleFactory::push_env() -> void
 {
   m_var_env.push_env();
+
+  // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.push_env();
 }
 
 auto MirModuleFactory::pop_env() -> void
 {
   m_var_env.pop_env();
+
+  // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.pop_env();
 }
 
@@ -48,26 +54,26 @@ auto MirModuleFactory::clear_env() -> void
   m_fn_env.clear();
 }
 
-auto MirModuleFactory::set_var_env(const SsaVarEnvState& t_env) -> void
+auto MirModuleFactory::set_var_env(const LocalVarEnvState& t_env) -> void
 {
   m_var_env = t_env;
 }
 
-auto MirModuleFactory::get_var_env() const -> const SsaVarEnvState&
+auto MirModuleFactory::get_var_env() const -> const LocalVarEnvState&
 {
   return m_var_env;
 }
 
-auto MirModuleFactory::create_var(TypeVariant t_type) -> SsaVarPtr
+auto MirModuleFactory::create_var(TypeVariant t_type) -> LocalVarPtr
 {
-  auto ptr{std::make_shared<SsaVar>(m_var_id, t_type)};
+  auto ptr{std::make_shared<LocalVar>(m_var_id, t_type)};
 
   m_var_id++;
 
   return ptr;
 }
 
-auto MirModuleFactory::add_result_var(TypeVariant t_type) -> SsaVarPtr
+auto MirModuleFactory::add_result_var(TypeVariant t_type) -> LocalVarPtr
 {
   auto ssa_var{create_var(t_type)};
   auto& instr{last_instruction()};
@@ -78,14 +84,14 @@ auto MirModuleFactory::add_result_var(TypeVariant t_type) -> SsaVarPtr
   return ssa_var;
 }
 
-auto MirModuleFactory::last_var() -> SsaVarPtr
+auto MirModuleFactory::last_var() -> LocalVarPtr
 {
   auto& instr{last_instruction()};
 
   return instr.m_result;
 }
 
-auto MirModuleFactory::require_last_var() -> SsaVarPtr
+auto MirModuleFactory::require_last_var() -> LocalVarPtr
 {
   auto var{last_var()};
   if(!var) {
@@ -138,22 +144,20 @@ auto MirModuleFactory::add_comment(std::string t_comment) -> void
   instr.m_comment = std::format(R"("{}".)", t_comment);
 }
 
-auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
-  -> Instruction&
+auto MirModuleFactory::to_opcode(NativeType t_type) -> Opcode
 {
   using types::core::nativetype2str;
 
   Opcode opcode{};
 
-  // Translate native type to literal opcode.
-  // TODO: Create a separate helper function for this.
+  // TODO: Encode exact types later.
   switch(t_type) {
     case NativeType::F32:
-      opcode = Opcode::CONST_F32;
+      opcode = Opcode::CONST_FLOAT;
       break;
 
     case NativeType::F64:
-      opcode = Opcode::CONST_F64;
+      opcode = Opcode::CONST_FLOAT;
       break;
 
     case NativeType::INT:
@@ -177,15 +181,23 @@ auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
     }
   }
 
-  // Instruction insertion:
-  auto& instr{add_instruction(opcode)};
+  return opcode;
+}
+
+auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
+  -> Instruction&
+{
+  using types::core::nativetype2str;
+
+  auto& fn{last_function()};
+  auto& instr{add_instruction(to_opcode(t_type))};
 
   // Add the literal as an operand.
   Literal lit{t_type, t_value};
   instr.add_operand(lit);
 
-  auto ssaVar{create_var({t_type})};
-  instr.m_result = std::move(ssaVar);
+  auto LocalVar{create_var({t_type})};
+  instr.m_result = std::move(LocalVar);
 
   return instr;
 }
@@ -216,11 +228,23 @@ auto MirModuleFactory::insert_jump(BasicBlock& t_block, BasicBlock& t_target)
   return insert_jump(jmp_instr, t_block, t_target);
 }
 
-auto MirModuleFactory::create_var_binding(std::string_view t_name,
-                                          SsaVarPtr t_var) -> void
+auto MirModuleFactory::var_bind(std::string_view t_name, LocalVarPtr t_var)
+  -> void
 {
   // TODO: Check for errors.
-  const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, t_var});
+  auto& block{last_block()};
+
+  auto& instr{add_instruction(Opcode::BIND)};
+  add_result_var(t_var->m_type);
+
+  instr.add_operand(t_var);
+
+  auto& local{instr.m_result};
+
+  add_local(local);
+  LocalVarSite site{&block, local};
+
+  const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, site});
   if(!inserted) {
     using lib::stdexcept::throw_runtime_error;
 
@@ -261,32 +285,6 @@ auto MirModuleFactory::add_global_declaration(const std::string_view t_name,
   }
 }
 
-auto MirModuleFactory::add_variable_definition(const std::string_view t_name,
-                                               TypeVariant t_type)
-  -> Instruction&
-{
-  auto& assign_instr{add_instruction(Opcode::INIT)};
-  auto result_var{add_result_var(t_type)};
-
-  if(m_var_env.is_toplevel()) {
-    const auto global_var{create_global(t_name, t_type)};
-
-    // Insert into global environment tracking.
-    GlobalMirEntity entity{EntityStatus::DEFINED, global_var};
-    m_global_map.insert({std::string{t_name}, entity});
-
-    // Insert into globals section of module.
-    auto& global_vec{m_module->m_globals};
-    global_vec.push_back(global_var);
-  } else {
-    // Bind the source variable name to the ssa var.
-    create_var_binding(t_name, result_var);
-  }
-
-
-  return assign_instr;
-}
-
 auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
   -> Instruction&
 {
@@ -302,19 +300,21 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
 
     return load_instr;
   } else {
-    // Get the previous ssa variable associated with the name.
-    auto prev_var{m_var_env.get_value(t_name)};
+    // Get the previous ssa variable associated with the
+    // name.
+    auto prev_var{m_var_env.get_value(t_name).m_var};
 
     return add_update(t_name, prev_var);
   }
 }
 
-auto MirModuleFactory::add_update(std::string_view t_name, SsaVarPtr t_prev_var)
-  -> Instruction&
+auto MirModuleFactory::add_update(std::string_view t_name,
+                                  LocalVarPtr t_prev_var) -> Instruction&
 {
   auto& update_instr{add_instruction(Opcode::UPDATE)};
 
-  // Add the last usage of the ssa variable associated with the name.
+  // Add the last usage of the ssa variable associated with
+  // the name.
   update_instr.add_operand(t_prev_var);
 
   const auto type{t_prev_var->m_type};
@@ -322,13 +322,15 @@ auto MirModuleFactory::add_update(std::string_view t_name, SsaVarPtr t_prev_var)
 
   // Update with the new result var.
   // For the next variable reference.
-  m_var_env.update(t_name, result_var);
+  auto& block{last_block()};
+  LocalVarSite site{&block, result_var};
+  m_var_env.update(t_name, site);
 
   return update_instr;
 }
 
 auto MirModuleFactory::add_call(const std::string_view t_name,
-                                const SsaVarVec& t_args) -> Instruction&
+                                const LocalVarVec& t_args) -> Instruction&
 {
   auto& call_instr{add_instruction(Opcode::CALL)};
 
@@ -336,14 +338,14 @@ auto MirModuleFactory::add_call(const std::string_view t_name,
   const FunctionMirEntity& entity{m_fn_env.get_value(t_name)};
 
   // Insert a weak reference to the function as operand.
-  // FIXME: But this fails when we only have a declaration of a function.
-  // Which occurs when we declare an extern C function.
-  // We need to have a fix for this.
+  // FIXME: But this fails when we only have a declaration
+  // of a function. Which occurs when we declare an extern
+  // C function. We need to have a fix for this.
   FunctionLabel label{FunctionWeakPtr{entity.m_entity}};
   call_instr.add_operand({label});
 
   // The rest of the args.
-  for(const SsaVarPtr& var : t_args) {
+  for(const LocalVarPtr& var : t_args) {
     call_instr.add_operand({var});
   }
 
@@ -358,9 +360,9 @@ auto MirModuleFactory::last_instruction() -> Instruction&
   if(instructions.empty()) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error(
-      "There are no instructions in the last basic block, cant retrieve "
-      "last instruction.");
+    throw_runtime_error("There are no instructions in the "
+                        "last basic block, cant retrieve "
+                        "last instruction.");
   }
 
   return instructions.back();
@@ -373,7 +375,7 @@ auto MirModuleFactory::create_block(const std::string_view t_label)
   // We want all blocks to have their own unique label.
   BasicBlock block{};
 
-  block.m_label = std::format("{}#{}", t_label, m_block_id);
+  block.m_label = std::format("{}_{}", t_label, m_block_id);
 
   m_block_id++;
 
@@ -424,12 +426,19 @@ auto MirModuleFactory::last_block() -> BasicBlock&
   if(fn->m_blocks.empty()) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error(
-      "There are no basic blocks in the last function, cant retrieve last "
-      "basic block.");
+    throw_runtime_error("There are no basic blocks in the last function, "
+                        "cant retrieve last "
+                        "basic block.");
   }
 
   return fn->m_blocks.back();
+}
+
+auto MirModuleFactory::add_local(LocalVarPtr& t_var) -> void
+{
+  auto& fn{last_function()};
+
+  fn->m_locals.emplace_back(t_var);
 }
 
 auto MirModuleFactory::add_function_declaration(FunctionPtr t_fn) -> void
@@ -438,12 +447,14 @@ auto MirModuleFactory::add_function_declaration(FunctionPtr t_fn) -> void
 
   // TODO: Maybe double check semantics?
 
-  // Only insert if the function name if an entry does not already exist.
-  // Semantic checking should guarentee proper semantics.
+  // Only insert if the function name if an entry does not
+  // already exist. Semantic checking should guarentee
+  // proper semantics.
   const auto [iter, exists] = m_fn_env.find(fn_name);
   if(!exists) {
     // Add the placeholder for later declaration.
-    // This way we can reference it before, the complete definition.
+    // This way we can reference it before, the complete
+    // definition.
     FunctionMirEntity entity{EntityStatus::DECLARED, t_fn};
     m_fn_env.insert({fn_name, entity});
   }
@@ -459,18 +470,20 @@ auto MirModuleFactory::add_function_definition(FunctionPtr t_new_fn) -> void
   const auto [iter, exists] = m_fn_env.find(fn_name);
   if(exists) {
     // TODO: Maybe double check semantics.
-    // TODO: This is brittle, depends on not modifying the inplace FunctionPtr.
-    // As it would invalidate any calls that depend on the forward declaration.
+    // TODO: This is brittle, depends on not modifying the
+    // inplace FunctionPtr. As it would invalidate any
+    // calls that depend on the forward declaration.
     auto& [fn_status, fn_ptr] = iter->second;
 
-    // Change the status inplace to not invalidate any call statements.
-    // That reference the current FunctionPtr.
+    // Change the status inplace to not invalidate any call
+    // statements. That reference the current FunctionPtr.
     fn_status = EntityStatus::DEFINED;
 
     CHECK_NULLPTR(fn_ptr);
     CHECK_NULLPTR(t_new_fn);
 
-    // Copy over contents, as to not invalidate any references.
+    // Copy over contents, as to not invalidate any
+    // references.
     *fn_ptr = *t_new_fn;
 
     // Set the definition to the inplace entry.
@@ -490,7 +503,7 @@ auto MirModuleFactory::last_function() -> FunctionPtr&
   if(functions.empty()) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error("There are no functions in the CLIR "
+    throw_runtime_error("There are no functions in the MIR "
                         "module, cant retrieve last function.");
   }
 
@@ -498,22 +511,27 @@ auto MirModuleFactory::last_function() -> FunctionPtr&
 }
 
 // TODO: Maybe find a way to optimize the implementation.
-auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
-                                  const SsaVarEnvState& t_env1,
-                                  const SsaVarEnvState& t_env2)
-  -> SsaVarEnvState
+auto MirModuleFactory::merge_envs(const LocalVarEnvState& t_env1,
+                                  const LocalVarEnvState& t_env2)
+  -> LocalVarEnvState
 {
-  using EnvMap = SsaVarEnvState::BaseEnvState::EnvMap;
+  using EnvMap = LocalVarEnvState::BaseEnvState::EnvMap;
 
   // Loop through layers of both t_env1 and t_env2.
   // And insert phi nodes and update variable binding.
   // For creation and setting of the new env state.
 
-  // Create a new environment from the base environment.
-  SsaVarEnvState merge_env{t_env1};
+  // TODO:
+  // Important to note the nested nature can be used for
+  // optimization. As we only create a new env when going
+  // into a possible scenario. Where phi merging might be
+  // needed.
 
-  // We need to loop through both environments at the same time.
-  // Whilst merging the new one.
+  // Create a new environment from the base environment.
+  LocalVarEnvState merge_env{t_env1};
+
+  // We need to loop through both environments at the same
+  // time. Whilst merging the new one.
   auto iter2{t_env2.begin()};
   for(EnvMap& merge_map : merge_env) {
     if(iter2 == t_env2.end()) {
@@ -521,18 +539,21 @@ auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
       break;
     }
 
-    // TODO: Maybe we should also check if we looped through all map2
-    // elements.
+    // TODO: Maybe we should also check if we looped
+    // through all map2 elements.
     const EnvMap& map2{*iter2};
 
-    for(auto& [merge_key, merge_ssa] : merge_map) {
+    for(auto& [merge_key, merge_site] : merge_map) {
+      auto& [merge_block, merge_ssa] = merge_site;
+
       const auto map_iter{map2.find(merge_key)};
       if(map_iter != map2.end()) {
-        const auto ssa2{map_iter->second};
+        const auto& [block2, ssa2] = map_iter->second;
 
         // If the SSA variables differ for an entry.
-        // Then we have variable references in two different branches.
-        // And we need to insert a phi instruction.
+        // Then we have variable references in two
+        // different branches. And we need to insert a phi
+        // instruction.
         if(merge_ssa != ssa2) {
           auto& phi_instr{add_instruction(Opcode::PHI)};
 
@@ -540,10 +561,17 @@ auto MirModuleFactory::merge_envs(const SsaVarPtr t_cond,
           const auto type{merge_ssa->m_type};
           const auto phi_result{add_result_var(type)};
 
-          // Add operands, for the phi instruction.
-          phi_instr.add_operand({t_cond});
-          phi_instr.add_operand({merge_ssa});
-          phi_instr.add_operand({ssa2});
+          // TODO: Are phi instructions must depend on
+          // basic blocks. Add operands, for the phi
+          // instruction. phi_instr.add_operand({t_cond});
+          // phi_instr.add_operand({merge_ssa});
+          // phi_instr.add_operand({ssa2});
+
+          // TODO: Insert type specification for result
+          // var. phi_instr.add_operand(PhiArg{merge_block,
+          // merge_ssa});
+          phi_instr.add_operand(PhiArg{merge_block, merge_ssa});
+          phi_instr.add_operand(PhiArg{block2, ssa2});
 
           // Update the ssa binding to the new result var.
           merge_ssa = phi_result;

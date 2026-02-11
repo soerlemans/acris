@@ -10,6 +10,7 @@
 
 // Absolute Includes:
 #include "lib/check_nullptr.hpp"
+#include "lib/overload.hpp"
 #include "lib/stdexcept/stdexcept.hpp"
 #include "lib/stdprint.hpp"
 
@@ -71,27 +72,10 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
 
   switch(t_opcode) {
     // Literals:
-    MATCH(CONST_F32, "const_f32");
-    MATCH(CONST_F64, "const_f64");
-
+    MATCH(CONST_FLOAT, "const_float");
     MATCH(CONST_INT, "const_int");
-
-    // FIXME: Unused as of writing as we dont support suffix literals yet.
-    // MATCH(CONST_I8, "const_i8");
-    // MATCH(CONST_I16, "const_i16");
-    // MATCH(CONST_I32, "const_i32");
-    // MATCH(CONST_I64, "const_i64");
-    // MATCH(CONST_ISIZE, "const_isize");
-
-    // MATCH(CONST_UINT, "const_uint");
-    // MATCH(CONST_U8, "const_u8");
-    // MATCH(CONST_U16, "const_u16");
-    // MATCH(CONST_U32, "const_u32");
-    // MATCH(CONST_U64, "const_u64");
-    // MATCH(CONST_USIZE, "const_usize");
-
+    MATCH(CONST_UINT, "const_uint");
     MATCH(CONST_STRING, "const_string");
-
     MATCH(CONST_BOOL, "const_bool");
 
     // Integer arithmetic:
@@ -125,11 +109,12 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(FCMP_GTE, "fcmp_gte");
 
     // Memory handling:
-    MATCH(INIT, "init");
+    MATCH(BIND, "bind");
     MATCH(UPDATE, "update");
 
     MATCH(LOAD, "load");
     MATCH(STORE, "store");
+    MATCH(ALLOC, "alloc");
     MATCH(LEA, "lea");
 
     // Control Flow:
@@ -172,11 +157,20 @@ auto operator<<(std::ostream& t_os, const mir::Opcode t_op) -> std::ostream&
 
 auto operator<<(std::ostream& t_os, const mir::Literal& t_val) -> std::ostream&
 {
-  std::visit(
-    [&](auto&& t_value) {
-      t_os << t_value << ":" << t_val.m_type;
-    },
-    t_val.m_value);
+  using lib::Overload;
+
+  // clang-format off
+  std::visit(Overload{
+			[&](std::string&& t_str) {
+				t_os << std::quoted(t_str);
+			},
+				[&](auto&& t_value) {
+					t_os << t_value;
+				}},
+		t_val.m_value);
+  // clang-format on
+
+  t_os << ":" << t_val.m_type;
 
   return t_os;
 }
@@ -207,7 +201,7 @@ auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&
+auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
 
@@ -216,7 +210,7 @@ auto operator<<(std::ostream& t_os, const mir::SsaVar& t_var) -> std::ostream&
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::SsaVarPtr& t_ptr)
+auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr)
   -> std::ostream&
 {
   using lib::stdprint::detail::print_smart_ptr;
@@ -235,6 +229,25 @@ auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label)
   -> std::ostream&
 {
   t_os << std::format("<f:{}>", t_label.label());
+
+  return t_os;
+}
+
+auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val)
+  -> std::ostream&
+{
+  auto print{[&](auto&& t_elem) {
+    t_os << t_elem;
+  }};
+
+  std::visit(print, t_val);
+
+  return t_os;
+}
+
+auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&
+{
+  t_os << '[' << t_arg.m_label << ", " << t_arg.m_value << ']';
 
   return t_os;
 }
@@ -309,25 +322,30 @@ auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock)
 auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 {
   using mir::BasicBlock;
-  using mir::SsaVarPtr;
+  using mir::LocalVarPtr;
 
-  const auto& [name, params, bblocks, return_type] = t_fn;
+  const auto& [name, params, return_type, locals, blocks] = t_fn;
 
   t_os << std::format("function {}", name);
 
   t_os << '(';
   std::string_view sep{};
-  for(const SsaVarPtr& ptr : params) {
+  for(const LocalVarPtr& ptr : params) {
     t_os << sep << ptr;
 
     sep = ", ";
   }
-  t_os << ") -> " << return_type << '\n';
+  t_os << ") -> " << return_type << "{\n";
 
-  // TODO: Print return type.
+  // Local vars, for forward declare:
+  t_os << "locals {\n";
+  for(const LocalVarPtr& local : locals) {
+    t_os << '\t' << local << " : " << local->m_type << '\n';
+  }
+  t_os << "}\n\n";
 
-  for(const BasicBlock& bblock : bblocks) {
-    t_os << bblock << "\n";
+  for(const BasicBlock& block : blocks) {
+    t_os << block << "\n";
   }
 
   t_os << "}\n";

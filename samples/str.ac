@@ -1,7 +1,16 @@
-module str_
+module str_sample
 
-func ret_str_lit() -> bool {
+// let g_str = "Global"
+
+
+func testFunc() -> void {
+  let l_str = "Somewhere"
+
+	let reassign = l_str
+}
+
+func main() -> int {
   let str_lit = "Test"
 
-  return str_lit
+  return 0
 }

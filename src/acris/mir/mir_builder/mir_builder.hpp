@@ -31,6 +31,11 @@ class MirBuilder : public NodeVisitor {
   private:
   MirModuleFactoryPtr m_factory;
 
+  /*!
+   * Traverse a node in a new environemnt
+   */
+  auto traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState;
+
   public:
   MirBuilder();
 
@@ -99,7 +104,7 @@ class MirBuilder : public NodeVisitor {
 
   // Implementation:
   //! Return all the SSA vars that are needed for a call.
-  auto get_call_args(node::NodeListPtr t_list) -> SsaVarVec;
+  auto get_call_args(node::NodeListPtr t_list) -> LocalVarVec;
 
   //! Translate the AST to a CLIR module.
   auto translate(NodePtr t_ast) -> ModulePtr;
