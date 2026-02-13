@@ -33,6 +33,15 @@ enum class BackendType {
   C_BACKEND,
 };
 
+enum class OptimizationLevel {
+  NO_OPTIMIZATION,
+  FAST,
+  SIZE,
+  LEVEL_1,
+  LEVEL_2,
+  LEVEL_3,
+};
+
 // Structs:
 /*!
  * Utility structure packing all required parameters for compiling.
@@ -77,10 +86,15 @@ auto select_backend(BackendType t_selector) -> BackendPtr;
 
 [[nodiscard("Pure method must use results.")]]
 auto backendtype2str(BackendType t_type) -> std::string_view;
+
+[[nodiscard("Pure method must use results.")]]
+auto optimizationlevel2str(OptimizationLevel t_level) -> std::string_view;
 } // namespace codegen
 
 auto operator<<(std::ostream& t_os, codegen::BackendType t_type)
   -> std::ostream&;
 
+auto operator<<(std::ostream& t_os, codegen::OptimizationLevel t_level)
+  -> std::ostream&;
 
 #endif // ACRIS_ACRIS_CODEGEN_BACKEND_INTERFACE_HPP

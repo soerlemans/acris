@@ -144,7 +144,7 @@ auto toml_project_section(toml::table& t_table, Settings& t_settings) -> void
   }
 
   // Extract interop backend, by enum.
-  toml_extract(project["interop_backends"], t_settings.m_interop_backends,
+  toml_extract(project["interop_backends"], t_settings.m_ibackends,
                str2interopbackendtype);
 }
 

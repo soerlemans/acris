@@ -66,7 +66,7 @@ Preprocessor::Preprocessor(TextStreamPtr t_text)
 
 auto Preprocessor::set_defined(const MacroRegister& t_mreg) -> void
 {
-  DBG_INFO("mdefs: ", dump_mreg(m_mreg));
+  DBG_INFO("mdefs: ", dump_mreg(t_mreg));
 
   m_mreg = t_mreg;
 }
@@ -101,6 +101,18 @@ auto Preprocessor::next_if_unhygienic_macro(TextStreamPtr t_text) -> bool
   }
 
   return false;
+}
+
+auto Preprocessor::skip_whitespace(TextStreamPtr t_text)
+{
+  while(!t_text->eos()) {
+    const auto ch{(uchar)t_text->character()};
+    if(ch != SPACE) {
+      break;
+    }
+
+    t_text->next();
+  }
 }
 
 auto Preprocessor::get_identifier(TextStreamPtr t_text) -> std::string
@@ -215,18 +227,6 @@ auto Preprocessor::get_include_path(TextStreamPtr t_text) -> IncludePack
   pack.m_include = ss.str();
 
   return pack;
-}
-
-auto Preprocessor::skip_whitespace(TextStreamPtr t_text)
-{
-  while(!t_text->eos()) {
-    const auto ch{(uchar)t_text->character()};
-    if(ch != SPACE) {
-      break;
-    }
-
-    t_text->next();
-  }
 }
 
 auto Preprocessor::handle_include_once(TextStreamPtr t_text,

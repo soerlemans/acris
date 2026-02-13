@@ -9,10 +9,12 @@
 namespace {
 using codegen::BackendType;
 using codegen::InteropBackendType;
+using codegen::OptimizationLevel;
 using debug::LogLevel;
 using settings::BackendTypeMap;
 using settings::InteropBackendTypeMap;
 using settings::LogLevelMap;
+using settings::OptimizationLevelMap;
 
 LogLevelMap loglevel_convmap{
   {"critical", LogLevel::CRITICAL},
@@ -21,6 +23,15 @@ LogLevelMap loglevel_convmap{
   {  "notice",   LogLevel::NOTICE},
   {    "info",     LogLevel::INFO},
   { "verbose",  LogLevel::VERBOSE}
+};
+
+OptimizationLevelMap optimization_level_convmap{
+  {"fast",            OptimizationLevel::FAST},
+  {"size",            OptimizationLevel::SIZE},
+  {   "0", OptimizationLevel::NO_OPTIMIZATION},
+  {   "1",         OptimizationLevel::LEVEL_1},
+  {   "2",         OptimizationLevel::LEVEL_2},
+  {   "3",         OptimizationLevel::LEVEL_3},
 };
 
 BackendTypeMap backendtype_convmap{
@@ -36,8 +47,8 @@ InteropBackendTypeMap interopbackendtype_convmap{
 
 // TODO: Create std::map type concept.
 template<typename MapType>
-inline auto str2enumtype(const MapType& t_map, const std::string_view t_key,
-                         std::string_view t_origin = "str2enumtype")
+inline auto str2enum(const MapType& t_map, const std::string_view t_key,
+                     std::string_view t_origin = "str2enum")
   -> MapType::mapped_type
 {
   using MappedType = MapType::mapped_type;
@@ -50,7 +61,7 @@ inline auto str2enumtype(const MapType& t_map, const std::string_view t_key,
     value = iter->second;
   } else {
     const auto err_msg{
-      std::format("{} could not convert string to enum value.", t_origin)};
+      std::format("{}() could not convert string to enum value.", t_origin)};
 
     throw std::invalid_argument{err_msg};
   }
@@ -63,6 +74,11 @@ namespace settings {
 auto loglevel_map() -> const LogLevelMap&
 {
   return loglevel_convmap;
+}
+
+auto optimization_level_map() -> const OptimizationLevelMap&
+{
+  return optimization_level_convmap;
 }
 
 auto backendtype_map() -> const BackendTypeMap&
@@ -95,6 +111,30 @@ auto str2loglevel(const std::string_view t_key) -> debug::LogLevel
   return level;
 }
 
+auto str2optimizationlevel(const std::string_view t_key)
+  -> codegen::OptimizationLevel
+{
+  using codegen::OptimizationLevel;
+
+  // OptimizationLevel level{};
+
+  // const auto& map{optimizationlevel_map()};
+  // std::string str{t_key};
+
+  // auto iter{map.find(str)};
+  // if(iter != map.end()) {
+  //   level = iter->second;
+  // } else {
+  //   throw std::invalid_argument{
+  //     "str2optimizationlevel() could not convert string to
+  //     OptimizationLevel."};
+  // }
+
+  // return level;
+
+  return str2enum(optimization_level_map(), t_key, "str2optimizationlevel()");
+}
+
 // TODO: All these string conversion functions look the same create a helper.
 auto str2backendtype(const std::string_view t_key) -> codegen::BackendType
 {
@@ -115,13 +155,12 @@ auto str2backendtype(const std::string_view t_key) -> codegen::BackendType
 
   return backend;
 
-  return str2enumtype(backendtype_map(), t_key, "str2backendtype()");
+  return str2enum(backendtype_map(), t_key, "str2backendtype()");
 }
 
 auto str2interopbackendtype(std::string_view t_key)
   -> codegen::InteropBackendType
 {
-  return str2enumtype(interopbackendtype_map(), t_key,
-                      "str2interopbackendtype()");
+  return str2enum(interopbackendtype_map(), t_key, "str2interopbackendtype()");
 }
 } // namespace settings

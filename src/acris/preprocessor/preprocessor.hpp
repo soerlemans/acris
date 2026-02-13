@@ -67,17 +67,16 @@ class Preprocessor {
   explicit Preprocessor(TextStreamPtr t_text);
 
   auto set_defined(const MacroRegister& t_mdefs) -> void;
-
   auto make_buffer() -> TextBufferPtr;
 
   auto next_if_unhygienic_macro(TextStreamPtr t_text) -> bool;
+  auto skip_whitespace(TextStreamPtr t_text);
   auto get_identifier(TextStreamPtr t_text) -> std::string;
 
   // auto next_ch();
 
   auto include_file(TextBufferPtr& t_buffer, const fs::path t_path) -> void;
   auto get_include_path(TextStreamPtr t_text) -> IncludePack;
-  auto skip_whitespace(TextStreamPtr t_text);
 
   auto handle_include_once(TextStreamPtr t_text, TextBufferPtr& t_buffer)
     -> void;

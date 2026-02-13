@@ -18,6 +18,8 @@
 namespace settings {
 // Aliases:
 using LogLevelMap = std::unordered_map<std::string, debug::LogLevel>;
+using OptimizationLevelMap =
+  std::unordered_map<std::string, codegen::OptimizationLevel>;
 using BackendTypeMap = std::unordered_map<std::string, codegen::BackendType>;
 using InteropBackendTypeMap =
   std::map<std::string_view, codegen::InteropBackendType>;
@@ -27,6 +29,9 @@ using InteropBackendTypeMap =
 auto loglevel_map() -> const LogLevelMap&;
 
 [[nodiscard("Pure function must use result.")]]
+auto optimization_level_map() -> const OptimizationLevelMap&;
+
+[[nodiscard("Pure function must use result.")]]
 auto backendtype_map() -> const BackendTypeMap&;
 
 [[nodiscard("Pure function must use result.")]]
@@ -34,6 +39,10 @@ auto interopbackendtype_map() -> const InteropBackendTypeMap&;
 
 [[nodiscard("Pure function must use result.")]]
 auto str2loglevel(std::string_view t_key) -> debug::LogLevel;
+
+[[nodiscard("Pure function must use result.")]]
+auto str2optimizationlevel(std::string_view t_key)
+  -> codegen::OptimizationLevel;
 
 [[nodiscard("Pure function must use result.")]]
 auto str2backendtype(std::string_view t_key) -> codegen::BackendType;

@@ -43,8 +43,7 @@ static auto run(const settings::Settings& t_settings) -> void
   auto session{make_session_unit(t_settings)};
 
   // Init build unit.
-  BuildUnitParams params{
-    t_settings.m_backend, t_settings.m_interop_backends, {}};
+  BuildUnitParams params{t_settings.m_backend, t_settings.m_ibackends, {}};
   auto build_unit{make_build_unit(params)};
 
   // For now just compile all translation units, sequentially.

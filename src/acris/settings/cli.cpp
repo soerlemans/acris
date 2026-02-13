@@ -70,6 +70,15 @@ auto add_macro_definitions_flag(CLI::App& t_app, Settings& t_settings) -> void
     "Key value macros to define (KEY=VALUE).");
 }
 
+auto add_no_libc_flag(CLI::App& t_app, Settings& t_settings) -> void
+{
+  // Program source files:
+  t_app
+    .add_option("--no_libc", t_settings.m_no_libc,
+                "When true omit linking to libc.")
+    ->default_val(false);
+}
+
 auto add_backend_flag(CLI::App& t_app, Settings& t_settings) -> void
 {
   using settings::backendtype_map;
@@ -91,8 +100,21 @@ auto add_bindings_flag(CLI::App& t_app, Settings& t_settings) -> void
   const InteropBackendTypeMap& map{interopbackendtype_map()};
 
   t_app
-    .add_option("-i,--interop", t_settings.m_interop_backends,
+    .add_option("-i,--interop", t_settings.m_ibackends,
                 "Which interop backends should be enabled.")
+    ->transform(CLI::CheckedTransformer(map));
+}
+
+auto add_optimize_flag(CLI::App& t_app, Settings& t_settings) -> void
+{
+  // using codegen::OptimizationLevelMap;
+  using settings::optimization_level_map;
+
+  const auto& map{optimization_level_map()};
+
+  t_app
+    .add_option("-O", t_settings.m_optimization_level,
+                "Set the optimization level.")
     ->transform(CLI::CheckedTransformer(map));
 }
 
@@ -159,6 +181,9 @@ auto read_cli_settings(CliParams& t_params, Settings& t_settings) -> void
 
   //
   add_macro_definitions_flag(app, t_settings);
+  add_no_libc_flag(app, t_settings);
+
+  add_optimize_flag(app, t_settings);
   add_backend_flag(app, t_settings);
   add_bindings_flag(app, t_settings);
 
