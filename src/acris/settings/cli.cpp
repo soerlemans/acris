@@ -62,7 +62,7 @@ auto add_macro_definitions_flag(CLI::App& t_app, Settings& t_settings) -> void
         auto key{str.substr(0, eq_pos)};
         auto val{str.substr(eq_pos + 1)};
 
-        t_settings.m_macro_definitions.emplace(key, value);
+        t_settings.m_mdefs.emplace(key, val);
       }
 
       return true;

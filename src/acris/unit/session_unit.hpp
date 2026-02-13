@@ -1,15 +1,20 @@
 #ifndef SESSION_UNIT_HPP
 #define SESSION_UNIT_HPP
 
+// STL Includes:
+#include <memory>
+
 // Absolute Includes:
-#include <settings/settings.hpp>
+#include "acris/settings/settings.hpp"
 
 namespace unit {
 // Forward Declarations:
 class SessionUnit;
 
 // Aliases:
-using settings::MacroDefinitionsMap;
+using SessionUnitPtr = std::shared_ptr<SessionUnit>;
+
+using settings::MacroDefs;
 using settings::Settings;
 
 using SessionUnitPtr = std::shared_ptr<SessionUnit>;
@@ -22,21 +27,19 @@ using SessionUnitPtr = std::shared_ptr<SessionUnit>;
  */
 class SessionUnit {
   private:
-  MacroDefinitionsMap m_macro_definitions;
+  MacroDefs m_mdefs;
 
   public:
-  SessionUnit(Settings&& t_settings);
+  SessionUnit(MacroDefs t_mdefs);
 
-  auto macro_defintions() const -> const MacroDefinitionsMap&;
+  auto macro_defs() const -> const MacroDefs&;
 
   virtual ~SessionUnit() = default;
 };
 
 // Functions:
-//! Resolve CLI settings and configuration from project.toml.
-auto make_build_unit(BuildUnitParams& t_params) -> BuildUnitPtr;
-
-
+auto make_session_unit(const Settings& t_settings)
+  -> SessionUnitPtr;
 } // namespace unit
 
 #endif // SESSION_UNIT_HPP

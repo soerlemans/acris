@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 
 using FileVec = std::vector<fs::path>;
 using StringVec = std::vector<std::string>;
-using MacroDefinitionsMap = std::map<std::string, std::string>;
+using MacroDefs = std::map<std::string, std::string>;
 using InteropBackendTypeVec = std::vector<codegen::InteropBackendType>;
 
 // using InteropBackendVec = std::vector<>;
@@ -32,7 +32,7 @@ struct Settings {
   using LogLevel = debug::LogLevel;
 
   FileVec m_source_paths;
-  MacroDefinitionsMap m_macro_definitions;
+  MacroDefs m_mdefs;
 
   codegen::BackendType m_backend;
   InteropBackendTypeVec m_interop_backends;

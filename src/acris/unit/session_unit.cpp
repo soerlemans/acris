@@ -1,12 +1,16 @@
 #include "session_unit.hpp"
 
 namespace unit {
-SessionUnit::SessionUnit(Settings&& t_settings)
-  : m_settings{std::move(t_settings)}
+SessionUnit::SessionUnit(MacroDefs t_mdefs): m_mdefs{std::move(t_mdefs)}
 {}
 
-auto SessionUnit::macro_definitions() const -> const MacroDefinitions&
+auto SessionUnit::macro_defs() const -> const MacroDefs&
 {
-  return m_macro_definitions;
+  return m_mdefs;
+}
+
+auto make_session_unit(const Settings& t_settings) -> SessionUnitPtr
+{
+  return make_shared<unit::SessionUnit>(t_settings.m_mdefs);
 }
 } // namespace unit

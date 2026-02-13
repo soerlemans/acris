@@ -61,7 +61,7 @@ class TranslationUnit {
 
   // Config:
   SessionUnitPtr m_session;
-  BuildUnitPtr m_build_unit;
+  BuildUnitPtr m_build;
 
   // Data:
   path m_source_file;
@@ -71,7 +71,7 @@ class TranslationUnit {
   ModulePtr m_mir;
 
   public:
-  TranslationUnit(BuildUnitPtr t_build_unit, path t_source_file);
+  TranslationUnit(SessionUnitPtr t_session, BuildUnitPtr t_build, path t_source_file);
 
   //! Run the preprocessortoken_stream.
   virtual auto preprocess(const TextStreamPtr& t_text_stream) -> TextStreamPtr;

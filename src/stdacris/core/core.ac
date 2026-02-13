@@ -1,4 +1,4 @@
-// Choose
+// Choose if we should prefer raw platform interface or dependence on libc.
 
 #<ifdef NO_LIBC
 #<include_once <core/linux/kernel.ac>

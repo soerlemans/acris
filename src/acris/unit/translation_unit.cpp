@@ -50,9 +50,10 @@ auto read_file(const path t_path) -> TextBuffer
 
 namespace unit {
 // Methods:
-TranslationUnit::TranslationUnit(BuildUnitPtr t_build_unit,
+TranslationUnit::TranslationUnit(SessionUnitPtr t_session, BuildUnitPtr t_build,
                                  const path t_source_file)
-  : m_build_unit{std::move(t_build_unit)},
+  : m_session{std::move(t_session)},
+    m_build{std::move(t_build)},
     m_source_file{t_source_file},
     m_text_stream{},
     m_token_stream{},
@@ -70,6 +71,8 @@ auto TranslationUnit::preprocess(const TextStreamPtr& t_text_stream)
   DBG_PRINTLN("<preprocessing>");
 
   Preprocessor preprocessor{t_text_stream};
+  preprocessor.set_defined(m_session->macro_defs());
+
   const auto processed_file{preprocessor.preprocess()};
 
   DBG_PRINTLN("</preprocessing>");
@@ -157,7 +160,7 @@ auto TranslationUnit::mir([[maybe_unused]] NodePtr t_ast) -> ModulePtr
   m_phase = TranslationUnitPhase::MIR_GENERATION;
 
   DBG_PRINTLN("<ir_generation>");
-  const auto mir_required{m_build_unit->backend_requires_mir()};
+  const auto mir_required{m_build->backend_requires_mir()};
   if(mir_required == false) {
     DBG_INFO("Skipping MIR generation, as backend does not require it.");
     DBG_PRINTLN("</ir_generation>");
@@ -189,7 +192,7 @@ auto TranslationUnit::backend(CompileParams& t_params) -> void
   DBG_PRINTLN("<code_generation>");
 
   // Invoke build unit to build.
-  m_build_unit->compile(t_params);
+  m_build->compile(t_params);
 
   DBG_PRINTLN("</code_generation>");
 }
@@ -214,7 +217,7 @@ auto TranslationUnit::execute() -> void
   m_mir = mir(m_ast);
 
   // Perform compilation:
-  const auto build_dir{m_build_unit->build_dir()};
+  const auto build_dir{m_build->build_dir()};
   CompileParams params{m_ast, m_mir, build_dir, m_source_file};
   backend(params);
 }
