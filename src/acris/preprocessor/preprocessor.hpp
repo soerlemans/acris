@@ -50,33 +50,32 @@ class Preprocessor {
   protected:
   auto preprocessor_error(TextPosition t_pos, std::string_view t_msg) const
     -> void;
-  auto preprocessor_error(TextStreamPtr t_text, std::string_view t_msg) const
+  auto preprocessor_error(TextStreamPtr t_src, std::string_view t_msg) const
     -> void;
 
   public:
-  explicit Preprocessor(TextStreamPtr t_text);
+  explicit Preprocessor(TextStreamPtr t_src);
 
-  auto set_defined(const MacroRegister& t_mdefs) -> void;
+  auto init_default_macros() -> void;
+  auto defines(const MacroRegister& t_mdefs) -> void;
   auto make_buffer() -> TextBufferPtr;
 
-  auto next_if_unhygienic_macro(TextStreamPtr t_text) -> bool;
-  auto skip_whitespace(TextStreamPtr t_text);
-  auto get_identifier(TextStreamPtr t_text) -> std::string;
+  auto next_if_unhygienic_macro(TextStreamPtr t_src) -> bool;
+  auto skip_whitespace(TextStreamPtr t_src);
+  auto get_identifier(TextStreamPtr t_src) -> std::string;
 
   // auto next_ch();
 
   auto include_file(TextBufferPtr& t_dst, const fs::path t_path) -> void;
-  auto get_include_path(TextStreamPtr t_text) -> IncludePack;
+  auto get_include_path(TextStreamPtr t_src) -> IncludePack;
 
-  auto handle_include_once(TextStreamPtr t_text, TextBufferPtr& t_dst)
-    -> void;
-  auto handle_include(TextStreamPtr t_text, TextBufferPtr& t_dst) -> void;
-  auto handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_dst) -> void;
-  auto match_macro(std::string_view t_macro_id, TextStreamPtr t_text,
-                   TextBufferPtr& t_dst) -> void;
+  auto handle_include_once(TextBufferPtr& t_dst, TextStreamPtr t_src) -> void;
+  auto handle_include(TextBufferPtr& t_dst, TextStreamPtr t_src) -> void;
+  auto handle_ifdef(TextBufferPtr& t_dst, TextStreamPtr t_src) -> void;
+  auto match_macro(std::string_view t_macro_id, TextBufferPtr& t_dst,
+                   TextStreamPtr t_src) -> void;
 
-  auto handle_preprocessor(TextStreamPtr t_text, TextBufferPtr& t_dst)
-    -> void;
+  auto handle_preprocessor(TextBufferPtr& t_dst, TextStreamPtr t_src) -> void;
 
   auto preprocess() -> TextStreamPtr;
 

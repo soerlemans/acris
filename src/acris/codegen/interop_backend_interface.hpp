@@ -19,10 +19,10 @@ using node::NodePtr;
 
 // Forward Declarations:
 class InteropBackendInterface;
-enum class InteropBackendType;
+enum class InteropBackend;
 
 // Aliases:
-using InteropSelectors = std::vector<InteropBackendType>;
+using InteropSelectors = std::vector<InteropBackend>;
 using InteropBackendPtr = std::shared_ptr<InteropBackendInterface>;
 
 // Enums:
@@ -31,7 +31,7 @@ using InteropBackendPtr = std::shared_ptr<InteropBackendInterface>;
  * Not all interop backends enums need to be supported.
  * By every codegeneration backend.
  */
-enum class InteropBackendType {
+enum class InteropBackend {
   C_INTEROP_BACKEND,
   PYTHON_INTEROP_BACKEND,
   LUA_INTEROP_BACKEND,
@@ -49,11 +49,11 @@ class InteropBackendInterface {
   virtual ~InteropBackendInterface() = default;
 };
 
-auto interopbackendtype2str(InteropBackendType t_type) -> std::string_view;
+auto interopbackend2str(InteropBackend t_type) -> std::string_view;
 } // namespace codegen
 
 // Functions:
-auto operator<<(std::ostream& t_os, codegen::InteropBackendType t_type)
+auto operator<<(std::ostream& t_os, codegen::InteropBackend t_type)
   -> std::ostream&;
 
 #endif // ACRIS_ACRIS_CODEGEN_INTEROP_BACKEND_INTERFACE_HPP

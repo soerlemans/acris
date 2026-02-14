@@ -81,10 +81,9 @@ auto add_no_libc_flag(CLI::App& t_app, Settings& t_settings) -> void
 
 auto add_backend_flag(CLI::App& t_app, Settings& t_settings) -> void
 {
-  using settings::backendtype_map;
-  using settings::BackendTypeMap;
+  using settings::backend_map;
 
-  const BackendTypeMap& map{backendtype_map()};
+  const auto& map{backend_map()};
 
   t_app
     .add_option("-b,--backend", t_settings.m_backend,
@@ -94,10 +93,9 @@ auto add_backend_flag(CLI::App& t_app, Settings& t_settings) -> void
 
 auto add_bindings_flag(CLI::App& t_app, Settings& t_settings) -> void
 {
-  using settings::interopbackendtype_map;
-  using settings::InteropBackendTypeMap;
+  using settings::interopbackend_map;
 
-  const InteropBackendTypeMap& map{interopbackendtype_map()};
+  const auto& map{interopbackend_map()};
 
   t_app
     .add_option("-i,--interop", t_settings.m_ibackends,
@@ -108,13 +106,11 @@ auto add_bindings_flag(CLI::App& t_app, Settings& t_settings) -> void
 auto add_optimize_flag(CLI::App& t_app, Settings& t_settings) -> void
 {
   // using codegen::OptimizationLevelMap;
-  using settings::optimization_level_map;
+  using settings::optimize_map;
 
-  const auto& map{optimization_level_map()};
+  const auto& map{optimize_map()};
 
-  t_app
-    .add_option("-O", t_settings.m_optimization_level,
-                "Set the optimization level.")
+  t_app.add_option("-O", t_settings.m_olevel, "Set the optimization level.")
     ->transform(CLI::CheckedTransformer(map));
 }
 

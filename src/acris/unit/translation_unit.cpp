@@ -71,7 +71,7 @@ auto TranslationUnit::preprocess(const TextStreamPtr& t_text_stream)
   DBG_PRINTLN("<preprocessing>");
 
   Preprocessor preprocessor{t_text_stream};
-  preprocessor.set_defined(m_session->macro_defs());
+  preprocessor.defines(m_session->macro_defs());
 
   const auto processed_file{preprocessor.preprocess()};
 
@@ -183,8 +183,8 @@ auto TranslationUnit::mir([[maybe_unused]] NodePtr t_ast) -> ModulePtr
 
 auto TranslationUnit::backend(CompileParams& t_params) -> void
 {
+  using codegen::Backend;
   using codegen::BackendPtr;
-  using codegen::BackendType;
 
   m_phase = TranslationUnitPhase::CODE_GENERATION;
   const auto stem{m_source_file.stem()};

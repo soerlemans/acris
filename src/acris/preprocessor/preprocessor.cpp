@@ -71,11 +71,28 @@ Preprocessor::Preprocessor(TextStreamPtr t_src)
   : m_src{t_src}, m_nesting_count{0}, m_ireg{}, m_mreg{}
 {}
 
-auto Preprocessor::set_defined(const MacroRegister& t_mreg) -> void
+auto Preprocessor::init_default_macros() -> void
+{
+  // auto insert_if_not_present{
+  //   [&](std::string_view t_key, std::string_view t_val) {
+  //     if(!m_mreg.contains(std::string{t_key})) {
+  //       m_mreg.emplace(std::string{t_val});
+  //     }
+  //   }};
+
+
+  // insert_if_not_present("LINUX", "true");
+  // m_mreg.contains("LINUX");
+  // TODO: Figure out what do next.
+}
+
+auto Preprocessor::defines(const MacroRegister& t_mreg) -> void
 {
   DBG_INFO("mdefs: ", dump_mreg(t_mreg));
 
   m_mreg = t_mreg;
+
+  init_default_macros();
 }
 
 auto Preprocessor::make_buffer() -> TextBufferPtr
@@ -166,7 +183,6 @@ auto Preprocessor::include_file(TextBufferPtr& t_dst, const fs::path t_path)
     throw std::invalid_argument{ss.str()};
   }
 
-  // TextBuffer buffer{t_path.string()};
   auto buffer{make_buffer()};
 
   std::ifstream ifs{t_path};
@@ -177,8 +193,8 @@ auto Preprocessor::include_file(TextBufferPtr& t_dst, const fs::path t_path)
     buffer->add_line(std::move(line));
   }
 
-	// In the future this solution might cost too much memory/be slow.
-	// Handle recursive expansion.
+  // In the future this solution might cost too much memory/be slow.
+  // Handle recursive expansion.
   m_nesting_count++;
   handle_preprocessor(buffer, t_dst);
   m_nesting_count--;
@@ -227,8 +243,8 @@ auto Preprocessor::get_include_path(TextStreamPtr t_src) -> IncludePack
   return pack;
 }
 
-auto Preprocessor::handle_include_once(TextStreamPtr t_src,
-                                       TextBufferPtr& t_dst) -> void
+auto Preprocessor::handle_include_once(TextBufferPtr& t_dst,
+                                       TextStreamPtr t_src) -> void
 {
   skip_whitespace(t_src);
 
@@ -246,7 +262,7 @@ auto Preprocessor::handle_include_once(TextStreamPtr t_src,
   }
 }
 
-auto Preprocessor::handle_include(TextStreamPtr t_src, TextBufferPtr& t_dst)
+auto Preprocessor::handle_include(TextBufferPtr& t_dst, TextStreamPtr t_src)
   -> void
 {
   skip_whitespace(t_src);
@@ -261,7 +277,7 @@ auto Preprocessor::handle_include(TextStreamPtr t_src, TextBufferPtr& t_dst)
   include_file(t_dst, include);
 }
 
-auto Preprocessor::handle_ifdef(TextStreamPtr t_src, TextBufferPtr& t_dst)
+auto Preprocessor::handle_ifdef(TextBufferPtr& t_dst, TextStreamPtr t_src)
   -> void
 {
   skip_whitespace(t_src);
@@ -289,7 +305,7 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_src, TextBufferPtr& t_dst)
         return;
       } else if(emit_branch) {
         // Only expand macros if we are in the branch that should emit.
-        match_macro(macro_id, t_src, t_dst);
+        match_macro(macro_id, t_dst, t_src);
       }
     } else {
       t_dst->add_line(std::string{t_src->line()});
@@ -306,16 +322,16 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_src, TextBufferPtr& t_dst)
 }
 
 auto Preprocessor::match_macro(const std::string_view t_macro_id,
-                               TextStreamPtr t_src, TextBufferPtr& t_dst)
+                               TextBufferPtr& t_dst, TextStreamPtr t_src)
   -> void
 {
   const auto pos{t_src->position()};
   if(t_macro_id == INCLUDE_ONCE) {
-    handle_include_once(t_src, t_dst);
+    handle_include_once(t_dst, t_src);
   } else if(t_macro_id == INCLUDE) {
-    handle_include(t_src, t_dst);
+    handle_include(t_dst, t_src);
   } else if(t_macro_id == IFDEF) {
-    handle_ifdef(t_src, t_dst);
+    handle_ifdef(t_dst, t_src);
   } else if(t_macro_id == ERROR) {
     const auto msg{std::format("#<error: \"{}\".", t_macro_id)};
 
@@ -327,8 +343,8 @@ auto Preprocessor::match_macro(const std::string_view t_macro_id,
   }
 }
 
-auto Preprocessor::handle_preprocessor(TextStreamPtr t_src,
-                                       TextBufferPtr& t_dst) -> void
+auto Preprocessor::handle_preprocessor(TextBufferPtr& t_dst,
+                                       TextStreamPtr t_src) -> void
 {
   if(m_nesting_count >= MAX_INCLUDE_NESTING) {
     const auto msg{
@@ -343,7 +359,7 @@ auto Preprocessor::handle_preprocessor(TextStreamPtr t_src,
     if(next_if_unhygienic_macro(t_src)) {
       const auto macro_id{get_identifier(t_src)};
 
-      match_macro(macro_id, t_src, t_dst);
+      match_macro(macro_id, t_dst, t_src);
     } else {
       t_dst->add_line(std::string{t_src->line()});
     }
@@ -354,13 +370,15 @@ auto Preprocessor::handle_preprocessor(TextStreamPtr t_src,
 
 auto Preprocessor::preprocess() -> TextStreamPtr
 {
-  auto buffer{make_buffer()};
+  auto dst{make_buffer()};
 
-  handle_preprocessor(m_src, buffer);
-  DBG_INFO("buffer: ", *buffer);
+  handle_preprocessor(dst, m_src);
+  DBG_INFO("dst: ", *dst);
 
+  // Reset anything sanity check.
   m_src->reset();
+  dst->reset();
 
-  return buffer;
+  return dst;
 }
 } // namespace preprocessor

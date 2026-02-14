@@ -49,7 +49,7 @@ auto operator<<(std::ostream& t_os, const settings::Settings& t_settings)
   t_os << "macro_definitions: " << t_settings.m_mdefs << ", " << cond_nl;
   t_os << "backend: " << t_settings.m_backend << ", " << cond_nl;
   t_os << "interop_backends: " << t_settings.m_ibackends << ", " << cond_nl;
-  t_os << "optimization_level: " << t_settings.m_optimization_level << ", " << cond_nl;
+  t_os << "optimization_level: " << t_settings.m_olevel << ", " << cond_nl;
   t_os << "loglevel: " << t_settings.m_level << ", " << cond_nl;
   t_os << "}";
   // clang-format on

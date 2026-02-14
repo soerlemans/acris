@@ -19,15 +19,15 @@ namespace settings {
 // Using:
 namespace fs = std::filesystem;
 
-using codegen::BackendType;
-using codegen::OptimizationLevel;
+using codegen::Backend;
+using codegen::Optimize;
 using debug::LogLevel;
 
 using FileVec = std::vector<fs::path>;
 using StringVec = std::vector<std::string>;
 using MacroDefs = std::map<std::string, std::string>;
 using MacroUndefs = std::set<std::string>;
-using InteropBackendTypeVec = std::vector<codegen::InteropBackendType>;
+using InteropBackendVec = std::vector<codegen::InteropBackend>;
 
 // using InteropBackendVec = std::vector<>;
 
@@ -38,9 +38,9 @@ struct Settings {
 
   bool m_no_libc;
 
-  BackendType m_backend;
-  InteropBackendTypeVec m_ibackends;
-  OptimizationLevel m_optimization_level;
+  Backend m_backend;
+  InteropBackendVec m_ibackends;
+  Optimize m_olevel;
 
   LogLevel m_level;
 
@@ -49,9 +49,9 @@ struct Settings {
     : m_source_paths{},
       m_mdefs{},
       m_no_libc{false},
-      m_backend{BackendType::CPP_BACKEND},
+      m_backend{Backend::CPP_BACKEND},
       m_ibackends{},
-      m_optimization_level{OptimizationLevel::NO_OPTIMIZATION},
+      m_olevel{Optimize::NONE},
       m_level{LogLevel::VERBOSE}
   {}
 

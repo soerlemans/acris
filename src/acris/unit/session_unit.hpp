@@ -28,9 +28,10 @@ using SessionUnitPtr = std::shared_ptr<SessionUnit>;
 class SessionUnit {
   private:
   MacroDefs m_mdefs;
+  bool m_no_libc;
 
   public:
-  SessionUnit(MacroDefs t_mdefs);
+  SessionUnit(MacroDefs t_mdefs, bool t_no_libc);
 
   auto macro_defs() const -> const MacroDefs&;
 
@@ -38,8 +39,7 @@ class SessionUnit {
 };
 
 // Functions:
-auto make_session_unit(const Settings& t_settings)
-  -> SessionUnitPtr;
+auto make_session_unit(const Settings& t_settings) -> SessionUnitPtr;
 } // namespace unit
 
 #endif // SESSION_UNIT_HPP

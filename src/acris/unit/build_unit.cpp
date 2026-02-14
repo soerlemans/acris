@@ -27,18 +27,20 @@ auto BuildUnit::build_dir() -> const fs::path&
 // Functions:
 auto make_build_unit(BuildUnitParams& t_params) -> BuildUnitPtr
 {
-  using codegen::InteropBackendType;
+  using codegen::InteropBackend;
   using codegen::select_backend;
 
   BuildUnitPtr ptr{};
 
-  auto& [backend_type, interop_types, opt] = t_params;
+  auto& [backend_type, interop_types, olevel, opt] = t_params;
 
   // Get pointer to backend.
   auto backend_ptr{select_backend(backend_type)};
 
+  backend_ptr->set_optimize(olevel);
+
   // Instruct backend to add interop backends.
-  for(const InteropBackendType type : interop_types) {
+  for(const InteropBackend type : interop_types) {
     backend_ptr->register_interop_backend(type);
   }
 

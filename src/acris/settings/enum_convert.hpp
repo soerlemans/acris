@@ -18,38 +18,34 @@
 namespace settings {
 // Aliases:
 using LogLevelMap = std::unordered_map<std::string, debug::LogLevel>;
-using OptimizationLevelMap =
-  std::unordered_map<std::string, codegen::OptimizationLevel>;
-using BackendTypeMap = std::unordered_map<std::string, codegen::BackendType>;
-using InteropBackendTypeMap =
-  std::map<std::string_view, codegen::InteropBackendType>;
+using OptimizeMap = std::unordered_map<std::string, codegen::Optimize>;
+using BackendMap = std::unordered_map<std::string, codegen::Backend>;
+using InteropBackendMap = std::map<std::string_view, codegen::InteropBackend>;
 
 // Functions:
 [[nodiscard("Pure function must use result.")]]
 auto loglevel_map() -> const LogLevelMap&;
 
 [[nodiscard("Pure function must use result.")]]
-auto optimization_level_map() -> const OptimizationLevelMap&;
+auto optimize_map() -> const OptimizeMap&;
 
 [[nodiscard("Pure function must use result.")]]
-auto backendtype_map() -> const BackendTypeMap&;
+auto backend_map() -> const BackendMap&;
 
 [[nodiscard("Pure function must use result.")]]
-auto interopbackendtype_map() -> const InteropBackendTypeMap&;
+auto interopbackend_map() -> const InteropBackendMap&;
 
 [[nodiscard("Pure function must use result.")]]
 auto str2loglevel(std::string_view t_key) -> debug::LogLevel;
 
 [[nodiscard("Pure function must use result.")]]
-auto str2optimizationlevel(std::string_view t_key)
-  -> codegen::OptimizationLevel;
+auto str2optimize(std::string_view t_key) -> codegen::Optimize;
 
 [[nodiscard("Pure function must use result.")]]
-auto str2backendtype(std::string_view t_key) -> codegen::BackendType;
+auto str2backend(std::string_view t_key) -> codegen::Backend;
 
 [[nodiscard("Pure function must use result.")]]
-auto str2interopbackendtype(std::string_view t_key)
-  -> codegen::InteropBackendType;
+auto str2interopbackend(std::string_view t_key) -> codegen::InteropBackend;
 } // namespace settings
 
 #endif // ACRIS_ACRIS_SETTINGS_ENUM_CONVERT_HPP

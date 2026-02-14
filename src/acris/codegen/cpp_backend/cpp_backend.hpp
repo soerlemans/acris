@@ -56,6 +56,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   // Is incremented after each usage to prevent collision.
   u64 m_id_defer_count;
 
+  Optimize m_optimize;
+
   protected:
   /*!
    * Generate the prologue for the generated C++ code.
@@ -166,7 +168,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
 
   // Util:
   //! CPP backend as of writing needs to refactor interop.
-  auto register_interop_backend(InteropBackendType t_type) -> void override;
+  auto register_interop_backend(InteropBackend t_type) -> void override;
+
+  //! Set the optimization level.
+  auto set_optimize(Optimize t_level) -> void override;
 
   /*!
    * Transpile the @ref t_ast to valid C++ code and write it to @ref t_out.
