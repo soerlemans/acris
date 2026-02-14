@@ -24,8 +24,8 @@
 namespace preprocessor {
 using container::TextBuffer;
 using container::TextBufferPtr;
-using container::TextStreamPtr;
 using container::TextPosition;
+using container::TextStreamPtr;
 
 namespace fs = std::filesystem;
 
@@ -41,7 +41,7 @@ struct IncludePack {
 
 class Preprocessor {
   private:
-  TextStreamPtr m_text;
+  TextStreamPtr m_src;
 
   u16 m_nesting_count;
   IncludedRegister m_ireg;
@@ -65,17 +65,17 @@ class Preprocessor {
 
   // auto next_ch();
 
-  auto include_file(TextBufferPtr& t_buffer, const fs::path t_path) -> void;
+  auto include_file(TextBufferPtr& t_dst, const fs::path t_path) -> void;
   auto get_include_path(TextStreamPtr t_text) -> IncludePack;
 
-  auto handle_include_once(TextStreamPtr t_text, TextBufferPtr& t_buffer)
+  auto handle_include_once(TextStreamPtr t_text, TextBufferPtr& t_dst)
     -> void;
-  auto handle_include(TextStreamPtr t_text, TextBufferPtr& t_buffer) -> void;
-  auto handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer) -> void;
+  auto handle_include(TextStreamPtr t_text, TextBufferPtr& t_dst) -> void;
+  auto handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_dst) -> void;
   auto match_macro(std::string_view t_macro_id, TextStreamPtr t_text,
-                   TextBufferPtr& t_buffer) -> void;
+                   TextBufferPtr& t_dst) -> void;
 
-  auto handle_preprocessor(TextStreamPtr t_text, TextBufferPtr& t_buffer)
+  auto handle_preprocessor(TextStreamPtr t_text, TextBufferPtr& t_dst)
     -> void;
 
   auto preprocess() -> TextStreamPtr;

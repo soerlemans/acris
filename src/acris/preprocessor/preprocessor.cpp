@@ -59,16 +59,16 @@ auto Preprocessor::preprocessor_error(TextPosition t_pos,
   throw PreprocessorError{t_msg, t_pos};
 }
 
-auto Preprocessor::preprocessor_error(TextStreamPtr t_text,
+auto Preprocessor::preprocessor_error(TextStreamPtr t_src,
                                       std::string_view t_msg) const -> void
 {
-  auto pos{t_text->position()};
+  auto pos{t_src->position()};
 
   throw PreprocessorError{t_msg, pos};
 }
 
-Preprocessor::Preprocessor(TextStreamPtr t_text)
-  : m_text{t_text}, m_nesting_count{0}, m_ireg{}, m_mreg{}
+Preprocessor::Preprocessor(TextStreamPtr t_src)
+  : m_src{t_src}, m_nesting_count{0}, m_ireg{}, m_mreg{}
 {}
 
 auto Preprocessor::set_defined(const MacroRegister& t_mreg) -> void
@@ -80,15 +80,15 @@ auto Preprocessor::set_defined(const MacroRegister& t_mreg) -> void
 
 auto Preprocessor::make_buffer() -> TextBufferPtr
 {
-  const auto source_file{m_text->source()};
+  const auto source_file{m_src->source()};
 
   return std::make_shared<TextBuffer>(source_file);
 }
 
-auto Preprocessor::next_if_unhygienic_macro(TextStreamPtr t_text) -> bool
+auto Preprocessor::next_if_unhygienic_macro(TextStreamPtr t_src) -> bool
 {
-  const auto ch{(uchar)t_text->character()};
-  const auto peek_opt{t_text->peek()};
+  const auto ch{(uchar)t_src->character()};
+  const auto peek_opt{t_src->peek()};
 
   // We need a # followed by a <.
   if(!peek_opt) {
@@ -98,10 +98,10 @@ auto Preprocessor::next_if_unhygienic_macro(TextStreamPtr t_text) -> bool
   // Directive processing loop.
   const auto peek_ch{peek_opt.value()};
   if(ch == MACRO_START && peek_ch == UNHYGIENIC_SPECIFIER) {
-    t_text->next(); // Skip #.
-    t_text->next(); // Skip <.
+    t_src->next(); // Skip #.
+    t_src->next(); // Skip <.
 
-    auto line{t_text->line()};
+    auto line{t_src->line()};
     DBG_VERBOSE("Found unhygienic macro: ", line);
 
     return true;
@@ -110,40 +110,40 @@ auto Preprocessor::next_if_unhygienic_macro(TextStreamPtr t_text) -> bool
   return false;
 }
 
-auto Preprocessor::skip_whitespace(TextStreamPtr t_text)
+auto Preprocessor::skip_whitespace(TextStreamPtr t_src)
 {
-  while(!t_text->eos()) {
-    const auto ch{(uchar)t_text->character()};
+  while(!t_src->eos()) {
+    const auto ch{(uchar)t_src->character()};
     if(ch != SPACE) {
       break;
     }
 
-    t_text->next();
+    t_src->next();
   }
 }
 
-auto Preprocessor::get_identifier(TextStreamPtr t_text) -> std::string
+auto Preprocessor::get_identifier(TextStreamPtr t_src) -> std::string
 {
   std::ostringstream oss{};
 
-  const auto start_ch{(uchar)t_text->character()};
+  const auto start_ch{(uchar)t_src->character()};
   if(!std::isalpha(start_ch)) {
     const auto msg{
       std::format("Macro name must start with alphanum '{}'.", start_ch)};
-    preprocessor_error(t_text, msg);
+    preprocessor_error(t_src, msg);
   }
   oss << start_ch;
-  t_text->next();
+  t_src->next();
 
-  while(!t_text->eos()) {
-    const auto ch{(uchar)t_text->character()};
+  while(!t_src->eos()) {
+    const auto ch{(uchar)t_src->character()};
     if(!(std::isalnum(ch) || ch == UNDERSCORE)) {
       break;
     }
 
     oss << ch;
 
-    t_text->next();
+    t_src->next();
   }
 
   const auto identifier{oss.str()};
@@ -152,48 +152,48 @@ auto Preprocessor::get_identifier(TextStreamPtr t_text) -> std::string
   return identifier;
 }
 
-auto Preprocessor::include_file(TextBufferPtr& t_buffer, const fs::path t_path)
+auto Preprocessor::include_file(TextBufferPtr& t_dst, const fs::path t_path)
   -> void
 {
   using fs::exists;
 
-  if(!exists(t_path)) {
-    std::ostringstream oss{};
-    oss << "File does not exist " << std::quoted(t_path.string()) << '!';
+  if(!fs::exists(t_path)) {
+    std::stringstream ss{};
 
-    preprocessor_error(t_buffer, oss.view());
+    ss << "File does not exist! ";
+    ss << std::quoted(t_path.string());
+
+    throw std::invalid_argument{ss.str()};
   }
+
+  // TextBuffer buffer{t_path.string()};
+  auto buffer{make_buffer()};
 
   std::ifstream ifs{t_path};
   while(ifs.good() && !ifs.eof()) {
     std::string line{};
     std::getline(ifs, line);
 
-    t_buffer->add_line(line);
-
-    // Nested include directive.
-    if(!line.empty() && line.front() == MACRO_START) {
-      auto buffer{make_buffer()};
-
-      m_nesting_count++;
-      if(m_nesting_count >= MAX_INCLUDE_NESTING) {
-        const auto msg{std::format(
-          "Exceeded maximum #<include nesting count of {} includes.",
-          MAX_INCLUDE_NESTING)};
-
-        preprocessor_error(t_buffer, msg);
-      }
-
-      handle_preprocessor(t_buffer, buffer);
-      m_nesting_count--;
-
-      // Expanded buffer write to intermediary.
-      t_buffer = std::move(buffer);
-    }
+    buffer->add_line(std::move(line));
   }
+
+  m_nesting_count++;
+  // if(m_nesting_count >= MAX_INCLUDE_NESTING) {
+  //   const auto msg{
+  //     std::format("Exceeded maximum #<include nesting count of {} includes.",
+  //                 MAX_INCLUDE_NESTING)};
+
+  //   preprocessor_error(t_dst, msg);
+  // }
+
+  handle_preprocessor(buffer, t_dst);
+  m_nesting_count--;
+
+  // Expanded buffer write to intermediary.
+  // t_dst = std::move(buffer);
 }
 
-auto Preprocessor::get_include_path(TextStreamPtr t_text) -> IncludePack
+auto Preprocessor::get_include_path(TextStreamPtr t_src) -> IncludePack
 {
   std::stringstream ss{};
 
@@ -201,17 +201,17 @@ auto Preprocessor::get_include_path(TextStreamPtr t_text) -> IncludePack
 
   IncludePack pack{};
 
-  const auto ch{(uchar)t_text->character()};
+  const auto ch{(uchar)t_src->character()};
   if(ch == '<' || ch == '"') {
     if(ch == '<') {
       // Library include path.
       pack.m_is_lib = true;
       term_char = '>';
     }
-    t_text->next();
+    t_src->next();
 
-    while(!t_text->eos()) {
-      const auto ch{(uchar)t_text->character()};
+    while(!t_src->eos()) {
+      const auto ch{(uchar)t_src->character()};
       if(ch == term_char) {
         break;
       }
@@ -220,12 +220,12 @@ auto Preprocessor::get_include_path(TextStreamPtr t_text) -> IncludePack
         const auto msg{
           std::format("Newlines are when defining include paths..")};
 
-        preprocessor_error(t_text, msg);
+        preprocessor_error(t_src, msg);
       }
 
       ss << ch;
 
-      t_text->next();
+      t_src->next();
     }
   } else {
     // TODO: Throw.
@@ -236,12 +236,12 @@ auto Preprocessor::get_include_path(TextStreamPtr t_text) -> IncludePack
   return pack;
 }
 
-auto Preprocessor::handle_include_once(TextStreamPtr t_text,
-                                       TextBufferPtr& t_buffer) -> void
+auto Preprocessor::handle_include_once(TextStreamPtr t_src,
+                                       TextBufferPtr& t_dst) -> void
 {
-  skip_whitespace(t_text);
+  skip_whitespace(t_src);
 
-  auto [is_lib, original] = get_include_path(t_text);
+  auto [is_lib, original] = get_include_path(t_src);
   DBG_INFO("include_once: ", std::quoted(original), " : ", m_nesting_count);
 
   const auto prepend{(is_lib) ? STD_INCLUDE_PATH : ""sv};
@@ -249,32 +249,32 @@ auto Preprocessor::handle_include_once(TextStreamPtr t_text,
   include = fs::absolute(include);
 
   if(m_ireg.contains(include) == false) {
-    include_file(t_buffer, include);
+    include_file(t_dst, include);
 
     m_ireg.insert(include);
   }
 }
 
-auto Preprocessor::handle_include(TextStreamPtr t_text, TextBufferPtr& t_buffer)
+auto Preprocessor::handle_include(TextStreamPtr t_src, TextBufferPtr& t_dst)
   -> void
 {
-  skip_whitespace(t_text);
+  skip_whitespace(t_src);
 
-  auto [is_lib, original] = get_include_path(t_text);
+  auto [is_lib, original] = get_include_path(t_src);
   DBG_INFO("include: ", std::quoted(original), " : ", m_nesting_count);
 
   const auto prepend{(is_lib) ? STD_INCLUDE_PATH : ""sv};
   fs::path include{std::format("{}{}", prepend, original)};
   include = fs::absolute(include);
 
-  include_file(t_buffer, include);
+  include_file(t_dst, include);
 }
 
-auto Preprocessor::handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer)
+auto Preprocessor::handle_ifdef(TextStreamPtr t_src, TextBufferPtr& t_dst)
   -> void
 {
-  skip_whitespace(t_text);
-  const auto cond_id{get_identifier(t_text)};
+  skip_whitespace(t_src);
+  const auto cond_id{get_identifier(t_src)};
 
   // Should we emit the current branch.
   bool emit_branch{false};
@@ -284,47 +284,47 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer)
 
   DBG_INFO("ifdef: ", cond_id, ", emit_branch: ", emit_branch);
 
-  t_text->next_line(); // Skip ifdef line.
-  while(!t_text->eos()) {
+  t_src->next_line(); // Skip ifdef line.
+  while(!t_src->eos()) {
     // Directive processing loop.
-    if(next_if_unhygienic_macro(t_text)) {
-      const auto macro_id{get_identifier(t_text)};
+    if(next_if_unhygienic_macro(t_src)) {
+      const auto macro_id{get_identifier(t_src)};
 
       if(macro_id == ELSE) {
         emit_branch = !emit_branch; // Flip emit_branch state.
       } else if(macro_id == ENDIF) {
         // Quite ifdef statemachine loop.
-        t_text->next_line();
+        t_src->next_line();
         return;
       } else if(emit_branch) {
         // Only expand macros if we are in the branch that should emit.
-        match_macro(macro_id, t_text, t_buffer);
+        match_macro(macro_id, t_src, t_dst);
       }
     } else {
-      t_buffer->add_line(std::string{t_text->line()});
+      t_dst->add_line(std::string{t_src->line()});
     }
 
-    t_text->next_line();
+    t_src->next_line();
   }
 
-  if(t_text->eos()) {
+  if(t_src->eos()) {
     // TODO: Throw endif was never hit till end of file.
-    const auto end_pos{t_text->end_position()};
+    const auto end_pos{t_src->end_position()};
     preprocessor_error(end_pos, "End of file reached and found no #<endif.");
   }
 }
 
 auto Preprocessor::match_macro(const std::string_view t_macro_id,
-                               TextStreamPtr t_text, TextBufferPtr& t_buffer)
+                               TextStreamPtr t_src, TextBufferPtr& t_dst)
   -> void
 {
-  const auto pos{t_text->position()};
+  const auto pos{t_src->position()};
   if(t_macro_id == INCLUDE_ONCE) {
-    handle_include_once(t_text, t_buffer);
+    handle_include_once(t_src, t_dst);
   } else if(t_macro_id == INCLUDE) {
-    handle_include(t_text, t_buffer);
+    handle_include(t_src, t_dst);
   } else if(t_macro_id == IFDEF) {
-    handle_ifdef(t_text, t_buffer);
+    handle_ifdef(t_src, t_dst);
   } else if(t_macro_id == ERROR) {
     const auto msg{std::format("#<error: \"{}\".", t_macro_id)};
 
@@ -336,28 +336,28 @@ auto Preprocessor::match_macro(const std::string_view t_macro_id,
   }
 }
 
-auto Preprocessor::handle_preprocessor(TextStreamPtr t_text,
-                                       TextBufferPtr& t_buffer) -> void
+auto Preprocessor::handle_preprocessor(TextStreamPtr t_src,
+                                       TextBufferPtr& t_dst) -> void
 {
   if(m_nesting_count >= MAX_INCLUDE_NESTING) {
     const auto msg{
       std::format("Exceeded maximum #<include nesting count of {} includes.",
                   MAX_INCLUDE_NESTING)};
 
-    preprocessor_error(t_text, msg);
+    preprocessor_error(t_src, msg);
   }
 
-  while(!t_text->eos()) {
+  while(!t_src->eos()) {
     // Directive processing loop.
-    if(next_if_unhygienic_macro(t_text)) {
-      const auto macro_id{get_identifier(t_text)};
+    if(next_if_unhygienic_macro(t_src)) {
+      const auto macro_id{get_identifier(t_src)};
 
-      match_macro(macro_id, t_text, t_buffer);
+      match_macro(macro_id, t_src, t_dst);
     } else {
-      t_buffer->add_line(std::string{t_text->line()});
+      t_dst->add_line(std::string{t_src->line()});
     }
 
-    t_text->next_line();
+    t_src->next_line();
   }
 }
 
@@ -365,10 +365,10 @@ auto Preprocessor::preprocess() -> TextStreamPtr
 {
   auto buffer{make_buffer()};
 
-  handle_preprocessor(m_text, buffer);
+  handle_preprocessor(m_src, buffer);
   DBG_INFO("buffer: ", *buffer);
 
-  m_text->reset();
+  m_src->reset();
 
   return buffer;
 }
