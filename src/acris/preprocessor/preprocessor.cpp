@@ -25,6 +25,7 @@ constexpr auto INCLUDE{"include"sv};
 constexpr auto IFDEF{"ifdef"sv};
 constexpr auto ELSE{"else"sv};
 constexpr auto ENDIF{"endif"sv};
+constexpr auto ERROR{"error"sv};
 
 constexpr uchar SPACE{' '};
 constexpr uchar UNDERSCORE{'_'};
@@ -51,6 +52,12 @@ auto dump_mreg(const MacroRegister& t_mreg) -> std::string
 
 namespace preprocessor {
 using diagnostic::PreprocessorError;
+
+auto Preprocessor::preprocessor_error(TextPosition t_pos,
+                                      std::string_view t_msg) const -> void
+{
+  throw PreprocessorError{t_msg, t_pos};
+}
 
 auto Preprocessor::preprocessor_error(TextStreamPtr t_text,
                                       std::string_view t_msg) const -> void
@@ -275,7 +282,7 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer)
     emit_branch = true;
   }
 
-  DBG_INFO("ifdef: ", cond_id, ", emit_branch:", emit_branch);
+  DBG_INFO("ifdef: ", cond_id, ", emit_branch: ", emit_branch);
 
   t_text->next_line(); // Skip ifdef line.
   while(!t_text->eos()) {
@@ -289,21 +296,10 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer)
         // Quite ifdef statemachine loop.
         t_text->next_line();
         return;
+      } else if(emit_branch) {
+        // Only expand macros if we are in the branch that should emit.
+        match_macro(macro_id, t_text, t_buffer);
       }
-
-      // Only expand macros if we are in the branch that should emit.
-      if(emit_branch) {
-        if(macro_id == INCLUDE_ONCE) {
-          handle_include_once(t_text, t_buffer);
-        } else if(macro_id == INCLUDE) {
-          handle_include(t_text, t_buffer);
-        } else if(macro_id == IFDEF) {
-          handle_ifdef(t_text, t_buffer);
-        } else {
-          // THROW unrecognized macro.
-        }
-      }
-
     } else {
       t_buffer->add_line(std::string{t_text->line()});
     }
@@ -312,7 +308,31 @@ auto Preprocessor::handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer)
   }
 
   if(t_text->eos()) {
-    // TODO: Throw endif was never hit till end of file;
+    // TODO: Throw endif was never hit till end of file.
+    const auto end_pos{t_text->end_position()};
+    preprocessor_error(end_pos, "End of file reached and found no #<endif.");
+  }
+}
+
+auto Preprocessor::match_macro(const std::string_view t_macro_id,
+                               TextStreamPtr t_text, TextBufferPtr& t_buffer)
+  -> void
+{
+  const auto pos{t_text->position()};
+  if(t_macro_id == INCLUDE_ONCE) {
+    handle_include_once(t_text, t_buffer);
+  } else if(t_macro_id == INCLUDE) {
+    handle_include(t_text, t_buffer);
+  } else if(t_macro_id == IFDEF) {
+    handle_ifdef(t_text, t_buffer);
+  } else if(t_macro_id == ERROR) {
+    const auto msg{std::format("#<error: \"{}\".", t_macro_id)};
+
+    preprocessor_error(pos, msg);
+  } else {
+    const auto msg{std::format("Unknown macro name \"{}\".", t_macro_id)};
+
+    preprocessor_error(pos, msg);
   }
 }
 
@@ -332,15 +352,7 @@ auto Preprocessor::handle_preprocessor(TextStreamPtr t_text,
     if(next_if_unhygienic_macro(t_text)) {
       const auto macro_id{get_identifier(t_text)};
 
-      if(macro_id == INCLUDE_ONCE) {
-        handle_include_once(t_text, t_buffer);
-      } else if(macro_id == INCLUDE) {
-        handle_include(t_text, t_buffer);
-      } else if(macro_id == IFDEF) {
-        handle_ifdef(t_text, t_buffer);
-      } else {
-        // THROW unrecognized macro.
-      }
+      match_macro(macro_id, t_text, t_buffer);
     } else {
       t_buffer->add_line(std::string{t_text->line()});
     }

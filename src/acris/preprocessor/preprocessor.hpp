@@ -6,8 +6,8 @@
 #include <map>
 #include <set>
 #include <stack>
-#include <string_view>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 
 // Absolute Includes:
@@ -22,28 +22,17 @@
  */
 
 namespace preprocessor {
-enum class MacroState;
-
 using container::TextBuffer;
 using container::TextBufferPtr;
 using container::TextStreamPtr;
+using container::TextPosition;
 
 namespace fs = std::filesystem;
 
 using IncludedRegister = std::set<std::filesystem::path>;
 using MacroRegister = std::map<std::string, std::string>;
-using MacroStateStack = std::stack<MacroState>;
 
 constexpr u8 MAX_INCLUDE_NESTING{255};
-
-/*!
- * Keeps track of which side of the ifdef to paste.
- * When preprocessing.
- */
-enum class MacroState {
-  PASTE_IF,
-  PASTE_ELSE
-};
 
 struct IncludePack {
   bool m_is_lib;
@@ -57,11 +46,12 @@ class Preprocessor {
   u16 m_nesting_count;
   IncludedRegister m_ireg;
   MacroRegister m_mreg;
-  MacroStateStack m_state_stack;
 
   protected:
-  auto preprocessor_error(TextStreamPtr t_text, std::string_view t_msg)
-    const -> void;
+  auto preprocessor_error(TextPosition t_pos, std::string_view t_msg) const
+    -> void;
+  auto preprocessor_error(TextStreamPtr t_text, std::string_view t_msg) const
+    -> void;
 
   public:
   explicit Preprocessor(TextStreamPtr t_text);
@@ -82,6 +72,8 @@ class Preprocessor {
     -> void;
   auto handle_include(TextStreamPtr t_text, TextBufferPtr& t_buffer) -> void;
   auto handle_ifdef(TextStreamPtr t_text, TextBufferPtr& t_buffer) -> void;
+  auto match_macro(std::string_view t_macro_id, TextStreamPtr t_text,
+                   TextBufferPtr& t_buffer) -> void;
 
   auto handle_preprocessor(TextStreamPtr t_text, TextBufferPtr& t_buffer)
     -> void;
