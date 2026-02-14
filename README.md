@@ -34,8 +34,14 @@ Here is a simple sample program.
 ```go
 module main
 
-// Standard library includes:
-#include_once <core/core.ac> // <> are reserved for standard library.
+// Standard library includes (#< is used for unhygienic macros):
+#<include_once <core/core.ac> // <> are reserved for standard library.
+
+#<ifdef NO_LIBC
+// Will be excluded if not linking to libc.
+#<else
+// Will be included if linking to libc.
+#<endif
 
 // Comments like in C/C++.
 
