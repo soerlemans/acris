@@ -177,20 +177,11 @@ auto Preprocessor::include_file(TextBufferPtr& t_dst, const fs::path t_path)
     buffer->add_line(std::move(line));
   }
 
+	// In the future this solution might cost too much memory/be slow.
+	// Handle recursive expansion.
   m_nesting_count++;
-  // if(m_nesting_count >= MAX_INCLUDE_NESTING) {
-  //   const auto msg{
-  //     std::format("Exceeded maximum #<include nesting count of {} includes.",
-  //                 MAX_INCLUDE_NESTING)};
-
-  //   preprocessor_error(t_dst, msg);
-  // }
-
   handle_preprocessor(buffer, t_dst);
   m_nesting_count--;
-
-  // Expanded buffer write to intermediary.
-  // t_dst = std::move(buffer);
 }
 
 auto Preprocessor::get_include_path(TextStreamPtr t_src) -> IncludePack
