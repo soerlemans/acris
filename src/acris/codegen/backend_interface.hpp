@@ -26,11 +26,19 @@ using BackendPtr = std::shared_ptr<BackendInterface>;
 namespace fs = std::filesystem;
 
 // Enums:
-enum class BackendType {
+enum class Backend {
   LLVM_BACKEND,
   JS_BACKEND,
   CPP_BACKEND,
   C_BACKEND,
+};
+
+enum class Optimize {
+  NONE,
+  SIZE,
+  LEVEL_1,
+  LEVEL_2,
+  LEVEL_3,
 };
 
 // Structs:
@@ -57,7 +65,12 @@ class BackendInterface {
    * How an interop backend is added is backend specific.
    * So this is a shared factory method for nested interop backends.
    */
-  virtual auto register_interop_backend(InteropBackendType t_type) -> void = 0;
+  virtual auto register_interop_backend(InteropBackend t_type) -> void = 0;
+
+  /*!
+   * Set the optimization level.
+   */
+  virtual auto set_optimize(Optimize t_level) -> void = 0;
 
   /*!
    * Check if MIR is required for compilation.
@@ -73,14 +86,17 @@ class BackendInterface {
 // Functions:
 // TODO: Implement with a unique_ptr or something similar.
 [[nodiscard("Pure method must use results.")]]
-auto select_backend(BackendType t_selector) -> BackendPtr;
+auto select_backend(Backend t_selector) -> BackendPtr;
 
 [[nodiscard("Pure method must use results.")]]
-auto backendtype2str(BackendType t_type) -> std::string_view;
+auto backend2str(Backend t_type) -> std::string_view;
+
+[[nodiscard("Pure method must use results.")]]
+auto optimize2str(Optimize t_level) -> std::string_view;
 } // namespace codegen
 
-auto operator<<(std::ostream& t_os, codegen::BackendType t_type)
-  -> std::ostream&;
+auto operator<<(std::ostream& t_os, codegen::Backend t_type) -> std::ostream&;
 
+auto operator<<(std::ostream& t_os, codegen::Optimize t_level) -> std::ostream&;
 
 #endif // ACRIS_ACRIS_CODEGEN_BACKEND_INTERFACE_HPP

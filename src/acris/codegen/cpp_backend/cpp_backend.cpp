@@ -772,15 +772,14 @@ auto CppBackend::visit([[maybe_unused]] NodeInterface* t_node) -> Any
 }
 
 // Util:
-auto CppBackend::register_interop_backend(const InteropBackendType t_type)
-  -> void
+auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
 {
   namespace py_interop = cpp_backend::interop::python_backend;
 
   CppInteropBackendPtr ptr{};
 
   switch(t_type) {
-    case InteropBackendType::PYTHON_INTEROP_BACKEND:
+    case InteropBackend::PYTHON_INTEROP_BACKEND:
       ptr = std::make_shared<py_interop::PythonBackend>();
 
       // Add compiler flags for compiling python3 support.
@@ -799,18 +798,18 @@ auto CppBackend::register_interop_backend(const InteropBackendType t_type)
                     "--extension-suffix)");
       break;
 
-      // case InteropBackendType::LUA_INTEROP_BACKEND:
+      // case InteropBackend::LUA_INTEROP_BACKEND:
       //   break;
 
       // Fallthrough all the way to default.
-    case InteropBackendType::C_INTEROP_BACKEND:
+    case InteropBackend::C_INTEROP_BACKEND:
       [[fallthrough]];
-    case InteropBackendType::LUA_INTEROP_BACKEND:
+    case InteropBackend::LUA_INTEROP_BACKEND:
       [[fallthrough]];
-    case InteropBackendType::JS_INTEROP_BACKEND: {
+    case InteropBackend::JS_INTEROP_BACKEND: {
       const auto err_msg{std::format("Unsupported interopability backend "
                                      "\"{}\" for C++ backend.",
-                                     interopbackendtype2str(t_type))};
+                                     interopbackend2str(t_type))};
       throw std::invalid_argument{err_msg};
       break;
     }
@@ -818,7 +817,7 @@ auto CppBackend::register_interop_backend(const InteropBackendType t_type)
     default: {
       const auto err_msg{std::format("Unknown interopability backend \"{}\" "
                                      "for C++ backend",
-                                     interopbackendtype2str(t_type))};
+                                     interopbackend2str(t_type))};
       throw std::invalid_argument{err_msg};
       break;
     }
@@ -826,6 +825,38 @@ auto CppBackend::register_interop_backend(const InteropBackendType t_type)
 
   // Add the backend at the end.
   m_interop_backends.emplace_back(ptr);
+}
+
+auto CppBackend::set_optimize(const Optimize t_level) -> void
+{
+  using lib::stdexcept::InvalidArgument;
+  using lib::stdexcept::throwf;
+
+  switch(t_level) {
+    case Optimize::NONE:
+      m_inv.add_flags("-O0");
+      break;
+
+    case Optimize::SIZE:
+      m_inv.add_flags("-Os");
+      break;
+
+    case Optimize::LEVEL_1:
+      m_inv.add_flags("-O1");
+      break;
+
+    case Optimize::LEVEL_2:
+      m_inv.add_flags("-O2");
+      break;
+
+    case Optimize::LEVEL_3:
+      m_inv.add_flags("-O3");
+      break;
+
+    default:
+      throwf<InvalidArgument>("Unhandled optimization level.");
+      break;
+  }
 }
 
 auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void

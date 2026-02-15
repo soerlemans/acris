@@ -17,17 +17,19 @@ class BuildUnit;
 // Aliases:
 namespace fs = std::filesystem;
 
+using codegen::Backend;
 using codegen::BackendPtr;
-using codegen::BackendType;
 using codegen::InteropSelectors;
+using codegen::Optimize;
 
 using BuildUnitPtr = std::shared_ptr<BuildUnit>;
 using PathOpt = std::optional<fs::path>;
 
 // Structs:
 struct BuildUnitParams {
-  BackendType m_backend_selector;
+  Backend m_backend_selector;
   InteropSelectors m_interop_selectors;
+  Optimize m_olevel;
   PathOpt m_build_dir_opt;
 };
 

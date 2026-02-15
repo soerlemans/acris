@@ -7,12 +7,14 @@
 
 // Internal:
 namespace {
-using codegen::BackendType;
-using codegen::InteropBackendType;
+using codegen::Backend;
+using codegen::InteropBackend;
+using codegen::Optimize;
 using debug::LogLevel;
-using settings::BackendTypeMap;
-using settings::InteropBackendTypeMap;
+using settings::BackendMap;
+using settings::InteropBackendMap;
 using settings::LogLevelMap;
+using settings::OptimizeMap;
 
 LogLevelMap loglevel_convmap{
   {"critical", LogLevel::CRITICAL},
@@ -23,21 +25,29 @@ LogLevelMap loglevel_convmap{
   { "verbose",  LogLevel::VERBOSE}
 };
 
-BackendTypeMap backendtype_convmap{
-  { "cpp",  BackendType::CPP_BACKEND},
-  {"llvm", BackendType::LLVM_BACKEND},
+OptimizeMap optimize_convmap{
+  {"none",    Optimize::NONE},
+  {"size",    Optimize::SIZE},
+  {   "1", Optimize::LEVEL_1},
+  {   "2", Optimize::LEVEL_2},
+  {   "3", Optimize::LEVEL_3},
 };
 
-InteropBackendTypeMap interopbackendtype_convmap{
-  {     "C",      InteropBackendType::C_INTEROP_BACKEND},
-  {"python", InteropBackendType::PYTHON_INTEROP_BACKEND},
-  {   "lua",    InteropBackendType::LUA_INTEROP_BACKEND},
+BackendMap backend_convmap{
+  { "cpp",  Backend::CPP_BACKEND},
+  {"llvm", Backend::LLVM_BACKEND},
+};
+
+InteropBackendMap interopbackend_convmap{
+  {     "C",      InteropBackend::C_INTEROP_BACKEND},
+  {"python", InteropBackend::PYTHON_INTEROP_BACKEND},
+  {   "lua",    InteropBackend::LUA_INTEROP_BACKEND},
 };
 
 // TODO: Create std::map type concept.
 template<typename MapType>
-inline auto str2enumtype(const MapType& t_map, const std::string_view t_key,
-                         std::string_view t_origin = "str2enumtype")
+inline auto str2enum(const MapType& t_map, const std::string_view t_key,
+                     std::string_view t_origin = "str2enum")
   -> MapType::mapped_type
 {
   using MappedType = MapType::mapped_type;
@@ -50,7 +60,7 @@ inline auto str2enumtype(const MapType& t_map, const std::string_view t_key,
     value = iter->second;
   } else {
     const auto err_msg{
-      std::format("{} could not convert string to enum value.", t_origin)};
+      std::format("{}() could not convert string to enum value.", t_origin)};
 
     throw std::invalid_argument{err_msg};
   }
@@ -65,63 +75,39 @@ auto loglevel_map() -> const LogLevelMap&
   return loglevel_convmap;
 }
 
-auto backendtype_map() -> const BackendTypeMap&
+auto optimize_map() -> const OptimizeMap&
 {
-  return backendtype_convmap;
+  return optimize_convmap;
 }
 
-auto interopbackendtype_map() -> const InteropBackendTypeMap&
+auto backend_map() -> const BackendMap&
 {
-  return interopbackendtype_convmap;
+  return backend_convmap;
+}
+
+auto interopbackend_map() -> const InteropBackendMap&
+{
+  return interopbackend_convmap;
 }
 
 auto str2loglevel(const std::string_view t_key) -> debug::LogLevel
 {
-  using debug::LogLevel;
+  return str2enum(loglevel_map(), t_key, "str2loglevel()");
+}
 
-  LogLevel level{};
-
-  const auto& map{loglevel_map()};
-  std::string str{t_key};
-
-  auto iter{map.find(str)};
-  if(iter != map.end()) {
-    level = iter->second;
-  } else {
-    throw std::invalid_argument{
-      "str2loglevel() could not convert string to LogLevel."};
-  }
-
-  return level;
+auto str2optimize(const std::string_view t_key) -> codegen::Optimize
+{
+  return str2enum(optimize_map(), t_key, "str2optimize()");
 }
 
 // TODO: All these string conversion functions look the same create a helper.
-auto str2backendtype(const std::string_view t_key) -> codegen::BackendType
+auto str2backend(const std::string_view t_key) -> codegen::Backend
 {
-  using codegen::BackendType;
-
-  BackendType backend{};
-
-  const auto& map{backendtype_map()};
-  std::string str{t_key};
-
-  auto iter{map.find(str)};
-  if(iter != map.end()) {
-    backend = iter->second;
-  } else {
-    throw std::invalid_argument{
-      "str2backendtype could not convert string to BackendType."};
-  }
-
-  return backend;
-
-  return str2enumtype(backendtype_map(), t_key, "str2backendtype()");
+  return str2enum(backend_map(), t_key, "str2backend()");
 }
 
-auto str2interopbackendtype(std::string_view t_key)
-  -> codegen::InteropBackendType
+auto str2interopbackend(std::string_view t_key) -> codegen::InteropBackend
 {
-  return str2enumtype(interopbackendtype_map(), t_key,
-                      "str2interopbackendtype()");
+  return str2enum(interopbackend_map(), t_key, "str2interopbackend()");
 }
 } // namespace settings

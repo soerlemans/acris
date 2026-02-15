@@ -13,6 +13,7 @@
 #include "acris/symbol_table/node_frame/node_frame_factory.hpp"
 #include "acris/token/token_stream.hpp"
 #include "acris/unit/build_unit.hpp"
+#include "acris/unit/session_unit.hpp"
 
 namespace unit {
 // Using Statements:
@@ -56,10 +57,11 @@ class TranslationUnit {
   // TODO: Settings should be passed to TranslationUnit as a shared_ptr.
   // So we can actually start passing CLI options to other phases of
   // compilation.
-	// For example passing through options to clang, via -X.
+  // For example passing through options to clang, via -X.
 
   // Config:
-  BuildUnitPtr m_build_unit;
+  SessionUnitPtr m_session;
+  BuildUnitPtr m_build;
 
   // Data:
   path m_source_file;
@@ -69,7 +71,7 @@ class TranslationUnit {
   ModulePtr m_mir;
 
   public:
-  TranslationUnit(BuildUnitPtr t_build_unit, path t_source_file);
+  TranslationUnit(SessionUnitPtr t_session, BuildUnitPtr t_build, path t_source_file);
 
   //! Run the preprocessortoken_stream.
   virtual auto preprocess(const TextStreamPtr& t_text_stream) -> TextStreamPtr;

@@ -40,13 +40,16 @@ auto operator<<(std::ostream& t_os, const settings::Settings& t_settings)
   -> std::ostream&
 {
   using namespace lib::stdprint::vector;
+  using namespace lib::stdprint::map;
   using lib::iomanip::cond_nl;
 
   // clang-format off
   t_os << "Settings{" << cond_nl;
   t_os << "source_paths: " << t_settings.m_source_paths << ", " << cond_nl;
+  t_os << "macro_definitions: " << t_settings.m_mdefs << ", " << cond_nl;
   t_os << "backend: " << t_settings.m_backend << ", " << cond_nl;
-  t_os << "interop_backends: " << t_settings.m_interop_backends << ", " << cond_nl;
+  t_os << "interop_backends: " << t_settings.m_ibackends << ", " << cond_nl;
+  t_os << "optimization_level: " << t_settings.m_olevel << ", " << cond_nl;
   t_os << "loglevel: " << t_settings.m_level << ", " << cond_nl;
   t_os << "}";
   // clang-format on

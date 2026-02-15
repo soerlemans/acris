@@ -1,7 +1,7 @@
 module strlen_sample
 
 // Standard library include.
-#include_once <core/linux/core.ac>
+#<include_once <core/linux/core.ac>
 
 func main() -> int {
   let len = strlen("Testing strlen")

@@ -18,8 +18,8 @@ namespace {
 // Aliases:
 namespace fs = std::filesystem;
 using settings::Settings;
-using settings::str2backendtype;
-using settings::str2interopbackendtype;
+using settings::str2backend;
+using settings::str2interopbackend;
 
 template<typename T>
 using NodeView = toml::node_view<T>;
@@ -140,12 +140,12 @@ auto toml_project_section(toml::table& t_table, Settings& t_settings) -> void
 
   // t_settings.m_backend = project["backend"].value_or("cpp"sv);
   if(auto backend{t_table["backend"].value<std::string>()}; backend) {
-    t_settings.m_backend = str2backendtype(backend.value());
+    t_settings.m_backend = str2backend(backend.value());
   }
 
   // Extract interop backend, by enum.
-  toml_extract(project["interop_backends"], t_settings.m_interop_backends,
-               str2interopbackendtype);
+  toml_extract(project["interop_backends"], t_settings.m_ibackends,
+               str2interopbackend);
 }
 
 auto toml_debug_section(toml::table& t_table, Settings& t_settings) -> void

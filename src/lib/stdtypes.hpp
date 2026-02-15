@@ -13,6 +13,8 @@
  */
 
 // Aliases:
+using uchar = unsigned char;
+
 // Integer type aliases:
 using uint = unsigned int;
 using u8 = std::uint8_t;

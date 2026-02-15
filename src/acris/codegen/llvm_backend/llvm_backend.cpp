@@ -47,7 +47,8 @@ LlvmBackend::LlvmBackend()
     m_literals{},
     m_globals{},
     m_locals{},
-    m_entry_bblock{nullptr}
+    m_entry_bblock{nullptr},
+    m_olevel{Optimize::NONE}
 {}
 
 auto LlvmBackend::entry_bblock() -> llvm::BasicBlock*
@@ -732,6 +733,39 @@ auto LlvmBackend::dump_ir(std::ostream& t_os) -> void
   m_module->print(oss, nullptr);
 
   t_os << str;
+}
+
+auto LlvmBackend::set_optimize(const Optimize t_olevel) -> void
+{
+  // Set passes, later.
+  m_olevel = t_olevel;
+}
+
+auto LlvmBackend::set_passess() -> void
+{
+  using lib::stdexcept::InvalidArgument;
+  using lib::stdexcept::throwf;
+
+  switch(m_olevel) {
+    case Optimize::NONE:
+      break;
+
+    case Optimize::SIZE:
+      break;
+
+    case Optimize::LEVEL_1:
+      break;
+
+    case Optimize::LEVEL_2:
+      break;
+
+    case Optimize::LEVEL_3:
+      break;
+
+    default:
+      throwf<InvalidArgument>("Unhandled optimization level.");
+      break;
+  }
 }
 
 auto LlvmBackend::requires_mir() -> bool

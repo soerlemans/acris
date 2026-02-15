@@ -14,11 +14,11 @@ else()
 	message(FATAL_ERROR "Architecture ${LOCAL_ARCH} unknown!")
 endif()
 
-set(ARCH_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${LOCAL_ARCH}_core.c")
+set(ARCH_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${LOCAL_ARCH}_kernel.c")
 if(NOT EXISTS "${ARCH_SOURCE_FILE}")
     message(FATAL_ERROR "Architecture ${LOCAL_ARCH} is not supported.")
 endif()
 
 target_sources(${TARGET_ACRIS_STDACRIS} PRIVATE
-	"${LOCAL_ARCH}_core.c"
+	"${LOCAL_ARCH}_kernel.c"
 )

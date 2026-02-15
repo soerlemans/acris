@@ -16,31 +16,42 @@
 #include "toml.hpp"
 
 namespace settings {
-// Aliases:
+// Using:
 namespace fs = std::filesystem;
+
+using codegen::Backend;
+using codegen::Optimize;
+using debug::LogLevel;
+
 using FileVec = std::vector<fs::path>;
 using StringVec = std::vector<std::string>;
-using InteropBackendTypeVec = std::vector<codegen::InteropBackendType>;
+using MacroDefs = std::map<std::string, std::string>;
+using MacroUndefs = std::set<std::string>;
+using InteropBackendVec = std::vector<codegen::InteropBackend>;
 
 // using InteropBackendVec = std::vector<>;
 
 // Structs:
 struct Settings {
-  using BackendType = codegen::BackendType;
-  using LogLevel = debug::LogLevel;
-
   FileVec m_source_paths;
+  MacroDefs m_mdefs;
 
-  codegen::BackendType m_backend;
-  InteropBackendTypeVec m_interop_backends;
+  bool m_no_libc;
 
-  debug::LogLevel m_level;
+  Backend m_backend;
+  InteropBackendVec m_ibackends;
+  Optimize m_olevel;
+
+  LogLevel m_level;
 
   // Methods:
   Settings()
     : m_source_paths{},
-      m_backend{BackendType::CPP_BACKEND},
-      m_interop_backends{},
+      m_mdefs{},
+      m_no_libc{false},
+      m_backend{Backend::CPP_BACKEND},
+      m_ibackends{},
+      m_olevel{Optimize::NONE},
       m_level{LogLevel::VERBOSE}
   {}
 

@@ -1,9 +1,9 @@
 module preprocessor_sample
 
-#include "samples/preprocess.ac"
+#<include "samples/preprocess.ac"
 
 // Standard library include.
-#include_once <core/linux/core.ac>
+#<include_once <core/linux/core.ac>
 
 
 // Relative path include.

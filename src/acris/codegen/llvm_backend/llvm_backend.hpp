@@ -83,6 +83,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   llvm::BasicBlock* m_entry_bblock;
 
+  Optimize m_olevel;
+
   public:
   LlvmBackend();
 
@@ -118,8 +120,11 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto dump_ir(std::ostream& t_os) -> void;
 
   //! LLVM backend as of writing supports no interop.
-  auto register_interop_backend([[maybe_unused]] InteropBackendType t_type)
+  auto register_interop_backend([[maybe_unused]] InteropBackend t_type)
     -> void override {};
+
+  auto set_optimize(Optimize t_olevel) -> void override;
+  auto set_passess() -> void;
 
   auto requires_mir() -> bool override;
   auto compile(CompileParams& t_params) -> void override;

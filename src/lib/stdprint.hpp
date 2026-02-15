@@ -11,6 +11,7 @@
 #include <concepts>
 #include <format>
 #include <list>
+#include <map>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -39,6 +40,24 @@ concept SmartPointer = requires(T ptr) {
   { ptr.get() } -> std::convertible_to<typename T::element_type*>;
   { *ptr } -> std::same_as<typename T::element_type&>;
 };
+
+template<typename T>
+  requires Container<T>
+inline auto print_map(std::ostream& t_os, const T& t_container) -> std::ostream&
+{
+  using namespace std::literals;
+
+  t_os << '{';
+  auto sep{""sv};
+  for(auto&& [key, val] : t_container) {
+    t_os << sep << key << "=" << val;
+
+    sep = ", "sv;
+  }
+  t_os << '}';
+
+  return t_os;
+}
 
 //! Helper function which prints all sequential containers.
 template<typename T>
@@ -98,6 +117,16 @@ inline auto print_weak_ptr(std::ostream& t_os, const std::weak_ptr<T>& t_wk_ptr)
 }
 
 } // namespace detail
+
+namespace map {
+//! For printing vectors.
+template<typename Key, typename Val>
+inline auto operator<<(std::ostream& t_os, const std::map<Key, Val>& t_map)
+  -> std::ostream&
+{
+  return detail::print_map(t_os, t_map);
+}
+} // namespace map
 
 namespace vector {
 //! For printing vectors.
@@ -161,6 +190,7 @@ namespace variant {
 
 //! Namespace that when included allows you to use all the ostream functions.
 namespace all {
+using namespace lib::stdprint::map;
 using namespace lib::stdprint::vector;
 using namespace lib::stdprint::list;
 using namespace lib::stdprint::array;
