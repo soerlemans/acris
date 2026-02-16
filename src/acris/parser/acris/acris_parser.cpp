@@ -591,6 +591,30 @@ auto AcrisParser::self() -> NodePtr
   return node;
 }
 
+// Enum:
+auto AcrisParser::enum_def() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(next_if(TokenType::ENUM)) {
+    PARSER_FOUND(TokenType::ENUM);
+
+    const auto id{expect(TokenType::IDENTIFIER).str()};
+    newline_opt();
+
+    auto members{accolades([this] {
+      newline_opt();
+
+      return member_decl_list();
+    })};
+
+    node = make_node<Struct>(id, std::move(members));
+  }
+
+  return node;
+}
+
 // Function:
 auto AcrisParser::param_list() -> NodeListPtr
 {

@@ -109,7 +109,7 @@ enum class Opcode : u32 {
   ICMP_LT,  // %<dest> = icmp_lt <lhs> <rhs>
   ICMP_LTE, // %<dest> = icmp_lte <lhs> <rhs>
   ICMP_EQ,  // %<dest> = icmp_eq <lhs> <rhs>
-  ICMP_NQ,  // %<dest> = icmp_nq <lhs> <rhs>
+	ICMP_NE,  // %<dest> = icmp_ne <lhs> <rhs>
   ICMP_GT,  // %<dest> = icmp_gt <lhs> <rhs>
   ICMP_GTE, // %<dest> = icmp_gte <lhs> <rhs>
 
@@ -124,7 +124,7 @@ enum class Opcode : u32 {
   FCMP_LT,  // %<dest> = fcmp_lt <lhs> <rhs>
   FCMP_LTE, // %<dest> = fcmp_lte <lhs> <rhs>
   FCMP_EQ,  // %<dest> = fcmp_eq <lhs> <rhs>
-  FCMP_NQ,  // %<dest> = fcmp_nq <lhs> <rhs>
+  FCMP_NE,  // %<dest> = fcmp_ne <lhs> <rhs>
   FCMP_GT,  // %<dest> = fcmp_gt <lhs> <rhs>
   FCMP_GTE, // %<dest> = fcmp_gte <lhs> <rhs>
 

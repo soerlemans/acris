@@ -10,9 +10,11 @@ class MemberDecl;
 class Struct;
 class Self;
 
+class Enum;
+class EnumField;
+
 class MemberAccess;
 class Member;
-
 } // namespace ast::node::user_types
 
 #endif // ACRIS_ACRIS_AST_NODE_USER_TYPES_FDECL_HPP

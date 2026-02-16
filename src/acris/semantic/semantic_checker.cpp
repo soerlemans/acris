@@ -681,7 +681,7 @@ auto SemanticChecker::visit(Arithmetic* t_arith) -> Any
   DBG_INFO("Typeof rhs: ", rhs);
 
   BinaryOperationData data{lhs, rhs, pos};
-  const auto ret{m_validator.validate_assignment(data)};
+  const auto ret{m_validator.validate_arithmetic(data)};
 
   // Annotate AST.
   m_annot_queue.push({t_arith, ret});

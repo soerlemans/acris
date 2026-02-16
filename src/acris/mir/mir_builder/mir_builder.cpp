@@ -612,7 +612,7 @@ auto MirBuilder::visit(Comparison* t_comp) -> Any
       break;
 
     case ComparisonOp::NOT_EQUAL:
-      add_comparison_instr(Opcode::ICMP_NQ, Opcode::FCMP_NQ);
+      add_comparison_instr(Opcode::ICMP_NE, Opcode::FCMP_NE);
       break;
 
     case ComparisonOp::GREATER_THAN:

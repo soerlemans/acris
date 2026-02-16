@@ -301,11 +301,27 @@ auto LlvmBackend::on_const_int(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val_lit{operand2llvm(first)};
 
   m_locals.emplace(result_id, val_lit);
+}
+
+auto LlvmBackend::on_iadd(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateAdd(lhs, rhs, "add_result");
+
+  m_locals.emplace(result_id, sub_result);
 }
 
 auto LlvmBackend::on_isub(Instruction& t_instr) -> void
@@ -313,7 +329,7 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
   auto& second{operands.at(1)};
 
   llvm::Value* lhs{operand2llvm(first)};
@@ -324,15 +340,153 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
   m_locals.emplace(result_id, sub_result);
 }
 
+auto LlvmBackend::on_imul(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateMul(lhs, rhs, "mul_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_idiv(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateSDiv(lhs, rhs, "mul_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_imod(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateSRem(lhs, rhs, "mod_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_ineg(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+
+  llvm::Value* sub_result = m_builder->CreateNeg(lhs, "ineg_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_icmp_lte(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpSLE(lhs, rhs, "ilte_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_lt(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpSLT(lhs, rhs, "ilt_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_eq(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpEQ(lhs, rhs, "ieq_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_ne(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpNE(lhs, rhs, "ine_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
 auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  // auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  // auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
   // auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
 
-  auto first{operands.front()};
+  auto first{operands.at(0)};
   auto second{operands.at(1)};
 
   auto* lhs{operand2llvm(first)};
@@ -351,7 +505,7 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
   auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
 
   auto* lhs{m_locals.at(first)};
@@ -366,7 +520,7 @@ auto LlvmBackend::on_bind(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{operand2llvm(first)};
 
@@ -391,7 +545,7 @@ auto LlvmBackend::on_update(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{nullptr};
   if(std::holds_alternative<LocalVarPtr>(first)) {
@@ -409,7 +563,7 @@ auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
   auto var_ptr(std::get<LocalVarPtr>(first));
   auto* val = m_locals.at(var_ptr->m_id);
 
@@ -428,7 +582,7 @@ auto LlvmBackend::on_jmp(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto label{std::get<mir::Label>(operands.front()).m_target->m_label};
+  auto label{std::get<mir::Label>(operands.at(0)).m_target->m_label};
   auto bblock{m_bblocks.at(label)};
 
   m_builder->CreateBr(bblock);
@@ -438,7 +592,7 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{operand2llvm(first)};
 
@@ -483,7 +637,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
   // );
 
   // case Opcode::CONST_STRING: {
-  //   Literal literal{std::get<mir::Literal>(operands.front())};
+  //   Literal literal{std::get<mir::Literal>(operands.at(0))};
   //   auto str{std::get<std::string>(literal.m_value)};
 
   //   llvm::Constant* constant{
@@ -502,6 +656,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
     case Opcode::IADD:
+      on_isub(t_instr);
       break;
 
     case Opcode::ISUB:
@@ -509,21 +664,37 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
     case Opcode::IMUL:
+      on_imul(t_instr);
       break;
+
     case Opcode::IDIV:
+      on_idiv(t_instr);
       break;
+
     case Opcode::IMOD:
+      on_imod(t_instr);
       break;
+
     case Opcode::INEG:
+      on_ineg(t_instr);
       break;
+
     case Opcode::ICMP_LT:
+      on_icmp_lt(t_instr);
       break;
+
     case Opcode::ICMP_LTE:
+      on_icmp_lte(t_instr);
       break;
+
     case Opcode::ICMP_EQ:
+      on_icmp_eq(t_instr);
       break;
-    case Opcode::ICMP_NQ:
+
+    case Opcode::ICMP_NE:
+      on_icmp_ne(t_instr);
       break;
+
     case Opcode::ICMP_GT:
       on_icmp_gt(t_instr);
       break;
@@ -548,7 +719,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::FCMP_EQ:
       break;
-    case Opcode::FCMP_NQ:
+    case Opcode::FCMP_NE:
       break;
     case Opcode::FCMP_GT:
       break;

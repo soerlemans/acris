@@ -41,6 +41,7 @@ enum class TokenType {
   // User Types:
   ALIAS,
   ENUM,
+  IOTA,
   UNION,
   STRUCT,
   SELF,

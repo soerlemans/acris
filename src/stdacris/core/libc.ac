@@ -1,1 +1,2 @@
-// Acris bindings for libc cause I am lazy.
+// Acris bindings for libc.
+// As parsing C headers is not something we can do yet.

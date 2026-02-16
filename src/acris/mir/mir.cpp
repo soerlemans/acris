@@ -89,7 +89,7 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(ICMP_LT, "icmp_lt");
     MATCH(ICMP_LTE, "icmp_lte");
     MATCH(ICMP_EQ, "icmp_eq");
-    MATCH(ICMP_NQ, "icmp_nq");
+    MATCH(ICMP_NE, "icmp_ne");
     MATCH(ICMP_GT, "icmp_gt");
     MATCH(ICMP_GTE, "icmp_gte");
 
@@ -104,7 +104,7 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(FCMP_LT, "fcmp_lt");
     MATCH(FCMP_LTE, "fcmp_lte");
     MATCH(FCMP_EQ, "fcmp_eq");
-    MATCH(FCMP_NQ, "fcmp_nq");
+    MATCH(FCMP_NE, "fcmp_ne");
     MATCH(FCMP_GT, "fcmp_gt");
     MATCH(FCMP_GTE, "fcmp_gte");
 
