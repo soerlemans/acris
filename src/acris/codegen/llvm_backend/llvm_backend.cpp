@@ -8,6 +8,13 @@
 #include <vector>
 
 // Library Includes:
+#include "clang/Driver/Compilation.h"
+#include "clang/Frontend/TextDiagnosticPrinter.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/VirtualFileSystem.h"
+#include <clang/Driver/Driver.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <lld/Common/Driver.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
@@ -28,6 +35,11 @@
 
 // Local Includes:
 #include "type2llvm.hpp"
+
+// Make sure the ELF driver exists.
+LLD_HAS_DRIVER(elf);
+LLD_HAS_DRIVER(wasm);
+LLD_HAS_DRIVER(macho);
 
 namespace codegen::llvm_backend {
 // Using:
@@ -944,6 +956,43 @@ auto LlvmBackend::requires_mir() -> bool
   return true;
 }
 
+auto LlvmBackend::invoke_clang_driver(const char* t_tmp_obj, const char* t_out)
+  -> void
+{
+  using namespace clang;
+  using namespace clang::driver;
+
+  IntrusiveRefCntPtr<DiagnosticOptions> diag_opts{new DiagnosticOptions()};
+  diag_opts->ShowColors = 1; // TODO: Toggle based on command line.
+
+
+  TextDiagnosticPrinter* diag_client{
+    new TextDiagnosticPrinter(llvm::errs(), &*diag_opts)};
+  IntrusiveRefCntPtr<DiagnosticIDs> diag_id(new DiagnosticIDs());
+  DiagnosticsEngine diags(diag_id, &*diag_opts, diag_client);
+
+  std::string target_triple = llvm::sys::getDefaultTargetTriple();
+  Driver clang_driver("clang", target_triple, diags);
+
+  std::vector<const char*> driver_args = {
+    "clang", t_tmp_obj, "-o", t_out,
+    "-fuse-ld=lld" // Tell the driver to use LLD internally
+  };
+
+  std::unique_ptr<Compilation> compile_job(
+    clang_driver.BuildCompilation(driver_args));
+
+  if(compile_job && !compile_job->containsError()) {
+    SmallVector<std::pair<int, const Command*>, 4> FailingCommands;
+    int result = clang_driver.ExecuteCompilation(*compile_job, FailingCommands);
+    if(result == 0) {
+      std::cout << std::format("Compiled {}!\n", t_out;
+    } else {
+      std::cerr << std::format("Failed to compile {}!\n", t_out);
+    }
+  }
+}
+
 //! FIXME: For now we do nothing with the @ref SymbolTable
 auto LlvmBackend::compile(CompileParams& t_params) -> void
 {
@@ -952,24 +1001,37 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
 
   using mir::mir_pass::MirPassParams;
 
-  const auto& [ast, mir_module, build_dir, source_path] = t_params;
+  auto [ast, mir_module, build_dir, source_path] = t_params;
 
   // FIXME: Check mir_module for nullptr.
 
-  fs::path stem{source_path.stem()};
-  const fs::path tmp_src{build_dir / stem.concat(".ll")};
+  // Handle encoding and similar.
+  source_path.make_preferred();
+  build_dir.make_preferred();
+
+  const fs::path stem{source_path.stem()};
+
+  fs::path tmp_src{build_dir / stem};
+  tmp_src.replace_extension(".ll");
+
+  fs::path tmp_obj{build_dir / stem};
+  tmp_obj.replace_extension(".o");
+
+  fs::path out{stem};
+  out += ".out";
 
   // Log filepath's:
   DBG_INFO("build_dir: ", build_dir);
   DBG_INFO("tmp_src: ", tmp_src);
+  DBG_INFO("tmp_obj: ", tmp_obj);
 
   // Initialize the LLVM target.
   initialize_target();
 
   // Obtain filehandle to destination file
-  const auto filename{tmp_src.c_str()};
+  const auto path_obj{tmp_obj.c_str()};
   std::error_code err_code{};
-  raw_fd_ostream dest{filename, err_code, sys::fs::OF_None};
+  raw_fd_ostream dest{path_obj, err_code, sys::fs::OF_None};
 
   if(err_code) {
     errs() << "Could not open file: " << err_code.message();
@@ -993,14 +1055,16 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
   const auto features{""};
 
   TargetOptions opt{};
-  std::optional<Reloc::Model> reloc_model{};
+  auto reloc_model{std::optional<llvm::Reloc::Model>(llvm::Reloc::PIC_)};
   auto target_machine{
     target->createTargetMachine(target_str, cpu, features, opt, reloc_model)};
 
+  m_module->setDataLayout(target_machine->createDataLayout());
+
   // Write object file:
-  legacy::PassManager pass{};
+  legacy::PassManager llvm_pass{};
   const auto fype{CGFT_ObjectFile};
-  if(target_machine->addPassesToEmitFile(pass, dest, nullptr, fype)) {
+  if(target_machine->addPassesToEmitFile(llvm_pass, dest, nullptr, fype)) {
     errs() << "target_machine can't emit a file of this type";
     return; // TODO: Fix
   }
@@ -1016,22 +1080,19 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
     return; // Exit or handle the error appropriately
   }
 
-  //
-  pass.run(*m_module);
+  // Write LLVM IR to a file.
+  const auto path_src{tmp_src.c_str()};
+  raw_fd_ostream dest_src{path_src, err_code, sys::fs::OF_None};
+  m_module->print(dest_src, nullptr);
+
+  // Write to object file.
+  llvm_pass.run(*m_module);
   dest.flush();
 
   // Close so that the permissions can be set
   dest.close();
 
-  // Make object file executable:
-  const perms permissions{others_write | all_read | all_exe};
-  err_code = setPermissions(tmp_src.c_str(), permissions);
-
-  errs() << err_code.message() << " Done...\n";
-
-  if(err_code) {
-    errs() << "Could not change file permissions: " << err_code.message();
-    return;
-  }
+	// Compile produced IR.
+  invoke_clang_driver(tmp_obj.c_str(), out.c_str());
 }
 } // namespace codegen::llvm_backend

@@ -21,11 +21,11 @@ using node_traits::TypeData;
 // Classes:
 class Enum : public Identifier,
              public Body,
-             public TypeAnnotation,
              public AttributeData,
+             public TypeAnnotation,
              public TypeData {
   public:
-  Enum(std::string_view t_identifier, NodeListPtr&& t_body);
+  Enum(std::string_view t_identifier, NodePtr&& t_annot, NodeListPtr&& t_body);
 
   AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(Enum, Identifier, Body, TypeAnnotation)
   AST_VISITOR_MAKE_VISITABLE(visitor::NodeVisitor);

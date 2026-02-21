@@ -6,6 +6,7 @@ find_package(
 	17.0.6
 	CONFIG
 	REQUIRED
+	# COMPONENTS lld
 )
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -24,13 +25,3 @@ target_link_libraries(
 	${TARGET_ACRIS_LIB}
 	PUBLIC LLVM-17
 )
-
-#target_link_libraries(
-#	${TARGET_ACRIS_LIB}
-#  lldCommon
-#  lldCOFF
-#  lldELF
-#  lldMachO
-#  lldMinGW
-#  lldWasm
-#)

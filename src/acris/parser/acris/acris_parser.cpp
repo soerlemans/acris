@@ -592,6 +592,22 @@ auto AcrisParser::self() -> NodePtr
 }
 
 // Enum:
+auto AcrisParser::enum_field() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  return node;
+}
+
+auto AcrisParser::enum_field_list() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodeListPtr nodes{};
+
+  return nodes;
+}
+
 auto AcrisParser::enum_def() -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -603,13 +619,19 @@ auto AcrisParser::enum_def() -> NodePtr
     const auto id{expect(TokenType::IDENTIFIER).str()};
     newline_opt();
 
-    auto members{accolades([this] {
+    // If type defined.
+    NodePtr type{};
+    if(next_if(TokenType::SEMICOLON)) {
+      type = m_type.type_expr();
+    }
+
+    auto fields{accolades([this] {
       newline_opt();
 
-      return member_decl_list();
+      return enum_field_list();
     })};
 
-    node = make_node<Struct>(id, std::move(members));
+    node = make_node<Enum>(id, std::move(type), std::move(fields));
   }
 
   return node;

@@ -140,6 +140,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto set_passess() -> void;
 
   auto requires_mir() -> bool override;
+
+	auto invoke_clang_driver(const char* t_tmp_obj, const char* t_out) -> void;
   auto compile(CompileParams& t_params) -> void override;
 
   virtual ~LlvmBackend() = default;

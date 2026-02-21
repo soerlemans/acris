@@ -1,7 +1,11 @@
 #include "enum.hpp"
 
 namespace ast::node::user_types {
-Enum::Enum(const std::string_view t_identifier, NodeListPtr&& t_body)
-  : Identifier{t_identifier}, Body{std::move(t_body)}, TypeData{}
+Enum::Enum(const std::string_view t_identifier, NodePtr&& t_annot,
+           NodeListPtr&& t_body)
+  : Identifier{t_identifier},
+    TypeAnnotation{std::move(t_annot)},
+    Body{std::move(t_body)},
+    TypeData{}
 {}
 } // namespace ast::node::user_types

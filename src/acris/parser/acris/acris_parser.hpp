@@ -104,6 +104,8 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   virtual auto self() -> NodePtr;
 
   // Enum my beloved:
+  virtual auto enum_field() -> NodePtr;
+  virtual auto enum_field_list() -> NodeListPtr;
   virtual auto enum_def() -> NodePtr;
 
   // Function:
