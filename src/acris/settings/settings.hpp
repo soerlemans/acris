@@ -10,6 +10,7 @@
 // Absolute Includes:
 #include "acris/codegen/backend_interface.hpp"
 #include "acris/debug/loglevel.hpp"
+#include "acris/unit/session_unit.hpp"
 
 // Local Includes:
 #include "cli.hpp"
@@ -22,11 +23,11 @@ namespace fs = std::filesystem;
 using codegen::Backend;
 using codegen::Optimize;
 using debug::LogLevel;
+using unit::MacroDefs;
+using unit::MacroUndefs;
 
 using FileVec = std::vector<fs::path>;
 using StringVec = std::vector<std::string>;
-using MacroDefs = std::map<std::string, std::string>;
-using MacroUndefs = std::set<std::string>;
 using InteropBackendVec = std::vector<codegen::InteropBackend>;
 
 // using InteropBackendVec = std::vector<>;

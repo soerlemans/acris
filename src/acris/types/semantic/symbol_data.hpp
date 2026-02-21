@@ -30,6 +30,7 @@ using types::core::TypeVariant;
 using Variant = std::variant<
 	std::monostate,
 	NativeType,
+	EnumTypePtr,
 	StructTypePtr,
 	FnTypePtr,
 	PointerTypePtr,

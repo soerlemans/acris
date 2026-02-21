@@ -93,6 +93,8 @@ STUB(Array)
 STUB(TypeName)
 
 // User Types:
+STUB(EnumField)
+STUB(Enum)
 STUB(Method)
 STUB(MethodCall)
 STUB(Interface)

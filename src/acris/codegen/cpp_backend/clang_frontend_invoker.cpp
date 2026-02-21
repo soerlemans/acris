@@ -25,11 +25,6 @@ ClangFrontendInvoker::ClangFrontendInvoker(): m_compiler_flags{}, m_out{}
 
   // Add C++23 standard flag.
   add_flags("-std=c++23"sv);
-
-  // Always link against our static library, it must be installed.
-  // add_flags("-nolibc"sv);
-  add_flags("-nostdlib"sv);
-  add_flags("-lstdacris"sv);
 }
 
 auto ClangFrontendInvoker::add_flags(const std::string_view t_str) -> void

@@ -15,6 +15,19 @@ using namespace types::symbol;
 using namespace std::literals::string_view_literals;
 
 // Functions:
+auto operator<<(std::ostream& t_os, EnumTypePtr t_enum) -> std::ostream&
+{
+  if(t_enum) {
+    t_os << "TODO!!!!";
+  } else {
+    DBG_ERROR("(EnumTypePtr) nullptr!");
+
+    t_os << "nullptr";
+  }
+
+  return t_os;
+}
+
 auto operator<<(std::ostream& t_os, StructTypePtr t_struct) -> std::ostream&
 {
   // TODO: Redo these operator<< functions they are outdated.

@@ -934,6 +934,30 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 }
 
 // User Types:
+auto SemanticChecker::visit(EnumField* t_field) -> Any
+{
+  return {};
+}
+
+auto SemanticChecker::visit(Enum* t_enum) -> Any
+{
+  const auto type{node2symbol_data(t_enum->type())};
+  const auto enum_body{t_enum->body()};
+
+  // Annotate AST.
+  m_annot_queue.push({t_enum, type});
+
+
+  // MemberMap members{};
+  for(const auto& node : *enum_body) {
+    const auto* enum_field{dynamic_cast<EnumField*>(node.get())};
+    DEBUG_ASSERT(enum_field != nullptr,
+                 R"(Was unable to cast to "*EnumField"!)");
+  }
+
+  return {};
+}
+
 auto SemanticChecker::visit(Method* t_meth) -> Any
 {
   using types::symbol::make_function;

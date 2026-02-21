@@ -1,44 +1,79 @@
 module methods_module
 
-let magic_num = 100
+// Standard C-style comments (perfection).
 
-struct ExampleStruct {
-  m_num1: int
+/*
+ * More perfection.
+ */
+
+// Unhygienic macros start with #<.
+#<include_once <core/linux/core.ac>
+#<include_once "some.ac"
+
+// Let for immutable variables.
+let NMAX = 100
+var count = 0
+
+// Block init declarations.
+let (
+  VAR1: i8 = -1
+  VAR2: i8 = -2
+)
+
+// Enum:
+enum Error: u8 {
+  EINVAL,
+  EPERM
+  // Etc.
 }
 
-func (ExampleStruct) set() -> int {
-  self.m_num1 = 20
-
-  return -1
+// Struct:
+struct Struct {
+  m_member1: int
+  m_member2: int
 }
 
-func init_example_struct() -> ExampleStruct {
-  var example: ExampleStruct
+func (Struct) set() -> int {
+  self.m_member1 = -20
 
-  example.m_num1 = 10
-
-  return example
+  return self.m_member1
 }
 
+// Interface implementation.
+func (Struct: Interface) set() -> int {
+  self.m_member1 = -20
 
-func pass_example_struct(param: ExampleStruct) -> ExampleStruct{
-  var example: ExampleStruct
+  return self.m_member1
+}
 
-  param.m_num1 = 200
+// Also allowed:
+func (Struct: Interface)
+set() -> int {
+  self.m_member1 = -20
 
-  return param
+  return self.m_member1
+}
+
+// Attribute C++ style:
+[[extern("C")]]
+func exit(status: int)
+
+// Block attribute application:
+[[extern("C")]] {
+  func exit(status: int)
 }
 
 func main() -> int {
-  // var example: ExampleStruct = init_example_struct()
   var example: ExampleStruct
-  example = init_example_struct()
+  var example2 = ExampleStruct{10, 20}
 
-  init_example_struct()
-
-  let returned_example = pass_example_struct(example)
+  // C-style aggregate initialization.
+  var example2 = ExampleStruct{.m_member1 = 20, .m_member2 = 20}
 
   let test = example.set()
+
+  // C++ Destructured bindings.
+  let [m1, m2] = example
 
   return test
 }

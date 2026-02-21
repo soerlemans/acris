@@ -887,7 +887,7 @@ auto CppBackend::requires_mir() -> bool
 
 auto CppBackend::compile(CompileParams& t_params) -> void
 {
-  const auto& [ast, mir, build_dir, source_path] = t_params;
+  const auto& [session, ast, mir, build_dir, source_path] = t_params;
 
   fs::path stem{source_path.stem()};
   const fs::path tmp_src{build_dir / stem.concat(".cpp")};
@@ -898,6 +898,13 @@ auto CppBackend::compile(CompileParams& t_params) -> void
 
   // Generate C++ source file.
   codegen(ast, tmp_src);
+
+	// Allow optional toggling libc.
+  if(session->no_libc()) {
+    // Always link against our static library, it must be installed.
+    m_inv.add_flags("-nostdlib");
+    m_inv.add_flags("-lstdacris");
+  }
 
   // Invoke clang frontend to generate a binary.
   m_inv.compile(tmp_src);

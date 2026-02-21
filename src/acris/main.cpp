@@ -40,7 +40,7 @@ static auto run(const settings::Settings& t_settings) -> void
   using unit::make_session_unit;
   using unit::TranslationUnit;
 
-  auto session{make_session_unit(t_settings)};
+  auto session{make_session_unit(t_settings.m_mdefs, t_settings.m_no_libc)};
 
   // Init build unit.
   BuildUnitParams params{

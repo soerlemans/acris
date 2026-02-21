@@ -150,7 +150,7 @@ auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 auto LlvmBackend::operand2llvm(const Operand& t_operand,
                                const std::string_view t_id) -> llvm::Value*
 {
-  DBG_WARNING("Operand: ", t_operand);
+  DBG_VERBOSE("Operand: ", t_operand);
 
   llvm::Value* val{nullptr};
   if(std::holds_alternative<Literal>(t_operand)) {
@@ -986,7 +986,7 @@ auto LlvmBackend::invoke_clang_driver(const char* t_tmp_obj, const char* t_out)
     SmallVector<std::pair<int, const Command*>, 4> FailingCommands;
     int result = clang_driver.ExecuteCompilation(*compile_job, FailingCommands);
     if(result == 0) {
-      std::cout << std::format("Compiled {}!\n", t_out;
+      std::cout << std::format("Compiled {}!\n", t_out);
     } else {
       std::cerr << std::format("Failed to compile {}!\n", t_out);
     }
@@ -1001,7 +1001,7 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
 
   using mir::mir_pass::MirPassParams;
 
-  auto [ast, mir_module, build_dir, source_path] = t_params;
+  auto [session, ast, mir_module, build_dir, source_path] = t_params;
 
   // FIXME: Check mir_module for nullptr.
 
@@ -1092,7 +1092,7 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
   // Close so that the permissions can be set
   dest.close();
 
-	// Compile produced IR.
+  // Compile produced IR.
   invoke_clang_driver(tmp_obj.c_str(), out.c_str());
 }
 } // namespace codegen::llvm_backend

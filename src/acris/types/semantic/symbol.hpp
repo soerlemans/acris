@@ -11,6 +11,7 @@ namespace types::symbol {
 // Forward Declarations:
 class SymbolData;
 
+struct EnumType;
 struct StructType;
 struct FnType;
 struct PointerType;
@@ -18,6 +19,7 @@ struct ArrayType;
 struct VarType;
 
 // Aliases:
+using EnumTypePtr = std::shared_ptr<EnumType>;
 using StructTypePtr = std::shared_ptr<StructType>;
 using FnTypePtr = std ::shared_ptr<FnType>;
 using PointerTypePtr = std::shared_ptr<PointerType>;
@@ -28,6 +30,8 @@ using SymbolDataList = std::list<SymbolData>;
 } // namespace types::symbol
 
 // Functions:
+auto operator<<(std::ostream& t_os, types::symbol::EnumTypePtr t_enum)
+  -> std::ostream&;
 auto operator<<(std::ostream& t_os, types::symbol::StructTypePtr t_struct)
   -> std::ostream&;
 auto operator<<(std::ostream& t_os, types::symbol::FnTypePtr t_fn)

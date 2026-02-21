@@ -6,6 +6,38 @@
 
 // Using Statements:
 namespace types::symbol {
+// EnumType:
+auto EnumType::resolve_result_type() const -> SymbolData
+{
+  // using types::symbol::make_enum;
+
+  // return make_enum(*this);
+
+  return *this;
+}
+
+auto EnumType::native_type() const -> NativeTypeOpt
+{
+  return {};
+}
+
+auto EnumType::type_variant() const -> TypeVariant
+{
+  // using types::core::make_struct;
+
+  // types::core::MemberMap member_map{};
+  // for(auto& [id, data] : m_members) {
+  //   member_map.emplace(id, data.type_variant());
+  // }
+
+  // types::core::MemberMap method_map{};
+  // for(auto& [id, data] : m_methods) {
+  //   method_map.emplace(id, data.type_variant());
+  // }
+
+  // return {make_struct(m_identifier, member_map, method_map)};
+}
+
 // StructType:
 auto StructType::resolve_result_type() const -> SymbolData
 {

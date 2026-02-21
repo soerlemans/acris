@@ -570,6 +570,8 @@ auto AcrisParser::type_def() -> NodePtr
 
   if(auto ptr{struct_def()}; ptr) {
     node = std::move(ptr);
+  } else if(auto ptr{enum_def()}; ptr) {
+    node = std::move(ptr);
   }
 
   return node;
@@ -597,15 +599,43 @@ auto AcrisParser::enum_field() -> NodePtr
   DBG_TRACE_FN(VERBOSE);
   NodePtr node{};
 
+  const auto token{get_token()};
+  if(next_if(TokenType::IDENTIFIER)) {
+    const auto id{token.str()};
+
+    NodePtr expr{};
+    if(next_if(TokenType::ASSIGNMENT)) {
+
+      expr = m_pratt.expr();
+    }
+
+    node = make_node<EnumField>(id, std::move(expr));
+  }
+
   return node;
 }
 
-auto AcrisParser::enum_field_list() -> NodePtr
+auto AcrisParser::enum_field_list() -> NodeListPtr
 {
   DBG_TRACE_FN(VERBOSE);
-  NodeListPtr nodes{};
 
-  return nodes;
+  return list_of([this] {
+    auto node{enum_field()};
+
+    if(next_if(TokenType::COMMA)) {
+      newline_opt(); // Remove newlines.
+    } else {
+      if(check(TokenType::ACCOLADE_CLOSE)) {
+        return node;
+      } else {
+        // If Comma is not present and we dont find end of enum body.
+        // We should throw as the enum is malformed.
+        throw_syntax_error("Expected a comma for next enum field.");
+      }
+    }
+
+    return node;
+  });
 }
 
 auto AcrisParser::enum_def() -> NodePtr
@@ -621,7 +651,7 @@ auto AcrisParser::enum_def() -> NodePtr
 
     // If type defined.
     NodePtr type{};
-    if(next_if(TokenType::SEMICOLON)) {
+    if(next_if(TokenType::COLON)) {
       type = m_type.type_expr();
     }
 
@@ -1085,6 +1115,10 @@ auto AcrisParser::parse() -> NodePtr
   // If we are not at EOS, then we didnt parse everything.
   // Which is a parsing error or syntax error.
   // As the entirety of the token stream should be parsed and accounted for.
+  if(!eos()) {
+    // Possibly this should be an exception and not a SyntaxError.
+    throw_syntax_error("End of file reached without parsing everything.");
+  }
 
   return ast;
 }

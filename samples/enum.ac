@@ -1,0 +1,12 @@
+module enum_module
+
+enum Color: u8 {
+  RED = 0,
+  BLUE,
+  GREEN,
+}
+
+func main() -> int {
+
+  return 0
+}

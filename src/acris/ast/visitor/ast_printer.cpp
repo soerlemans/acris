@@ -376,6 +376,9 @@ auto AstPrinter::visit(TypeName* t_type) -> Any
 }
 
 // User Types:
+DEFINE_PRINTER_METHOD(EnumField)
+DEFINE_PRINTER_METHOD(Enum)
+
 auto AstPrinter::visit(Method* t_meth) -> Any
 {
   COUNTG_INIT();

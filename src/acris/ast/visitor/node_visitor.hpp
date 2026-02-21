@@ -100,6 +100,8 @@ class NodeVisitor {
   virtual auto visit(node::builtin_types::TypeName* t_type) -> Any;
 
   // User Types:
+  virtual auto visit(node::user_types::EnumField* t_field) -> Any;
+  virtual auto visit(node::user_types::Enum* t_enum) -> Any;
   virtual auto visit(node::user_types::Method* t_meth) -> Any;
   virtual auto visit(node::user_types::MethodCall* t_meth_call) -> Any;
   virtual auto visit(node::user_types::Interface* t_ifc) -> Any;

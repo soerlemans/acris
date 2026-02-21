@@ -20,10 +20,10 @@ using node_traits::TypeData;
 
 // Classes:
 class Enum : public Identifier,
-             public Body,
-             public AttributeData,
              public TypeAnnotation,
-             public TypeData {
+             public Body,
+             public TypeData,
+						 public AttributeData {
   public:
   Enum(std::string_view t_identifier, NodePtr&& t_annot, NodeListPtr&& t_body);
 

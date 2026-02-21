@@ -6,6 +6,7 @@ Enum::Enum(const std::string_view t_identifier, NodePtr&& t_annot,
   : Identifier{t_identifier},
     TypeAnnotation{std::move(t_annot)},
     Body{std::move(t_body)},
-    TypeData{}
+    TypeData{},
+    AttributeData{}
 {}
 } // namespace ast::node::user_types
