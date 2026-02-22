@@ -4,4 +4,5 @@ target_sources(${TARGET_ACRIS_LIB} PRIVATE
 	let.cpp
 	variable.cpp
 	subscript.cpp
+	scope_resolution.cpp
 )

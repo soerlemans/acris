@@ -8,5 +8,5 @@ enum Color: u8 {
 
 func main() -> int {
 
-  return 0
+  return Color::RED
 }

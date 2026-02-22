@@ -3,8 +3,9 @@
 
 // Lvalue:
 #include "let.hpp"
+#include "scope_resolution.hpp"
+#include "subscript.hpp"
 #include "var.hpp"
 #include "variable.hpp"
-#include "subscript.hpp"
 
 #endif // ACRIS_ACRIS_AST_NODE_LVALUE_INCLUDE_HPP
