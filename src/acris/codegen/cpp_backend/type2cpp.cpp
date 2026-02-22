@@ -142,6 +142,10 @@ auto type_spec2cpp(const TypeSpec t_spec) -> std::string
 						[&](const NativeType t_native) {
 							return native_type2cpp(t_native);
 						},
+						[&](const EnumTypePtr& t_enum) {
+							// return struct2cpp(t_struct); TODO: For enum.
+							return std::string{};
+						},
 						[&](const StructTypePtr& t_struct) {
 							return struct2cpp(t_struct);
 						},

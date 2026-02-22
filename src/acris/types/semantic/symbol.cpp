@@ -18,7 +18,17 @@ using namespace std::literals::string_view_literals;
 auto operator<<(std::ostream& t_os, EnumTypePtr t_enum) -> std::ostream&
 {
   if(t_enum) {
-    t_os << "TODO!!!!";
+    t_os << "(enum ut: {" << t_enum->m_underlying_type << "} ";
+
+    t_os << '{';
+    std::string_view sep{""};
+    for(auto&& field : t_enum->m_fields) {
+      t_os << sep << field;
+
+      sep = ", ";
+    }
+
+    t_os << "})";
   } else {
     DBG_ERROR("(EnumTypePtr) nullptr!");
 

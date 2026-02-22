@@ -17,6 +17,11 @@ auto TypeVariant::is_native_type() const -> bool
   return std::holds_alternative<NativeType>(*this);
 }
 
+auto TypeVariant::is_enum() const -> bool
+{
+  return std::holds_alternative<EnumTypePtr>(*this);
+}
+
 auto TypeVariant::is_struct() const -> bool
 {
   return std::holds_alternative<StructTypePtr>(*this);
@@ -47,6 +52,10 @@ auto TypeVariant::as_native_type() const -> NativeType
   return std::get<NativeType>(*this);
 }
 
+auto TypeVariant::as_enum() const -> EnumTypePtr
+{
+  return std::get<EnumTypePtr>(*this);
+}
 
 auto TypeVariant::as_struct() const -> StructTypePtr
 {

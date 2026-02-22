@@ -13,9 +13,19 @@ namespace types::core {
 using types::core::NativeType;
 
 // Aliases:
-// TODO: Add monostate.
-using Variant = std::variant<NativeType, StructTypePtr, FnTypePtr,
-                             PointerTypePtr, ArrayTypePtr, VarTypePtr>;
+// clang-format off
+//! Monostate is not permitted for the @ref TypeVariant itself.
+using Variant = std::variant<
+	NativeType,
+	EnumTypePtr,
+	StructTypePtr,
+	FnTypePtr,
+  PointerTypePtr,
+	ArrayTypePtr,
+	VarTypePtr
+>;
+
+// clang-format on
 
 // Classes:
 // FIXME: We probably should probably not inherit from Variant.
@@ -31,6 +41,7 @@ class TypeVariant : public Variant {
   using Variant::Variant;
 
   auto is_native_type() const -> bool;
+  auto is_enum() const -> bool;
   auto is_struct() const -> bool;
   auto is_function() const -> bool;
   auto is_ptr() const -> bool;
@@ -38,6 +49,7 @@ class TypeVariant : public Variant {
   auto is_var() const -> bool;
 
   auto as_native_type() const -> NativeType;
+  auto as_enum() const -> EnumTypePtr;
   auto as_struct() const -> StructTypePtr;
   auto as_function() const -> FnTypePtr;
   auto as_ptr() const -> PointerTypePtr;

@@ -99,7 +99,7 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<InitExpr>(t_ptr, [&](auto t_ptr) {
-      lambda("Init Expr", t_ptr->init_expr());
+      lambda("InitExpr", t_ptr->init_expr());
     });
 
     when_derived<Condition>(t_ptr, [&](auto t_ptr) {
@@ -115,7 +115,7 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<TypeAnnotation>(t_ptr, [&](auto t_ptr) {
-      lambda("Type Annotation: ", t_ptr->type());
+      lambda("TypeAnnotation: ", t_ptr->type());
 
       // print("| Type Annotation:");
 
@@ -128,11 +128,11 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<TypeData>(t_ptr, [&](auto t_ptr) {
-      print("| Type Data: ", t_ptr->get_type());
+      print("| TypeData: ", t_ptr->get_type());
     });
 
     when_derived<AttributeData>(t_ptr, [&](auto t_ptr) {
-      print("| Attribute Data: ", t_ptr->get_attributes());
+      print("| AttributeData: ", t_ptr->get_attributes());
     });
 
     when_derived<Body>(t_ptr, [&](auto t_ptr) {

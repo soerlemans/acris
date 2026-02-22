@@ -90,17 +90,20 @@ auto SymbolData::as_var() const -> VarTypePtr
 
 auto SymbolData::is_struct() const -> bool
 {
-  return std::holds_alternative<StructTypePtr>(*this);;
+  return std::holds_alternative<StructTypePtr>(*this);
+  ;
 }
 
 auto SymbolData::is_ptr() const -> bool
 {
-  return std::holds_alternative<PointerTypePtr>(*this);;
+  return std::holds_alternative<PointerTypePtr>(*this);
+  ;
 }
 
 auto SymbolData::is_array() const -> bool
 {
-  return std::holds_alternative<ArrayTypePtr>(*this);;
+  return std::holds_alternative<ArrayTypePtr>(*this);
+  ;
 }
 
 auto SymbolData::is_mutable() const -> bool
@@ -214,6 +217,7 @@ auto SymbolData::operator==(const SymbolData& t_rhs) const -> bool
         // clang-format off
       } else if constexpr(
 				 lib::IsAnyOf<L,
+				   EnumTypePtr,
 					 StructTypePtr, FnTypePtr,
            PointerTypePtr, ArrayTypePtr, VarTypePtr
 				 >) {

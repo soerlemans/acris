@@ -38,15 +38,17 @@ enum class Mutability {
 
 // Structs:
 struct EnumType {
+	std::string m_identifier;
+
   SymbolData m_underlying_type;
-  IdentifierSet m_enums;
+  IdentifierSet m_fields;
 
   auto resolve_result_type() const -> SymbolData;
 
   auto native_type() const -> NativeTypeOpt;
   auto type_variant() const -> TypeVariant;
 
-  auto operator==(const StructType&) const -> bool = default;
+  auto operator==(const EnumType&) const -> bool = default;
 };
 
 // TODO: use VarTypePtr and FnTypePtr in combination with a map?

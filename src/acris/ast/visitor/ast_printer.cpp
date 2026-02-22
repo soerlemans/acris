@@ -384,7 +384,7 @@ auto AstPrinter::visit(Method* t_meth) -> Any
   COUNTG_INIT();
 
   print_hl("Method");
-  print("Receiver Type: ", t_meth->get_receiver());
+  print("ReceiverType: ", t_meth->get_receiver());
   print_traits(t_meth);
 
   return {};

@@ -9,11 +9,9 @@ namespace types::symbol {
 // EnumType:
 auto EnumType::resolve_result_type() const -> SymbolData
 {
-  // using types::symbol::make_enum;
+  using types::symbol::make_enum;
 
-  // return make_enum(*this);
-
-  return *this;
+  return make_enum(*this);
 }
 
 auto EnumType::native_type() const -> NativeTypeOpt
@@ -23,19 +21,14 @@ auto EnumType::native_type() const -> NativeTypeOpt
 
 auto EnumType::type_variant() const -> TypeVariant
 {
-  // using types::core::make_struct;
+  using types::core::make_enum;
 
-  // types::core::MemberMap member_map{};
-  // for(auto& [id, data] : m_members) {
-  //   member_map.emplace(id, data.type_variant());
-  // }
+  types::core::IdentifierSet id_set{};
+  for(auto&& field : m_fields) {
+    id_set.emplace(field);
+  }
 
-  // types::core::MemberMap method_map{};
-  // for(auto& [id, data] : m_methods) {
-  //   method_map.emplace(id, data.type_variant());
-  // }
-
-  // return {make_struct(m_identifier, member_map, method_map)};
+  return {make_enum(m_identifier, m_underlying_type.type_variant(), id_set)};
 }
 
 // StructType:

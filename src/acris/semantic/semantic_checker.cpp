@@ -936,24 +936,53 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 // User Types:
 auto SemanticChecker::visit(EnumField* t_field) -> Any
 {
+  // Nothing to semantically validate yet, until iota comes along.
+  // The value of an enum should be computed at compile time.
+
+  // Also check for enum overflow values.
+
   return {};
 }
 
 auto SemanticChecker::visit(Enum* t_enum) -> Any
 {
-  const auto type{node2symbol_data(t_enum->type())};
+  using types::symbol::IdentifierSet;
+  using types::symbol::make_enum;
+
+  const std::string enum_id{t_enum->identifier()};
+  const auto type{t_enum->type()}; // Underlying type.
+
+  // Default type for enums is an int.
+  // TODO: Have enum fields decide the underlying enum type.
+  SymbolData enum_ut{NativeType::INT};
+
+  // Underlying type can be optionally specified.
+  if(type) {
+    enum_ut = node2symbol_data(type);
+  }
+
   const auto enum_body{t_enum->body()};
 
-  // Annotate AST.
-  m_annot_queue.push({t_enum, type});
-
-
-  // MemberMap members{};
+  IdentifierSet id_set{};
   for(const auto& node : *enum_body) {
     const auto* enum_field{dynamic_cast<EnumField*>(node.get())};
     DEBUG_ASSERT(enum_field != nullptr,
                  R"(Was unable to cast to "*EnumField"!)");
+
+    // TODO: Check if iota, is only used once.
+
+    // Store enum identifier names.
+    id_set.emplace(enum_field->identifier());
   }
+
+  const auto enum_data{make_enum(enum_id, enum_ut, id_set)};
+
+  add_symbol_definition(enum_id, enum_data);
+
+  DBG_INFO("Enum: ", enum_data);
+
+  // Annotate AST.
+  m_annot_queue.push({t_enum, enum_data});
 
   return {};
 }

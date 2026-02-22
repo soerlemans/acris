@@ -602,6 +602,41 @@ auto CppBackend::visit([[maybe_unused]] Boolean* t_bool) -> Any
 }
 
 // User Types:
+auto CppBackend::visit(EnumField* t_field) -> Any
+{
+  const auto field_id{t_field->identifier()};
+  const auto field_expr{t_field->expr()};
+
+  std::ostringstream oss{};
+
+  oss << field_id;
+
+  if(field_expr) {
+    // Resolve assignment expression.
+    oss << " = " << resolve(field_expr);
+  }
+
+  oss << ", ";
+
+  return oss.str();
+}
+
+auto CppBackend::visit(Enum* t_enum) -> Any
+{
+  const auto enum_id{t_enum->identifier()};
+  const auto enum_type{t_enum->get_type().as_enum()};
+  const auto enum_ut{type_spec2cpp({enum_type->m_underlying_type})};
+  const auto enum_body{t_enum->body()};
+
+  std::ostringstream oss{};
+
+  oss << "enum class" << enum_id << " : " << enum_ut << "{";
+  oss << resolve(enum_body);
+  oss << "};";
+
+  return oss.str();
+}
+
 auto CppBackend::visit(Method* t_meth) -> Any
 {
   using node::node_traits::AttributeType;
@@ -899,7 +934,7 @@ auto CppBackend::compile(CompileParams& t_params) -> void
   // Generate C++ source file.
   codegen(ast, tmp_src);
 
-	// Allow optional toggling libc.
+  // Allow optional toggling libc.
   if(session->no_libc()) {
     // Always link against our static library, it must be installed.
     m_inv.add_flags("-nostdlib");

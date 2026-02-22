@@ -153,6 +153,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto visit(node::rvalue::Boolean* t_bool) -> Any override;
 
   // User Types:
+  auto visit(node::user_types::EnumField* t_field) -> Any override;
+  auto visit(node::user_types::Enum* t_enum) -> Any override;
   auto visit(node::user_types::Method* t_meth) -> Any override;
   auto visit(node::user_types::MethodCall* t_meth_call) -> Any override;
   auto visit(node::user_types::Interface* t_ifc) -> Any override;
