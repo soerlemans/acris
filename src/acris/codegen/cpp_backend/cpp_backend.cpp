@@ -902,6 +902,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
   // similar.
   ofs << "// Prologue:\n";
   ofs << prologue() << '\n';
+  ofs << '\n';
 
   // Generate forward declarations, to make code position
   // independent. ofs << "// Protoypes:\n"; ofs << "// TODO:
@@ -910,6 +911,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
   // Generate C++ code.
   ofs << "// C++ code:\n";
   ofs << resolve(t_ast);
+  ofs << '\n';
 
   ofs << "// Epilogue:\n";
   ofs << epilogue() << '\n';

@@ -87,6 +87,10 @@ auto PrattParser::literal() -> NodePtr
     })};
 
     node = make_node<ArrayExpr>(list);
+  } else if(check(TokenType::IOTA)) {
+    m_delegate->context_check_enum();
+
+		throw_syntax_error("TODO: Implement iota.");
   }
 
   return node;

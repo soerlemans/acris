@@ -47,6 +47,7 @@ class AcrisParser : public Parser, public PrattParserDelegate {
    * @param[in] t_context Context to check for.
    */
   auto context_check(Context t_context) -> void;
+	auto context_check_enum() -> void;
 
   public:
   AcrisParser(TokenStream t_token_stream);

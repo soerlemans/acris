@@ -10,6 +10,7 @@ namespace parser::acris::context {
 enum class Context {
   LOOP,
   METHOD,
+  ENUM,
 };
 
 // Aliases:

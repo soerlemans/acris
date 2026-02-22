@@ -29,6 +29,11 @@ auto AcrisParser::context_check(const Context t_context) -> void
   }
 }
 
+auto AcrisParser::context_check_enum() -> void
+{
+  context_check(Context::ENUM);
+}
+
 // Public Methods:
 AcrisParser::AcrisParser(TokenStream t_token_stream)
   : AcrisParser{make_parser_context(std::move(t_token_stream))}
@@ -655,6 +660,8 @@ auto AcrisParser::enum_def() -> NodePtr
       type = m_type.type_expr();
     }
 
+    // Needed to enable iota.
+    CONTEXT_GUARD(ENUM);
     auto fields{accolades([this] {
       newline_opt();
 

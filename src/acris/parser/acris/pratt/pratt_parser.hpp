@@ -26,6 +26,8 @@ using RhsFn = std::function<NodePtr(TokenType)>;
 struct PrattParserDelegate {
   PrattParserDelegate() = default;
 
+	// Needed to check if we can use iota.
+  virtual auto context_check_enum() -> void = 0;
   virtual auto expr_list_opt() -> NodeListPtr = 0;
   virtual auto self() -> NodePtr = 0;
 
