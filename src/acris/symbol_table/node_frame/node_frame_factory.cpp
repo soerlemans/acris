@@ -97,7 +97,7 @@ auto NodeFrameFactory::visit(Var* t_var) -> Any
   return {};
 }
 
-AST_VISITOR_STUB(NodeFrameFactory, Variable)
+AST_VISITOR_STUB(NodeFrameFactory, IdentifierNode)
 
 // Operators:
 AST_VISITOR_STUB(NodeFrameFactory, Arithmetic)

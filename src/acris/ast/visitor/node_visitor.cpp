@@ -56,7 +56,7 @@ STUB(ReturnType)
 // LValue:
 STUB(Let)
 STUB(Var)
-STUB(Variable)
+STUB(IdentifierNode)
 STUB(Subscript)
 STUB(ScopeResolution)
 

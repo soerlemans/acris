@@ -56,7 +56,7 @@ class MirBuilder : public NodeVisitor {
   // Lvalue:
   auto visit(node::lvalue::Let* t_let) -> Any override;
   auto visit(node::lvalue::Var* t_var) -> Any override;
-  auto visit(node::lvalue::Variable* t_var) -> Any override;
+  auto visit(node::lvalue::IdentifierNode* t_id) -> Any override;
 
   // Meta:
   auto visit(node::meta::Attribute* t_attr) -> Any override;

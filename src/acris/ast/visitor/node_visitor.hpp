@@ -54,7 +54,7 @@ class NodeVisitor {
   // Lvalue:
   virtual auto visit(node::lvalue::Let* t_let) -> Any;
   virtual auto visit(node::lvalue::Var* t_var) -> Any;
-  virtual auto visit(node::lvalue::Variable* t_var) -> Any;
+  virtual auto visit(node::lvalue::IdentifierNode* t_id) -> Any;
   virtual auto visit(node::lvalue::Subscript* t_subscript) -> Any;
   virtual auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any;
 

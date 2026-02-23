@@ -40,8 +40,8 @@ auto PrattParser::lvalue() -> NodePtr
   } else if(next_if(TokenType::IDENTIFIER)) {
     const auto id{token.str()};
     const auto pos{token.position()};
-    DBG_TRACE_PRINT(INFO, "Found 'VARIABLE': ", id);
-    node = make_node<Variable>(pos, id);
+    DBG_TRACE_PRINT(INFO, "Found 'IDENTIFIER': ", id);
+    node = make_node<IdentifierNode>(pos, id);
   }
 
   return node;
@@ -338,7 +338,7 @@ auto PrattParser::infix_chain(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr
 
   // TODO: Eliminate as many dynamic_cast calls as possible.
   // Chain expressions can only be performed on the following:
-  const auto* is_variable{dynamic_cast<Variable*>(t_lhs.get())};
+  const auto* is_variable{dynamic_cast<IdentifierNode*>(t_lhs.get())};
   const auto* is_function_call{dynamic_cast<FunctionCall*>(t_lhs.get())};
   const auto* is_method_call{dynamic_cast<MethodCall*>(t_lhs.get())};
   const auto* is_member_access{dynamic_cast<MemberAccess*>(t_lhs.get())};

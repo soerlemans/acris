@@ -112,7 +112,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   // Lvalue:
   auto visit(node::lvalue::Let* t_let) -> Any override;
   auto visit(node::lvalue::Var* t_var) -> Any override;
-  auto visit(node::lvalue::Variable* t_var) -> Any override;
+  auto visit(node::lvalue::IdentifierNode* t_id) -> Any override;
   auto visit(node::lvalue::Subscript* t_subscript) -> Any override;
 
   // Meta:

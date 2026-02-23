@@ -99,12 +99,12 @@ DEFINE_PRINTER_METHOD(ReturnType)
 DEFINE_PRINTER_METHOD(Let)
 DEFINE_PRINTER_METHOD(Var)
 
-auto AstPrinter::visit(Variable* t_var) -> Any
+auto AstPrinter::visit(IdentifierNode* t_id) -> Any
 {
   COUNTG_INIT();
 
-  print_hl("Variable: ", t_var->identifier());
-  print_traits(t_var);
+  print_hl("IdentifierNode: ", t_id->identifier());
+  print_traits(t_id);
 
   return {};
 }

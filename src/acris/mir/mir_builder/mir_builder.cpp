@@ -318,10 +318,10 @@ auto MirBuilder::visit(Var* t_var) -> Any
   return {};
 }
 
-auto MirBuilder::visit(Variable* t_var) -> Any
+auto MirBuilder::visit(IdentifierNode* t_id) -> Any
 {
-  const auto name{t_var->identifier()};
-  const auto source_line{t_var->position().m_line};
+  const auto name{t_id->identifier()};
+  const auto source_line{t_id->position().m_line};
 
   // TODO: add casting of a variable if it differs from.
   // The source type.
@@ -479,8 +479,8 @@ auto MirBuilder::visit(Assignment* t_assign) -> Any
   const auto type{t_assign->get_type()};
   const auto source_line{t_assign->position().m_line};
 
-  // For now we need a dynamic_cast.
-  auto* lhs{dynamic_cast<Variable*>(left.get())};
+  // For now we need a dynamic_cast and assume a variable.
+  auto* lhs{dynamic_cast<IdentifierNode*>(left.get())};
   if(!lhs) {
     using lib::stdexcept::throw_unexpected_nullptr;
 

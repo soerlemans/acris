@@ -15,11 +15,6 @@ using node_traits::NodePosition;
 using node_traits::TypeData;
 
 // Classes:
-// TODO: Rename to NamedEntity, or IdentifierNode or similar.
-// As with scoped resolution this should be renamed as we arent talking about
-// just variables anymore.
-// Any named identity can be :: without us knowing what its refering to until
-// resolution.
 class IdentifierNode : public NodePosition, public Identifier, public TypeData {
   public:
   IdentifierNode(TextPosition t_pos, std::string_view t_identifier);

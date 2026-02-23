@@ -324,9 +324,9 @@ auto CppBackend::visit(Var* t_var) -> Any
   }
 }
 
-auto CppBackend::visit(Variable* t_var) -> Any
+auto CppBackend::visit(IdentifierNode* t_id) -> Any
 {
-  const auto identifier{t_var->identifier()};
+  const auto identifier{t_id->identifier()};
 
   return std::format("{}", identifier);
 }
@@ -468,7 +468,7 @@ auto CppBackend::visit(AddressOf* t_addr_of) -> Any
   auto left{t_addr_of->left()};
   const auto elem{resolve(left)};
 
-  if(auto var_ptr{dynamic_cast<Variable*>(left.get())}; var_ptr) {
+  if(auto var_ptr{dynamic_cast<IdentifierNode*>(left.get())}; var_ptr) {
     // For arrays we need to access .data().
     auto type_var{var_ptr->get_type().as_var()};
     if(type_var->m_type.is_array()) {

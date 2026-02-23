@@ -540,15 +540,15 @@ auto SemanticChecker::visit(Var* t_var) -> Any
   return {};
 }
 
-auto SemanticChecker::visit(Variable* t_var) -> Any
+auto SemanticChecker::visit(IdentifierNode* t_id) -> Any
 {
-  const auto id{t_var->identifier()};
+  const auto id{t_id->identifier()};
   const auto var_data{get_symbol_data_from_env(id)};
 
-  DBG_INFO("Variable ", std::quoted(id), " of type ", var_data);
+  DBG_INFO("IdentifierNode ", std::quoted(id), " of type ", var_data);
 
   // Annotate AST.
-  m_annot_queue.push({t_var, var_data});
+  m_annot_queue.push({t_id, var_data});
 
   return {var_data};
 }

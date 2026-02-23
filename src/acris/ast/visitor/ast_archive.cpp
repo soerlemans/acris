@@ -101,7 +101,7 @@ DEFINE_SERIALIZE_METHOD(ReturnType);
 // Lvalue:
 DEFINE_SERIALIZE_METHOD(Let);
 DEFINE_SERIALIZE_METHOD(Var);
-DEFINE_SERIALIZE_METHOD(Variable);
+DEFINE_SERIALIZE_METHOD(IdentifierNode);
 
 // Meta:
 auto AstArchive::visit([[maybe_unused]] Attribute* t_attr) -> Any
