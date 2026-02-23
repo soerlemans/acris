@@ -7,4 +7,9 @@ ScopeResolution::ScopeResolution(TextPosition t_pos,
     Expr{std::move(t_expr)},
     m_path{std::move(t_path)}
 {}
+
+auto ScopeResolution::path() const -> const ScopeResolutionPath&
+{
+  return m_path;
+}
 } // namespace ast::node::lvalue

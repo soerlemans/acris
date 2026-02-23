@@ -154,6 +154,9 @@ namespace symbols {
   // Meta:
   DEFINE_TERMINAL(g_hash, '#', HASH);
 
+  DEFINE_TERMINAL(g_scope_resolution, "::", SCOPE_RESOLUTION);
+
+	// Attributes:
   DEFINE_TERMINAL(g_attribute_open,  "[[", ATTRIBUTE_OPEN);
   DEFINE_TERMINAL(g_attribute_close, "]]", ATTRIBUTE_CLOSE);
 
@@ -182,6 +185,13 @@ namespace symbols {
 
   DEFINE_TERMINAL(g_add_assign, "+=", ADD_ASSIGN);
   DEFINE_TERMINAL(g_sub_assign, "-=", SUB_ASSIGN);
+
+  DEFINE_TERMINAL(g_bw_and_assign, "&=", BITWISE_AND_ASSIGN);
+  DEFINE_TERMINAL(g_bw_or_assign,  "|=", BITWISE_OR_ASSIGN);
+  DEFINE_TERMINAL(g_bw_xor_assign, "^=", BITWISE_XOR_ASSIGN);
+
+  DEFINE_TERMINAL(g_bw_lhs_assign, "<<=", BITWISE_LHS_ASSIGN);
+  DEFINE_TERMINAL(g_bw_rhs_assign, ">>=", BITWISE_RHS_ASSIGN);
 
   // TODO: Add bitwise assignment operators.
 
@@ -216,7 +226,6 @@ namespace symbols {
   DEFINE_TERMINAL(g_dot,           '.',  DOT);
   DEFINE_TERMINAL(g_comma,         ',',  COMMA);
   DEFINE_TERMINAL(g_question_mark, '?',  QUESTION_MARK);
-  DEFINE_TERMINAL(g_double_colon,  "::", DOUBLE_COLON);
   DEFINE_TERMINAL(g_colon,         ':',  COLON);
   DEFINE_TERMINAL(g_semicolon,     ';',  SEMICOLON);
   DEFINE_TERMINAL(g_ampersand,     '&',  AMPERSAND);
@@ -281,7 +290,7 @@ namespace symbols {
     g_and.pair(),
 
     g_arrow.pair(),
-    g_double_colon.pair()
+    g_scope_resolution.pair()
   };
 
   namespace none {

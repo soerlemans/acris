@@ -56,6 +56,7 @@ class NodeVisitor {
   virtual auto visit(node::lvalue::Var* t_var) -> Any;
   virtual auto visit(node::lvalue::Variable* t_var) -> Any;
   virtual auto visit(node::lvalue::Subscript* t_subscript) -> Any;
+  virtual auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any;
 
   // Meta:
   virtual auto visit(node::meta::Attribute* t_attr) -> Any;

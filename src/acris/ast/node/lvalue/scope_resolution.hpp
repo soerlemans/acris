@@ -27,7 +27,9 @@ class ScopeResolution : public NodePosition, public Expr, public TypeData {
 
   public:
   ScopeResolution(TextPosition t_pos, ScopeResolutionPath&& t_path,
-                      NodePtr&& t_expr);
+                  NodePtr&& t_expr);
+
+  auto path() const -> const ScopeResolutionPath&;
 
   // AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(ScopeResolution, Node)
   AST_VISITOR_MAKE_VISITABLE(visitor::NodeVisitor);

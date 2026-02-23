@@ -34,7 +34,10 @@ auto PrattParser::lvalue() -> NodePtr
   NodePtr node{};
 
   const auto token{get_token()};
-  if(next_if(TokenType::IDENTIFIER)) {
+
+  if(auto ptr{m_delegate->scope_resolution()}; ptr) {
+    node = std::move(ptr);
+  } else if(next_if(TokenType::IDENTIFIER)) {
     const auto id{token.str()};
     const auto pos{token.position()};
     DBG_TRACE_PRINT(INFO, "Found 'VARIABLE': ", id);
@@ -90,7 +93,7 @@ auto PrattParser::literal() -> NodePtr
   } else if(check(TokenType::IOTA)) {
     m_delegate->context_check_enum();
 
-		throw_syntax_error("TODO: Implement iota.");
+    throw_syntax_error("TODO: Implement iota.");
   }
 
   return node;

@@ -17,6 +17,7 @@ enum class TokenType {
   IDENTIFIER = 0,
   LET,
   VAR,
+  SCOPE_RESOLUTION,
 
   // Variable interaction specifiers.
   READONLY,
@@ -133,7 +134,12 @@ enum class TokenType {
   ADD_ASSIGN,
   SUB_ASSIGN,
 
-  // TODO: Add bitwise assignment operators.
+  BITWISE_NOT_ASSIGN,
+  BITWISE_AND_ASSIGN,
+  BITWISE_OR_ASSIGN,
+  BITWISE_XOR_ASSIGN,
+  BITWISE_LHS_ASSIGN,
+  BITWISE_RHS_ASSIGN,
 
   ASSIGNMENT,
 
@@ -169,7 +175,6 @@ enum class TokenType {
   DOT,
   COMMA,
   QUESTION_MARK,
-  DOUBLE_COLON,
   COLON,
   SEMICOLON,
   AMPERSAND,

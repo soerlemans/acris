@@ -25,4 +25,25 @@ auto ContextStore::get(const Context t_context) -> bool
 
   return enabled;
 }
+
+auto context2str(Context t_ctx) -> std::string_view
+{
+  switch(t_ctx) {
+    case Context::ENUM:
+      return {"enum"};
+
+    case Context::METHOD:
+      return {"method"};
+
+    case Context::LOOP:
+      return {"loop"};
+
+    default:
+      // TODO: Throw.
+      break;
+  }
+
+  return {};
+}
+
 } // namespace parser::acris::context

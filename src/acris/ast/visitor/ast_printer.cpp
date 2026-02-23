@@ -5,6 +5,8 @@
 #include <ios>
 #include <sstream>
 
+// Absolute Includes:
+#include "lib/stdprint.hpp"
 
 // Macros:
 /*!
@@ -107,12 +109,20 @@ auto AstPrinter::visit(Variable* t_var) -> Any
   return {};
 }
 
-auto AstPrinter::visit(Subscript* t_subscript) -> Any
+DEFINE_PRINTER_METHOD(Subscript)
+
+auto AstPrinter::visit(ScopeResolution* t_scope_res) -> Any
 {
+  using lib::stdprint::detail::print_seq;
+
   COUNTG_INIT();
 
-  print_hl("Subscript");
-  print_traits(t_subscript);
+  std::ostringstream oss{};
+  print_seq(oss, t_scope_res->path());
+
+  print_hl("ScopeResolution");
+  print("| Path: ", oss.view());
+  print_traits(t_scope_res);
 
   return {};
 }

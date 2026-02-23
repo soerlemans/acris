@@ -95,6 +95,14 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   // Body:
   virtual auto body() -> NodeListPtr;
 
+	// User Types:
+	virtual auto scope_resolution() -> NodePtr;
+
+  // Enum my beloved:
+  virtual auto enum_field() -> NodePtr;
+  virtual auto enum_field_list() -> NodeListPtr;
+  virtual auto enum_def() -> NodePtr;
+
   // Struct:
   virtual auto member_decl() -> NodePtr;
   virtual auto member_decl_list() -> NodeListPtr;
@@ -103,11 +111,6 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   virtual auto type_def() -> NodePtr;
 
   virtual auto self() -> NodePtr;
-
-  // Enum my beloved:
-  virtual auto enum_field() -> NodePtr;
-  virtual auto enum_field_list() -> NodeListPtr;
-  virtual auto enum_def() -> NodePtr;
 
   // Function:
   virtual auto param_list() -> NodeListPtr;

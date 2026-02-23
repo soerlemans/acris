@@ -58,6 +58,7 @@ STUB(Let)
 STUB(Var)
 STUB(Variable)
 STUB(Subscript)
+STUB(ScopeResolution)
 
 // Meta:
 STUB(Attribute)

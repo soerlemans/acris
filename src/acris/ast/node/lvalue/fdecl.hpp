@@ -4,7 +4,7 @@
 namespace ast::node::lvalue {
 class Var;
 class Let;
-class Variable;
+class IdentifierNode;
 class Subscript;
 class ScopeResolution;
 } // namespace ast::node::lvalue
