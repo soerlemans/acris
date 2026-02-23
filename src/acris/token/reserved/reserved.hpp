@@ -183,6 +183,8 @@ namespace symbols {
   DEFINE_TERMINAL(g_add_assign, "+=", ADD_ASSIGN);
   DEFINE_TERMINAL(g_sub_assign, "-=", SUB_ASSIGN);
 
+  // TODO: Add bitwise assignment operators.
+
   DEFINE_TERMINAL(g_assignment, '=',  ASSIGNMENT);
 
   // Comparisons:
@@ -199,6 +201,15 @@ namespace symbols {
   DEFINE_TERMINAL(g_not, '!',  NOT);
   DEFINE_TERMINAL(g_or,  "||", OR);
   DEFINE_TERMINAL(g_and, "&&", AND);
+
+	// Bitwise:
+  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_NOT);
+  DEFINE_TERMINAL(g_bitwise_and,  '&', BITWISE_AND);
+  DEFINE_TERMINAL(g_bitwise_or,  '|', BITWISE_OR);
+  DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
+
+  DEFINE_TERMINAL(g_bitwise_lhs,  "<<", BITWISE_LHS);
+  DEFINE_TERMINAL(g_bitwise_rhs,  ">>", BITWISE_RHS);
 
   // Miscellaneous:
   DEFINE_TERMINAL(g_arrow,         "->", ARROW);

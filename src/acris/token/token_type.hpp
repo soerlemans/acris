@@ -133,9 +133,11 @@ enum class TokenType {
   ADD_ASSIGN,
   SUB_ASSIGN,
 
+  // TODO: Add bitwise assignment operators.
+
   ASSIGNMENT,
 
-  // Comparison Tokens:
+  // Comparisons:
   LESS_THAN,
   LESS_THAN_EQUAL,
 
@@ -145,9 +147,18 @@ enum class TokenType {
   GREATER_THAN,
   GREATER_THAN_EQUAL,
 
+  // Logic:
   NOT,
   AND,
   OR,
+
+  // Bitwise:
+  BITWISE_NOT,
+  BITWISE_AND,
+  BITWISE_OR,
+  BITWISE_XOR,
+  BITWISE_LHS,
+  BITWISE_RHS,
 
   // Comments:
   LINE_COMMENT,  // Starts with "//".
