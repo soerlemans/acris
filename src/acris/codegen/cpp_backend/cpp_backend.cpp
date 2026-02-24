@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string_view>
 
+// Library Includes:
+#include <libassert/assert.hpp>
+
 // Absolute Includes:
 #include "acris/ast/node/include_nodes.hpp"
 #include "acris/codegen/cpp_backend/interop/python_backend/python_backend.hpp"
@@ -339,6 +342,27 @@ auto CppBackend::visit(Subscript* t_subscript) -> Any
   return std::format("{}[{}]", expr, index_expr);
 }
 
+auto CppBackend::visit(ScopeResolution* t_scope_res) -> Any
+{
+  const auto scope_path{t_scope_res->path()};
+  const auto expr{t_scope_res->expr()};
+
+  DEBUG_ASSERT(!scope_path.empty(), R"(Empty scope path cant be resolved.)");
+
+  std::ostringstream oss{};
+
+  std::string_view sep{""};
+  for(auto&& elem : scope_path) {
+    oss << sep << elem;
+
+    sep = "::";
+  }
+
+  oss << "::" << resolve(expr);
+
+  return oss.str();
+}
+
 // Meta:
 auto CppBackend::visit(Attribute* t_attr) -> Any
 {
@@ -630,7 +654,7 @@ auto CppBackend::visit(Enum* t_enum) -> Any
 
   std::ostringstream oss{};
 
-  oss << "enum class" << enum_id << " : " << enum_ut << "{";
+  oss << "enum class " << enum_id << " : " << enum_ut << "{";
   oss << resolve(enum_body);
   oss << "};";
 

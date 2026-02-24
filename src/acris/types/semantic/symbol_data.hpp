@@ -55,12 +55,8 @@ class SymbolData : public Variant {
   // Use the constructors of the parent class.
   using Variant::Variant;
 
-  // Only use these methods if you are sure about the underlying type.
-  auto as_struct() const -> StructTypePtr;
-  auto as_function() const -> FnTypePtr;
-  auto as_ptr() const -> PointerTypePtr;
-  auto as_array() const -> ArrayTypePtr;
-  auto as_var() const -> VarTypePtr;
+  //! Verify if a symbol is an enum type.
+  auto is_enum() const -> bool;
 
   //! Verify if a symbol is a struct type.
   auto is_struct() const -> bool;
@@ -70,6 +66,15 @@ class SymbolData : public Variant {
 
   //! Verify if a symbol is an array type.
   auto is_array() const -> bool;
+
+  // Only use these methods if you are sure about the underlying type.
+  auto as_enum() const -> EnumTypePtr;
+  auto as_struct() const -> StructTypePtr;
+  auto as_function() const -> FnTypePtr;
+  auto as_ptr() const -> PointerTypePtr;
+  auto as_array() const -> ArrayTypePtr;
+  auto as_var() const -> VarTypePtr;
+
 
   //! Verify if a symbol is immutable.
   auto is_mutable() const -> bool;

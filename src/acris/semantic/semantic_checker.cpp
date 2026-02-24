@@ -581,6 +581,47 @@ auto SemanticChecker::visit(Subscript* t_subscript) -> Any
   return type;
 }
 
+auto SemanticChecker::visit(ScopeResolution* t_scope_res) -> Any
+{
+  SymbolData type{};
+
+  const auto scope_path{t_scope_res->path()};
+  auto expr{t_scope_res->expr()};
+
+  DEBUG_ASSERT(!scope_path.empty(), R"(Empty scope path cant be resolved.)");
+
+  // For now only resolve in-module.
+  const auto entity_id{scope_path.front()};
+
+  const auto [iter, exists] = m_symbol_state.find(entity_id);
+  if(exists) {
+    auto& [status, type_data] = iter->second;
+
+    if(type_data.is_enum()) {
+      const auto enum_type{type_data.as_enum()};
+      auto* id_node{dynamic_cast<IdentifierNode*>(expr.get())};
+      DEBUG_ASSERT(id_node != nullptr, R"(Must be an IdentifierNode.)");
+
+      const std::string field_id{id_node->identifier()};
+      const auto has_field{enum_type->m_fields.contains(field_id)};
+      if(!has_field) {
+        const auto msg{
+          std::format("Enum {} has no field named {}.", entity_id, field_id)};
+
+        throw_type_error(msg);
+      }
+
+      // Annotate Queue.
+      m_annot_queue.push({t_scope_res, type_data});
+
+      // Set return value.
+      type = type_data;
+    }
+  }
+
+  return type;
+}
+
 // Meta:
 auto SemanticChecker::visit(Attribute* t_attr) -> Any
 {

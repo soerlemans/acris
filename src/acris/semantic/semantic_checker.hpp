@@ -161,6 +161,7 @@ class SemanticChecker : public NodeVisitor {
   auto visit(node::lvalue::Var* t_var) -> Any override;
   auto visit(node::lvalue::IdentifierNode* t_id) -> Any override;
   auto visit(node::lvalue::Subscript* t_subscript) -> Any override;
+  auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any override;
 
   // Meta:
   auto visit(node::meta::Attribute* t_attr) -> Any override;
