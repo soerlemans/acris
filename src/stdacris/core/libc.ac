@@ -1,2 +1,71 @@
 // Acris bindings for libc.
 // As parsing C headers is not something we can do yet.
+
+let STDIN = 0
+let STDOUT = 1
+let STDERR = 2
+
+// TODO: Later create more clean interfaces.
+// Stuff like memset not int but always byte.
+[[extern("C")]] {
+  // Heap:
+  func malloc(size: usz) -> *void
+  func free(p: *void) -> void
+
+  func calloc(n: usz, size: usz) -> *void
+  func realloc(p: *void, size: usz) -> *void
+  func reallocarray(p: *void, n: usz, size: usz) -> *void
+
+  // Memory:
+  func memcpy(dest: *void, src: *ro void, n: usz) -> *void
+  func memmove(dest: *void, src: *ro void, n: usz) -> *void
+  func memset(dest: *void, c: int, n: usz) -> *void
+
+  // String:
+  func strlen(s: cstr) -> usz
+
+  func strcmp(s1: cstr, s2: cstr) -> int
+  func strncmp(s1: cstr, s2: cstr, n: usz) -> int
+
+  func strstr(haystack: cstr, needle: cstr) -> *char
+  func strcasestr(haystack: cstr, needle: cstr) -> *char
+
+  // Env:
+  func getenv(name: cstr) -> cstr
+  func secure_getenv(name: cstr) -> cstr
+
+  func setenv(name: cstr, value: cstr, overwrite: int) -> int
+  func unsetenv(name: cstr) -> int
+
+  // TODO: Implement or create proper bindings for.
+  /*
+  int open(const char *path, int flags, mode_t mode);
+  int creat(const char *path, mode_t mode);
+  int openat(int dirfd, const char *path, int flags, mode_t mode);
+  int openat2(int dirfd, const char *path, const struct open_how *how, size_t size);
+
+  // Also do fopen, fclose, fread, fwrite, fseek, ftell.
+  */
+
+  func read(fd: int, buf: *void, count: usz) -> isz
+  func write(fd: int, buf: *ro void, count: usz) -> isz
+  func close(fd: int) -> int
+
+  // Error:
+  func perror(s: cstr) -> void
+  func strerror(errnum: int) -> *char
+
+  /*
+  void qsort(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
+  void qsort_r(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size], void *)) *compar, void *arg);
+
+  void *bsearch(size_t n, size_t size; const void key[size], const void base[size * n], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
+  */
+
+  // System:
+  func system(cmd: cstr) -> int
+
+  // TODO: Should have somekind of does not return annotation.
+  func exit(status: int) -> void
+  func abort() -> void
+}

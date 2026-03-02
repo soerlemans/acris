@@ -33,6 +33,8 @@ enum class TokenType {
   HASH, // Used for preprocessor directives.
   ATTRIBUTE_OPEN,
   ATTRIBUTE_CLOSE,
+  SIZE_OF,
+  LEN,
 
   DECLARE,
   MACRO,
@@ -49,6 +51,8 @@ enum class TokenType {
 
   PROTO,
 
+  TO,
+
   // Control statements:
   SLOT,
   FUNCTION,
@@ -59,6 +63,8 @@ enum class TokenType {
   ELSE,
   ELIF,
   LOOP,
+  DO,
+  IN,
 
   // Jump:
   BREAK,

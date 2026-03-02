@@ -16,6 +16,7 @@ class TypeParser : public Parser {
   public:
   explicit TypeParser(ParserContextPtr t_ctx);
 
+  // virtual auto type_ref() -> NodePtr; // TODO.
   virtual auto type_pointer() -> NodePtr;
   virtual auto type_array() -> NodePtr;
   virtual auto type_id_builtin() -> NodePtr;

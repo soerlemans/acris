@@ -75,5 +75,7 @@ func main() -> int {
   // C++ Destructured bindings.
   let [m1, m2] = example
 
-  return test
+  let retval: uint = 10
+
+  return retval to<int> // Cast to int, <> must be attached to `to`.
 }

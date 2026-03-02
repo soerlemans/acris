@@ -42,7 +42,11 @@ namespace keywords {
 	// Meta:
 	// TODO: Consider renaming to just decl.
   DEFINE_TERMINAL(g_declare, "decl", DECLARE);
-  DEFINE_TERMINAL(g_macro,   "macro",   MACRO);
+  DEFINE_TERMINAL(g_macro,   "macro", MACRO);
+
+  DEFINE_TERMINAL(g_size_of, "size_of", SIZE_OF);
+  DEFINE_TERMINAL(g_len,     "len", LEN);
+
 
 	// TODO: Decide between these two:
   DEFINE_TERMINAL(g_const, "const", CONST); // Compile time constants.
@@ -58,6 +62,8 @@ namespace keywords {
 
   DEFINE_TERMINAL(g_proto, "proto", PROTO);
 
+  DEFINE_TERMINAL(g_to, "to", TO);
+
   // Control statements:
   DEFINE_TERMINAL(g_slot,   "slot",  SLOT);
   DEFINE_TERMINAL(g_func,   "func",  FUNCTION);
@@ -68,8 +74,8 @@ namespace keywords {
   DEFINE_TERMINAL(g_else,   "else",   ELSE);
   DEFINE_TERMINAL(g_elif,   "elif",   ELIF);
   DEFINE_TERMINAL(g_loop,   "loop",   LOOP);
-  // DEFINE_TERMINAL(g_do,   "do",   LOOP);
-  // DEFINE_TERMINAL(g_in,   "in",   LOOP);
+  DEFINE_TERMINAL(g_do,     "do",     DO);
+  DEFINE_TERMINAL(g_in,     "in",     IN);
   // DEFINE_TERMINAL(g_in,   "for",   LOOP);
 
   // Jump:

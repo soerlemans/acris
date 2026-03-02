@@ -196,7 +196,7 @@ auto Preprocessor::include_file(TextBufferPtr& t_dst, const fs::path t_path)
   // In the future this solution might cost too much memory/be slow.
   // Handle recursive expansion.
   m_nesting_count++;
-  handle_preprocessor(buffer, t_dst);
+  handle_preprocessor(t_dst, buffer);
   m_nesting_count--;
 }
 
