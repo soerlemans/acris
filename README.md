@@ -6,11 +6,14 @@ Acris 𓆏
 Home of the Acris programming language.
 Named after the genus Acris which is the name of cricket frogs.
 
-Acris syntax is somewhat inspired by Swift, Golang and Rust.
-But in Acris expressions are not statements.
-This allows us to write code without any need for semicolons.
-As well as prevents your coworkes from writing hard to read expressions like:
+Acris syntax is somewhat inspired by Golang, Rust, Zig, Odin and C3 (I know its a lot).
+In Acris expressions cannot be statements, expressions can only be used in context of a statement where they are required to produce a result.
+This significantly helps with semicolon or end of statement inference:
+```rust
+let var = 10 + 10 // We know that the statement ends here, as there is no continuation operator and the next line will likely start with a keyword or similar.
+```
 
+Personally I am also not a big fan of writing ternary expressions like so:
 ```rust
 let var = if(...) {
   // ...
@@ -21,14 +24,15 @@ let var = if(...) {
 
 The main goal of the programming language is providing seamless interop with multiple programming languages.
 Besides being able to select which backend you want to use for code generation:
- + LLVM (Half broken).
+ + LLVM (Partial implementation).
  + C++ (Generated from the AST).
- + C (not yet implemented)
+ + C (not yet implemented).
 
 It is also possible to select for which language you want your functions to be exported to:
  + Python (Works for C++ backend uses `pybind11`)
  + Lua (not yet implemented)
  + JavaScript (not yet implemented)
+ + Common LISP (not yet implemented)
 
 Here is a simple sample program.
 ```go
@@ -69,6 +73,7 @@ Which will create an importable Python DLL.
 ## Warning
 Note that the project is not yet stable at all.
 There are a list of language features implemented and its best to read through the `samples/`, for what is implemented.
+Or to get an idea of the syntax.
 
 ## Dependencies
 In order to compile the project you will need to following dependencies:
@@ -85,7 +90,7 @@ In order to compile the project you will need to following dependencies:
 - [libassert](https://github.com/jeremy-rifkin/libassert) (Modern assertion library for compile and runtime assertion checking)
 - [pybind11](https://github.com/pybind/pybind11) (Used to generate C++ to Python bindings.)
 
-### Buildsystem
+### Build system
 In order to compile the project you will need a couple of dependencies.
 First we use invoke to invoke different python scripts, to orchestrate building the project.
 In order to install invoke it is best to use pipx.

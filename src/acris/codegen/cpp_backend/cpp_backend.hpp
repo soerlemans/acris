@@ -42,6 +42,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   private:
   // CXX compiler front end.
   ClangFrontendInvoker m_inv;
+	SessionUnitPtr m_session;
 
   // Global symbol table used for quick symbol lookup.
   // Currently unused as the idea was to use it for interop.
@@ -175,6 +176,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
 
   //! Set the optimization level.
   auto set_optimize(Optimize t_level) -> void override;
+
+	auto no_libc() const -> bool;
 
   /*!
    * Transpile the @ref t_ast to valid C++ code and write it to @ref t_out.

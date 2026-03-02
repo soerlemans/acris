@@ -9,33 +9,33 @@ let STDERR = 2
 // Stuff like memset not int but always byte.
 [[extern("C")]] {
   // Heap:
-  func malloc(size: usz) -> *void
-  func free(p: *void) -> void
+  decl func malloc(size: usz) -> *void
+  decl func free(p: *void) -> void
 
-  func calloc(n: usz, size: usz) -> *void
-  func realloc(p: *void, size: usz) -> *void
-  func reallocarray(p: *void, n: usz, size: usz) -> *void
+  decl func calloc(n: usz, size: usz) -> *void
+  decl func realloc(p: *void, size: usz) -> *void
+  decl func reallocarray(p: *void, n: usz, size: usz) -> *void
 
   // Memory:
-  func memcpy(dest: *void, src: *ro void, n: usz) -> *void
-  func memmove(dest: *void, src: *ro void, n: usz) -> *void
-  func memset(dest: *void, c: int, n: usz) -> *void
+  decl func memcpy(dest: *void, src: *ro void, n: usz) -> *void
+  decl func memmove(dest: *void, src: *ro void, n: usz) -> *void
+  decl func memset(dest: *void, c: int, n: usz) -> *void
 
   // String:
-  func strlen(s: cstr) -> usz
+  decl func strlen(s: cstr) -> usz
 
-  func strcmp(s1: cstr, s2: cstr) -> int
-  func strncmp(s1: cstr, s2: cstr, n: usz) -> int
+  decl func strcmp(s1: cstr, s2: cstr) -> int
+  decl func strncmp(s1: cstr, s2: cstr, n: usz) -> int
 
-  func strstr(haystack: cstr, needle: cstr) -> *char
-  func strcasestr(haystack: cstr, needle: cstr) -> *char
+  decl func strstr(haystack: cstr, needle: cstr) -> *char
+  decl func strcasestr(haystack: cstr, needle: cstr) -> *char
 
   // Env:
-  func getenv(name: cstr) -> cstr
-  func secure_getenv(name: cstr) -> cstr
+  decl func getenv(name: cstr) -> cstr
+  decl func secure_getenv(name: cstr) -> cstr
 
-  func setenv(name: cstr, value: cstr, overwrite: int) -> int
-  func unsetenv(name: cstr) -> int
+  decl func setenv(name: cstr, value: cstr, overwrite: int) -> int
+  decl func unsetenv(name: cstr) -> int
 
   // TODO: Implement or create proper bindings for.
   /*
@@ -47,13 +47,13 @@ let STDERR = 2
   // Also do fopen, fclose, fread, fwrite, fseek, ftell.
   */
 
-  func read(fd: int, buf: *void, count: usz) -> isz
-  func write(fd: int, buf: *ro void, count: usz) -> isz
-  func close(fd: int) -> int
+  decl func read(fd: int, buf: *void, count: usz) -> isz
+  decl func write(fd: int, buf: *ro void, count: usz) -> isz
+  decl func close(fd: int) -> int
 
   // Error:
-  func perror(s: cstr) -> void
-  func strerror(errnum: int) -> *char
+  decl func perror(s: cstr) -> void
+  decl func strerror(errnum: int) -> *char
 
   /*
   void qsort(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
@@ -63,9 +63,9 @@ let STDERR = 2
   */
 
   // System:
-  func system(cmd: cstr) -> int
+  decl func system(cmd: cstr) -> int
 
   // TODO: Should have somekind of does not return annotation.
-  func exit(status: int) -> void
-  func abort() -> void
+  decl func exit(status: int) -> void
+  decl func abort() -> void
 }

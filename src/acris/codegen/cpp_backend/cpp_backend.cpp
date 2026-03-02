@@ -41,7 +41,9 @@ auto CppBackend::prologue() -> std::string
 
   // FIXME: Temporary input for printing purposes.
   oss << "// Stdacris Includes:\n";
-  oss << R"(#include "stdacris/core/linux/core.h")" << "\n";
+  if(no_libc()) {
+    oss << R"(#include "stdacris/core/linux/core.h")" << "\n";
+  }
   oss << R"(#include "stdacris/internal/internal.hpp")" << "\n\n";
 
   // Loop through the interop backends and add the prologue from each backend.
@@ -111,7 +113,11 @@ auto CppBackend::resolve(NodePtr t_ptr, const bool t_terminate) -> std::string
 
 // Public:
 CppBackend::CppBackend()
-  : m_inv{}, m_interop_backends{}, m_terminate{}, m_id_defer_count{0}
+  : m_inv{},
+    m_session{},
+    m_interop_backends{},
+    m_terminate{},
+    m_id_defer_count{0}
 {}
 
 // Control:
@@ -918,6 +924,11 @@ auto CppBackend::set_optimize(const Optimize t_level) -> void
   }
 }
 
+auto CppBackend::no_libc() const -> bool
+{
+  return m_session->no_libc();
+}
+
 auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
 {
   std::ofstream ofs{t_out};
@@ -950,6 +961,9 @@ auto CppBackend::compile(CompileParams& t_params) -> void
 {
   const auto& [session, ast, mir, build_dir, source_path] = t_params;
 
+  // TODO: Check for nullptr?
+  m_session = session;
+
   fs::path stem{source_path.stem()};
   const fs::path tmp_src{build_dir / stem.concat(".cpp")};
 
@@ -961,7 +975,7 @@ auto CppBackend::compile(CompileParams& t_params) -> void
   codegen(ast, tmp_src);
 
   // Allow optional toggling libc.
-  if(session->no_libc()) {
+  if(no_libc()) {
     // Always link against our static library, it must be installed.
     m_inv.add_flags("-nostdlib");
     m_inv.add_flags("-lstdacris");
@@ -971,6 +985,7 @@ auto CppBackend::compile(CompileParams& t_params) -> void
   m_inv.compile(tmp_src);
 
   // Clear members, for next compilation.
+  m_session.reset();
   m_terminate = {};
   m_id_defer_count = 0;
 }
