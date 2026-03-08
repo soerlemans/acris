@@ -526,13 +526,13 @@ auto CppBackend::visit(UnaryPrefix* t_up) -> Any
 
 auto CppBackend::visit(ToCast* t_cast) -> Any
 {
-  const auto left{resolve(t_cast->left())};
+	// Do not terminate expression.
+  const auto left{resolve(t_cast->left(), false)};
 
   const auto type_variant{t_cast->get_type()};
   const auto type{type_spec2cpp({type_variant})};
 
-  // Perform C-style cast cause its the most aesthetic.
-  return std::format("(({})({}))", type, left);
+  return std::format("static_cast<{}>({})", type, left);
 }
 
 // Logical:

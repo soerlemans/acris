@@ -2,9 +2,9 @@ module getenv_sample
 
 // Standard library include.
 #<include_once <core/core.ac>
-// #<include_once <core/libc.ac>
 
 func main() -> int {
-  var path = getenv("PATH")
+  var path = getenv("PATH") to<*ro char>
+
   return strlen(path)
 }
