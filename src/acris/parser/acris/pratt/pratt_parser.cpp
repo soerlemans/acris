@@ -588,9 +588,11 @@ auto PrattParser::to_cast(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr
     const auto token{get_token()};
     next();
 
-
-    auto type_parse_fn{[this]([[maybe_unused]] const int t_rbp) {
-      // We are parsing a type specification in this case.
+    auto type_parse_fn{
+      [this]([[maybe_unused]]
+             const int t_rbp) {
+        // We are parsing a type specification in this case.
+				// So we need to change the default behavior.
       return m_delegate->type_expr();
     }};
 
@@ -698,7 +700,7 @@ auto PrattParser::expr(const int t_min_bp) -> NodePtr
         },
       // Default recursive parsing strategy.
       .m_parse =
-        [this](int t_rbp) {
+        [this](const int t_rbp) {
           return expr(t_rbp);
         }};
 
@@ -728,7 +730,7 @@ auto PrattParser::expr(const int t_min_bp) -> NodePtr
         },
       // Default recursive parsing strategy.
       .m_parse =
-        [this](int t_rbp) {
+        [this](const int t_rbp) {
           return expr(t_rbp);
         }};
 
@@ -778,7 +780,7 @@ auto PrattParser::effect_expr(int t_min_bp) -> NodePtr
         },
       // Default recursive parsing strategy.
       .m_parse =
-        [this](int t_rbp) {
+        [this](const int t_rbp) {
           return chain_expr(t_rbp);
         }};
 

@@ -22,20 +22,20 @@ let STDERR = 2
   decl func memset(dest: *void, c: int, n: usz) -> *void
 
   // String:
-  decl func strlen(s: cstr) -> usz
+  decl func strlen(s: *ro char) -> usz
 
-  decl func strcmp(s1: cstr, s2: cstr) -> int
-  decl func strncmp(s1: cstr, s2: cstr, n: usz) -> int
+  decl func strcmp(s1: *ro char, s2: *ro char) -> int
+  decl func strncmp(s1: *ro char, s2: *ro char, n: usz) -> int
 
-  decl func strstr(haystack: cstr, needle: cstr) -> *char
-  decl func strcasestr(haystack: cstr, needle: cstr) -> *char
+  decl func strstr(haystack: *ro char, needle: *ro char) -> *char
+  decl func strcasestr(haystack: *ro char, needle: *ro char) -> *char
 
   // Env:
-  decl func getenv(name: cstr) -> cstr
-  decl func secure_getenv(name: cstr) -> cstr
+  decl func getenv(name: *ro char) -> *char
+  decl func secure_getenv(name: *ro char) -> *char
 
-  decl func setenv(name: cstr, value: cstr, overwrite: int) -> int
-  decl func unsetenv(name: cstr) -> int
+  decl func setenv(name: *ro char, value: *ro char, overwrite: int) -> int
+  decl func unsetenv(name: *ro char) -> int
 
   // TODO: Implement or create proper bindings for.
   /*
@@ -52,8 +52,10 @@ let STDERR = 2
   decl func close(fd: int) -> int
 
   // Error:
-  decl func perror(s: cstr) -> void
+  decl func perror(s: *ro char) -> void
   decl func strerror(errnum: int) -> *char
+
+  // TODO: There are more error related function to port over.
 
   /*
   void qsort(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
@@ -63,7 +65,7 @@ let STDERR = 2
   */
 
   // System:
-  decl func system(cmd: cstr) -> int
+  decl func system(cmd: *ro char) -> int
 
   // TODO: Should have somekind of does not return annotation.
   decl func exit(status: int) -> void
@@ -71,4 +73,4 @@ let STDERR = 2
 }
 
 // TODO: Implement for simple printing.
-// decl func write_str(t_fd: int, t_buf: cstr, t_count: usz) -> isz
+// decl func write_str(t_fd: int, t_buf: *ro char, t_count: usz) -> isz

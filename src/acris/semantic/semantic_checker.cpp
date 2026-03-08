@@ -876,7 +876,7 @@ auto SemanticChecker::visit(ToCast* t_cast) -> Any
   const auto left{get_symbol_data(t_cast->left())};
   const auto type_data{node2symbol_data(t_cast->right())};
 
-	// Annotate AST.
+  // Annotate AST.
   m_annot_queue.push({t_cast, type_data});
 
   // TODO: Check if cast is possible.
@@ -948,7 +948,13 @@ auto SemanticChecker::visit([[maybe_unused]] Char* t_ch) -> Any
 
 auto SemanticChecker::visit([[maybe_unused]] String* t_str) -> Any
 {
-  return SymbolData{NativeType::CSTR};
+  using types::symbol::make_pointer;
+  // TODO: Perhaps return pointer to readonly char?
+  // TODO: Consider implementing Slice type for cstr keyword?
+
+  // return SymbolData{NativeType::CSTR};
+
+  return make_pointer(SymbolData{NativeType::CHAR}, 1, true);
 }
 
 auto SemanticChecker::visit([[maybe_unused]] Boolean* t_bool) -> Any

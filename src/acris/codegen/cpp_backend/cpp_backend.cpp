@@ -532,7 +532,7 @@ auto CppBackend::visit(ToCast* t_cast) -> Any
   const auto type{type_spec2cpp({type_variant})};
 
   // Perform C-style cast cause its the most aesthetic.
-  return std::format("(({}){})", type, left);
+  return std::format("(({})({}))", type, left);
 }
 
 // Logical:
