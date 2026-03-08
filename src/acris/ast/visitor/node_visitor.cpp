@@ -66,7 +66,7 @@ STUB(LetDecl)
 STUB(VarDecl)
 STUB(FunctionDecl)
 
-// Arithmetic:
+// BinaryOperator:
 STUB(Arithmetic)
 STUB(Assignment)
 STUB(Comparison)
@@ -75,6 +75,8 @@ STUB(Decrement)
 STUB(AddressOf)
 STUB(Dereference)
 STUB(UnaryPrefix)
+STUB(ToCast)
+
 STUB(Not)
 STUB(And)
 STUB(Or)

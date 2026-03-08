@@ -75,6 +75,7 @@ class NodeVisitor {
   virtual auto visit(node::operators::AddressOf* t_addr_of) -> Any;
   virtual auto visit(node::operators::Dereference* t_deref) -> Any;
   virtual auto visit(node::operators::UnaryPrefix* t_up) -> Any;
+  virtual auto visit(node::operators::ToCast* t_to) -> Any;
 
   // Logical:
   virtual auto visit(node::operators::Not* t_not) -> Any;

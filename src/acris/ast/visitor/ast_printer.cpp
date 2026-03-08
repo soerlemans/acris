@@ -261,6 +261,8 @@ auto AstPrinter::visit(UnaryPrefix* t_up) -> Any
   return {};
 }
 
+DEFINE_PRINTER_METHOD(ToCast)
+
 // Logical:
 DEFINE_PRINTER_METHOD(Not)
 DEFINE_PRINTER_METHOD(And)

@@ -9,13 +9,15 @@
 
 namespace ast::node::operators {
 // Using Statements:
+using container::TextPosition;
+using node_traits::NodePosition;
 using node_traits::TypeData;
 using node_traits::UnaryOperator;
 
 // Classes:
-class ToCast : public UnaryOperator, public TypeData {
+class ToCast : public NodePosition, public UnaryOperator, public TypeData {
   public:
-  ToCast(NodePtr&& t_left);
+  ToCast(TextPosition t_pos, NodePtr&& t_left);
 
   AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(ToCast, UnaryOperator)
   AST_VISITOR_MAKE_VISITABLE(visitor::NodeVisitor);
@@ -25,6 +27,6 @@ class ToCast : public UnaryOperator, public TypeData {
 } // namespace ast::node::operators
 
 // Cereal type registration:
-REGISTER_ARCHIVEABLE_TYPE(ast::node::operators, ToCast);
+// REGISTER_ARCHIVEABLE_TYPE(ast::node::operators, ToCast);
 
 #endif // TO_TYPE_HPP

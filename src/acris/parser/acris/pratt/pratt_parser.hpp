@@ -107,12 +107,13 @@ class PrattParser : public Parser {
   virtual auto lvalue_chain(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
   virtual auto lvalue_infix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
 
+	// TODO: Value Lvalue checks during semantic checking not during parsing.
   /*!
    * Continue's a member access chain.
    * Which derives from an lvalue_expr().
    * Not an entry.
    */
-  virtual auto lvalue_member_expr(int t_min_bp = 0) -> NodePtr;
+  // virtual auto lvalue_member_expr(int t_min_bp = 0) -> NodePtr;
 
   /*!
    * Generally an expression is universal.
@@ -121,7 +122,7 @@ class PrattParser : public Parser {
    * So no assigning to the result of function calls.
    * Entry for Lvalue expressions.
    */
-  virtual auto lvalue_expr(int t_min_bp = 0) -> NodePtr;
+  // virtual auto lvalue_expr(int t_min_bp = 0) -> NodePtr;
 
   // Method call specific.
   /*!
