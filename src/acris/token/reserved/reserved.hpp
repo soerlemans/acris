@@ -66,6 +66,7 @@ namespace keywords {
 
   // Control statements:
   DEFINE_TERMINAL(g_slot,   "slot",  SLOT);
+  DEFINE_TERMINAL(g_pure,   "pure",  PURE); // TODO: Look into something like how D does it.
   DEFINE_TERMINAL(g_func,   "func",  FUNCTION);
   // DEFINE_TERMINAL(g_meth,  "meth",  METHOD);
   DEFINE_TERMINAL(g_switch, "switch", SWITCH);

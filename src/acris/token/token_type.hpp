@@ -55,6 +55,7 @@ enum class TokenType {
 
   // Control statements:
   SLOT,
+  PURE,
   FUNCTION,
   METHOD,
   MATCH,
