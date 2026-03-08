@@ -15,13 +15,13 @@ class PrefixMap : public BindingMap {
   PrefixMap()
   {
     // Dereference:
-    INSERT_BINDING(ASTERISK, 15, 15);
-    INSERT_BINDING(AMPERSAND, 15, 15);
+    INSERT_BINDING(ASTERISK, 100, 99); // Dereference.
+    INSERT_BINDING(AMPERSAND, 100, 99); // Address off.
 
-    // Unary operators:
-    INSERT_BINDING(NOT, 14, 14);
-    INSERT_BINDING(PLUS, 14, 14);
-    INSERT_BINDING(MINUS, 14, 14);
+    // Unary prefix operators:
+    INSERT_BINDING(NOT, 90, 90);
+    INSERT_BINDING(PLUS, 90, 90);
+    INSERT_BINDING(MINUS, 90, 90);
   }
 };
 
@@ -31,43 +31,42 @@ class InfixMap : public BindingMap {
   InfixMap()
   {
     // Member access:
-    INSERT_BINDING(DOT, 15, 14);   // Member Access.
-    INSERT_BINDING(ARROW, 15, 14); // Member Access via pointer.
-
-    // INSERT_BINDING(PAREN_OPEN, 15, 14);
-    // INSERT_BINDING(BRACKET_OPEN, 15, 14); // Array subscript.
+    INSERT_BINDING(DOT, 110, 109);   // Member Access.
+    INSERT_BINDING(ARROW, 110, 109); // Member Access via pointer.
 
     // Factor:
-    INSERT_BINDING(ASTERISK, 12, 13);     // Multiplication
-    INSERT_BINDING(SLASH, 12, 13);        // Division
-    INSERT_BINDING(PERCENT_SIGN, 12, 13); // Modulo
+    INSERT_BINDING(ASTERISK, 69, 70);     // Multiplication
+    INSERT_BINDING(SLASH, 69, 70);        // Division
+    INSERT_BINDING(PERCENT_SIGN, 69, 70); // Modulo
 
     // Arithmetic:
-    INSERT_BINDING(PLUS, 10, 11);  // Addition
-    INSERT_BINDING(MINUS, 10, 11); // Subtraction
+    INSERT_BINDING(PLUS, 59, 60);  // Addition
+    INSERT_BINDING(MINUS, 59, 60); // Subtraction
 
     // Comparisons:
-    INSERT_BINDING(LESS_THAN, 9, 9);
-    INSERT_BINDING(LESS_THAN_EQUAL, 9, 9);
-    INSERT_BINDING(EQUAL, 9, 9);
-    INSERT_BINDING(NOT_EQUAL, 9, 9);
-    INSERT_BINDING(GREATER_THAN, 9, 9);
-    INSERT_BINDING(GREATER_THAN_EQUAL, 9, 9);
+    INSERT_BINDING(LESS_THAN, 50, 50);
+    INSERT_BINDING(LESS_THAN_EQUAL, 50, 50);
+    INSERT_BINDING(EQUAL, 50, 50);
+    INSERT_BINDING(NOT_EQUAL, 50, 50);
+    INSERT_BINDING(GREATER_THAN, 50, 50);
+    INSERT_BINDING(GREATER_THAN_EQUAL, 50, 50);
 
     // Logical
-    INSERT_BINDING(AND, 7, 8);
-    INSERT_BINDING(OR, 5, 6);
+    INSERT_BINDING(AND, 39, 40);
+    INSERT_BINDING(OR, 29, 30);
 
     // Ternary:
-    INSERT_BINDING(QUESTION_MARK, 4, 3);
+    // INSERT_BINDING(QUESTION_MARK, 20, 19);
 
     // Assignments:
-    INSERT_BINDING(MUL_ASSIGN, 2, 1);
-    INSERT_BINDING(DIV_ASSIGN, 2, 1);
-    INSERT_BINDING(MOD_ASSIGN, 2, 1);
-    INSERT_BINDING(ADD_ASSIGN, 2, 1);
-    INSERT_BINDING(SUB_ASSIGN, 2, 1);
-    INSERT_BINDING(ASSIGNMENT, 2, 1);
+    // TODO: Remove? We dont treat assignment as an expression but instead a
+    // statement.
+    INSERT_BINDING(MUL_ASSIGN, 10, 9);
+    INSERT_BINDING(DIV_ASSIGN, 10, 9);
+    INSERT_BINDING(MOD_ASSIGN, 10, 9);
+    INSERT_BINDING(ADD_ASSIGN, 10, 9);
+    INSERT_BINDING(SUB_ASSIGN, 10, 9);
+    INSERT_BINDING(ASSIGNMENT, 10, 9);
   }
 };
 
@@ -75,11 +74,15 @@ class PostfixMap : public BindingMap {
   public:
   PostfixMap()
   {
-    INSERT_BINDING(BRACKET_OPEN, 16, 15);
-    INSERT_BINDING(PAREN_OPEN, 16, 15);
+    INSERT_BINDING(BRACKET_OPEN, 120, 119);
+    INSERT_BINDING(PAREN_OPEN, 120, 119);
 
-    INSERT_BINDING(DOT, 15, 14);
-    INSERT_BINDING(ARROW, 15, 14);
+		// Member access is postfix.
+    INSERT_BINDING(DOT, 110, 109);
+    INSERT_BINDING(ARROW, 110, 109);
+
+    // Casting sits inbetween tightly binded expression
+    INSERT_BINDING(TO, 80, 80);
   }
 };
 } // namespace parser::pratt::binding

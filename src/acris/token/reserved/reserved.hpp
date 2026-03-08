@@ -140,6 +140,7 @@ namespace keywords {
     g_declare.pair(), g_macro.pair(), g_const.pair(),
     g_alias.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
 		g_proto.pair(),
+		g_to.pair(),
     g_func.pair(),
     g_match.pair(),
     g_if.pair(), g_else.pair(), g_elif.pair(),

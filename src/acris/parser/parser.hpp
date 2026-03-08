@@ -61,7 +61,7 @@ class Parser {
 
   auto get_token_stream() -> TokenStream&;
 
-	// TODO: Someday use std::allocate_shared with an arena allocator.
+  // TODO: Someday use std::allocate_shared with an arena allocator.
   /*!
    * Wrapper method for std::make_shared() makes it easy to change smart
    * pointer type later down the line
@@ -128,13 +128,20 @@ class Parser {
     return surround(TokenType::ACCOLADE_OPEN, TokenType::ACCOLADE_CLOSE, t_fn);
   }
 
-  
   template<typename Fn>
   inline auto brackets(const Fn t_fn)
   {
     DBG_TRACE_FN(VERBOSE);
 
     return surround(TokenType::BRACKET_OPEN, TokenType::BRACKET_CLOSE, t_fn);
+  }
+
+  template<typename Fn>
+  inline auto angle_brackets(const Fn t_fn)
+  {
+    DBG_TRACE_FN(VERBOSE);
+
+    return surround(TokenType::LESS_THAN, TokenType::GREATER_THAN, t_fn);
   }
 
   auto list_of(ParseFn t_fn) -> ast::node::NodeListPtr;

@@ -7,6 +7,7 @@ namespace ast::node::operators {
 class AddressOf;
 class Dereference;
 class UnaryPrefix;
+class ToCast;
 class Increment;
 class Decrement;
 class Not;
@@ -17,6 +18,7 @@ class Comparison;
 class And;
 class Or;
 class Assignment;
+
 
 // Trinary operator:
 class Ternary;

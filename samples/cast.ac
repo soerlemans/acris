@@ -1,0 +1,10 @@
+module to_cast_sample
+
+// Standard library include.
+#<include_once <core/core.ac>
+// #<include_once <core/libc.ac>
+
+func main() -> int {
+  var path = getenv("PATH")
+  return strlen(path)
+}

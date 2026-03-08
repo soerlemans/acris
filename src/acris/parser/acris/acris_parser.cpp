@@ -80,6 +80,20 @@ auto AcrisParser::terminator() -> void
   }
 }
 
+auto AcrisParser::type_expr() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+
+  return m_type.type_expr();
+}
+
+auto AcrisParser::expr() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+
+  return m_pratt.expr();
+}
+
 auto AcrisParser::literal_list() -> NodeListPtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -537,7 +551,7 @@ auto AcrisParser::scope_resolution() -> NodePtr
       ScopeResolutionPath path{};
       path.push_back(id);
 
-			// Qualified name target.
+      // Qualified name target.
       auto target_expr{m_pratt.lvalue()};
 
       node = make_node<ScopeResolution>(pos, std::move(path),

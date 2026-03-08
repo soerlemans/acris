@@ -69,3 +69,6 @@ let STDERR = 2
   decl func exit(status: int) -> void
   decl func abort() -> void
 }
+
+// TODO: Implement for simple printing.
+// decl func write_str(t_fd: int, t_buf: cstr, t_count: usz) -> isz

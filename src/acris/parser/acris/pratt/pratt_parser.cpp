@@ -575,6 +575,32 @@ auto PrattParser::call([[maybe_unused]] NodePtr& t_lhs,
   return node;
 }
 
+auto PrattParser::to_cast(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(after_newlines(TokenType::TO)) {
+    PARSER_FOUND(TokenType::TO);
+    const auto token{get_token()};
+    next();
+
+    expect(TokenType::LESS_THAN);
+
+    if(auto rhs{t_fn(token.type())}; rhs) {
+      node = make_node<ToCast>(pos, std::move(t_lhs), std::move(rhs));
+      expect(TokenType::GREATER_THAN);
+
+    } else {
+      prev();
+      prev();
+    }
+  }
+
+  return node;
+}
+
 auto PrattParser::postfix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -589,6 +615,8 @@ auto PrattParser::postfix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr
   } else if(auto ptr{subscript(t_lhs, t_fn)}; ptr) {
     node = std::move(ptr);
   } else if(auto ptr{call(t_lhs, t_fn)}; ptr) {
+    node = std::move(ptr);
+  } else if(auto ptr{to_cast(t_lhs, t_fn)}; ptr) {
     node = std::move(ptr);
   }
 

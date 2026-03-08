@@ -26,7 +26,8 @@ using RhsFn = std::function<NodePtr(TokenType)>;
 struct PrattParserDelegate {
   PrattParserDelegate() = default;
 
-	virtual auto scope_resolution() -> NodePtr = 0;
+  virtual auto type_expr() -> NodePtr = 0;
+  virtual auto scope_resolution() -> NodePtr = 0;
 
   // Needed to check if we can use iota.
   virtual auto context_check_enum() -> void = 0;
@@ -91,6 +92,7 @@ class PrattParser : public Parser {
   virtual auto member_access(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
   virtual auto subscript(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
   virtual auto call(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto to_cast(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
 
   virtual auto postfix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
 
