@@ -134,6 +134,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto visit(node::operators::AddressOf* t_addr_of) -> Any override;
   auto visit(node::operators::Dereference* t_deref) -> Any override;
   auto visit(node::operators::UnaryPrefix* t_up) -> Any override;
+  auto visit(node::operators::ToCast* t_cast) -> Any override;
 
   // Logical:
   auto visit(node::operators::Not* t_not) -> Any override;

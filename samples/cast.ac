@@ -4,11 +4,10 @@ module to_cast_sample
 #<include_once <core/core.ac>
 
 func main() -> int {
-  var ptr = malloc(4)
+  var target: u32
+  var ptr = &target
 
   var more = ptr to<*uint>
-
-  free(more)
 
   return 0
 }

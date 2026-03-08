@@ -871,6 +871,19 @@ auto SemanticChecker::visit(UnaryPrefix* t_up) -> Any
   return left;
 }
 
+auto SemanticChecker::visit(ToCast* t_cast) -> Any
+{
+  const auto left{get_symbol_data(t_cast->left())};
+  const auto type_data{node2symbol_data(t_cast->right())};
+
+	// Annotate AST.
+  m_annot_queue.push({t_cast, type_data});
+
+  // TODO: Check if cast is possible.
+
+  return type_data;
+}
+
 // Logical:
 auto SemanticChecker::visit(Not* t_not) -> Any
 {
