@@ -18,9 +18,10 @@ func init_string(t_str: *ro char) -> String {
   return init
 }
 
-func (String) at(t_idx: usz) -> char {
-  return self.m_buffer[t_idx]
-}
+// TODO: Parameters dont work yet?
+// func (String) at(t_idx: usz) -> char {
+//   return self.m_buffer[t_idx]
+// }
 
 func (String) c_str() -> *ro char {
   let buf = (self.m_buffer) to<*ro char>
@@ -28,8 +29,8 @@ func (String) c_str() -> *ro char {
   return buf
 }
 
-func (String) free() -> void {
-  let buf = (self.m_buffer) to <*void>
+func (String) destroy() -> void {
+  var buf = (self.m_buffer) to <*void>
 
   free(buf)
 }

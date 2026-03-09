@@ -7,8 +7,9 @@ func main() -> int {
 
   // test.str()
 
-  let str = init_string("Hello World!")
-  defer str.free()
+  // let str = init_string("Hello World!")
+  var str = init_string("Hello World!")
+  defer str.destroy()
 
   return 0
 }
