@@ -1133,6 +1133,10 @@ auto SemanticChecker::visit(Struct* t_struct) -> Any
   // Loop through member declarations and add them to the member map.
   MemberMap members{};
   for(const auto& node : *struct_body) {
+    // TODO: Maybe someday we will need a separate Symbol type like make_member.
+    using types::symbol::make_variable;
+    using types::symbol::Mutability;
+
     // Gain a raw ptr (non owning).
     // If the AST changes the assertion will be triggered.
     const auto* member_decl{dynamic_cast<MemberDecl*>(node.get())};
@@ -1140,13 +1144,14 @@ auto SemanticChecker::visit(Struct* t_struct) -> Any
                  R"(Was unable to cast to "*MemberDecl"!)");
 
     const std::string member_id{member_decl->identifier()};
-    const SymbolData member_type{node2symbol_data(member_decl->type())};
+    const SymbolData underlying_type{node2symbol_data(member_decl->type())};
+    const SymbolData member_type{
+      make_variable(Mutability::MUTABLE, underlying_type)};
 
     members.insert({member_id, member_type});
   }
 
   const auto struct_data{make_struct(struct_id, members)};
-
   add_symbol_definition(struct_id, struct_data);
 
   DBG_INFO("Struct: ", struct_data);
@@ -1192,6 +1197,26 @@ auto SemanticChecker::visit(MemberAccess* t_access) -> Any
   const auto pos{t_access->position()};
 
   const auto lhs{get_resolved_result_type(left)};
+  if(!lhs.is_struct()) {
+    throw_type_error("Can only use . on structs.");
+  }
+
+  const auto& [struct_id, members, methods] = *(lhs.as_struct());
+
+  std::string_view member_id{};
+  if(auto ptr{dynamic_cast<IdentifierNode*>(right.get())}; ptr) {
+    member_id = ptr->identifier();
+
+    auto iter{members.find(std::string{member_id})};
+    if(iter == members.end()) {
+      const auto err{
+        std::format("Struct {} has no member named {}.", struct_id, member_id)};
+
+      throw_type_error(err);
+    }
+
+    return {iter->second};
+  }
 
   // Check type of left side, check if operation on the right side is possible.
   // Always return result of right side operation.

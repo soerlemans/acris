@@ -221,16 +221,23 @@ namespace symbols {
   DEFINE_TERMINAL(g_and, "&&", AND);
 
 	// Bitwise:
-  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_NOT);
+	// Follow Odin's syntax which uses prefix as a bit inversion.
+	// And infix as XOR.
+  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_XOR); // TODO: Rename tilde.
   DEFINE_TERMINAL(g_bitwise_and,  '&', BITWISE_AND);
   DEFINE_TERMINAL(g_bitwise_or,  '|', BITWISE_OR);
-  DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
+  // DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
 
   DEFINE_TERMINAL(g_bitwise_lhs,  "<<", BITWISE_LHS);
   DEFINE_TERMINAL(g_bitwise_rhs,  ">>", BITWISE_RHS);
 
+	// Stream operators:
+  // DEFINE_TERMINAL(g_bitwise_lhs,  "<%", BITWISE_LHS);
+  // DEFINE_TERMINAL(g_bitwise_rhs,  "%>", BITWISE_RHS);
+
   // Miscellaneous:
   DEFINE_TERMINAL(g_arrow,         "->", ARROW);
+  DEFINE_TERMINAL(g_circumflex,    "*.", ARROW); // I like postfix syntax for this a lot more.
   DEFINE_TERMINAL(g_dot,           '.',  DOT);
   DEFINE_TERMINAL(g_comma,         ',',  COMMA);
   DEFINE_TERMINAL(g_question_mark, '?',  QUESTION_MARK);

@@ -1,0 +1,35 @@
+#<include_once <core/core.ac>
+
+struct String {
+  m_buffer: *char
+  m_length: usz
+  m_capacity: usz
+}
+
+func init_string(t_str: *ro char) -> String {
+  var init: String
+
+  let size = strlen(t_str)
+
+  init.m_buffer = malloc(size) to<*char>
+  init.m_length = size
+  init.m_capacity = 2 * size
+
+  return init
+}
+
+func (String) at(t_idx: usz) -> char {
+  return self.m_buffer[t_idx]
+}
+
+func (String) c_str() -> *ro char {
+  let buf = (self.m_buffer) to<*ro char>
+
+  return buf
+}
+
+func (String) free() -> void {
+  let buf = (self.m_buffer) to <*void>
+
+  free(buf)
+}

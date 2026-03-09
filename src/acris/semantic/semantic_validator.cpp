@@ -214,17 +214,23 @@ auto SemanticValidator::validate_comparison(const BinaryOperationData& t_data)
 {
   const auto& [lhs, rhs, pos] = t_data;
 
+
+  // We need to resolve to the underlying type of the variable.
+  // For type validation purposes.
+  const auto lhs_resolved{lhs.resolve_result_type()};
+  const auto rhs_resolved{rhs.resolve_result_type()};
+
   // We only check if the promotion is possible because we dont use the result.
-  const auto opt{promote(lhs, rhs, PromotionMode::PEAK)};
+  const auto opt{promote(lhs_resolved, rhs_resolved, PromotionMode::PEAK)};
 
   // If promotion fails and the types are not equal.
   // We have a type mismatch.
-  if(!opt && lhs != rhs) {
+  if(!opt && lhs_resolved != rhs_resolved) {
     std::stringstream ss{};
 
     ss << "Comparison operation contains a type mismatch.\n";
-    ss << "typeof lhs = " << lhs << "\n";
-    ss << "typeof rhs = " << rhs << "\n\n";
+    ss << "typeof lhs = " << lhs_resolved << "\n";
+    ss << "typeof rhs = " << rhs_resolved << "\n\n";
 
     ss << pos;
 
