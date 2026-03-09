@@ -6,5 +6,8 @@ module getenv_sample
 func main() -> int {
   var path = getenv("PATH") to<*ro char>
 
+  write_str("PATH: ")
+  writeln_str(path)
+
   return strlen(path)
 }
