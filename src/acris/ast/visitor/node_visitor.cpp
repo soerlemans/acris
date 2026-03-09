@@ -56,8 +56,9 @@ STUB(ReturnType)
 // LValue:
 STUB(Let)
 STUB(Var)
-STUB(Variable)
+STUB(IdentifierNode)
 STUB(Subscript)
+STUB(ScopeResolution)
 
 // Meta:
 STUB(Attribute)
@@ -65,7 +66,7 @@ STUB(LetDecl)
 STUB(VarDecl)
 STUB(FunctionDecl)
 
-// Arithmetic:
+// BinaryOperator:
 STUB(Arithmetic)
 STUB(Assignment)
 STUB(Comparison)
@@ -74,6 +75,8 @@ STUB(Decrement)
 STUB(AddressOf)
 STUB(Dereference)
 STUB(UnaryPrefix)
+STUB(ToCast)
+
 STUB(Not)
 STUB(And)
 STUB(Or)
@@ -93,6 +96,8 @@ STUB(Array)
 STUB(TypeName)
 
 // User Types:
+STUB(EnumField)
+STUB(Enum)
 STUB(Method)
 STUB(MethodCall)
 STUB(Interface)

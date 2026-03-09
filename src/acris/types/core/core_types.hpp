@@ -4,6 +4,7 @@
 // STL Includes:
 #include <iosfwd>
 #include <map>
+#include <set>
 #include <string>
 
 // Absolute Includes:
@@ -16,8 +17,17 @@ namespace types::core {
 // Aliases:
 using MemberMap = std::map<std::string, TypeVariant>;
 using MethodMap = std::map<std::string, TypeVariant>;
+using IdentifierSet = std ::set<std::string>;
 
 // Structs:
+struct EnumType {
+  std::string m_identifier;
+  TypeVariant m_underlying_type;
+  IdentifierSet m_fields;
+
+  auto native_type() const -> core::NativeTypeOpt;
+};
+
 // TODO: use VarTypePtr and FnTypePtr in combination with a map?
 struct StructType {
   std::string m_identifier;
@@ -58,6 +68,12 @@ struct VarType {
 
 // Functions:
 template<typename... Args>
+inline auto make_enum(Args&&... t_args) -> TypeVariant
+{
+  return std::make_shared<EnumType>(std::forward<Args>(t_args)...);
+}
+
+template<typename... Args>
 inline auto make_struct(Args&&... t_args) -> TypeVariant
 {
   return std::make_shared<StructType>(std::forward<Args>(t_args)...);
@@ -90,6 +106,8 @@ inline auto make_array(Args&&... t_args) -> TypeVariant
 } // namespace types::core
 
 // Functions:
+auto operator<<(std::ostream& t_os, types::core::EnumTypePtr t_enum)
+  -> std::ostream&;
 auto operator<<(std::ostream& t_os, types::core::StructTypePtr t_struct)
   -> std::ostream&;
 auto operator<<(std::ostream& t_os, types::core::FnTypePtr t_fn)

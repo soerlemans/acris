@@ -20,6 +20,7 @@ using codegen::cpp_backend::type_spec2cpp;
 using lib::stdexcept::InvalidArgument;
 using lib::stdexcept::throwf;
 using types::core::ArrayTypePtr;
+using types::core::EnumTypePtr;
 using types::core::FnTypePtr;
 using types::core::NativeType;
 using types::core::nativetype2str;
@@ -70,6 +71,11 @@ inline auto native_type2cpp(const NativeType t_type) -> std::string
   }
 
   return str;
+}
+
+inline auto enum2cpp(const EnumTypePtr& t_enum) -> std::string
+{
+  return t_enum->m_identifier;
 }
 
 inline auto struct2cpp(const StructTypePtr& t_struct) -> std::string
@@ -141,6 +147,9 @@ auto type_spec2cpp(const TypeSpec t_spec) -> std::string
 					Overload{
 						[&](const NativeType t_native) {
 							return native_type2cpp(t_native);
+						},
+						[&](const EnumTypePtr& t_enum) {
+							return enum2cpp(t_enum);
 						},
 						[&](const StructTypePtr& t_struct) {
 							return struct2cpp(t_struct);

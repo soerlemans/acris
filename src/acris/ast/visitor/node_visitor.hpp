@@ -54,8 +54,9 @@ class NodeVisitor {
   // Lvalue:
   virtual auto visit(node::lvalue::Let* t_let) -> Any;
   virtual auto visit(node::lvalue::Var* t_var) -> Any;
-  virtual auto visit(node::lvalue::Variable* t_var) -> Any;
+  virtual auto visit(node::lvalue::IdentifierNode* t_id) -> Any;
   virtual auto visit(node::lvalue::Subscript* t_subscript) -> Any;
+  virtual auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any;
 
   // Meta:
   virtual auto visit(node::meta::Attribute* t_attr) -> Any;
@@ -74,6 +75,7 @@ class NodeVisitor {
   virtual auto visit(node::operators::AddressOf* t_addr_of) -> Any;
   virtual auto visit(node::operators::Dereference* t_deref) -> Any;
   virtual auto visit(node::operators::UnaryPrefix* t_up) -> Any;
+  virtual auto visit(node::operators::ToCast* t_to) -> Any;
 
   // Logical:
   virtual auto visit(node::operators::Not* t_not) -> Any;
@@ -100,6 +102,8 @@ class NodeVisitor {
   virtual auto visit(node::builtin_types::TypeName* t_type) -> Any;
 
   // User Types:
+  virtual auto visit(node::user_types::EnumField* t_field) -> Any;
+  virtual auto visit(node::user_types::Enum* t_enum) -> Any;
   virtual auto visit(node::user_types::Method* t_meth) -> Any;
   virtual auto visit(node::user_types::MethodCall* t_meth_call) -> Any;
   virtual auto visit(node::user_types::Interface* t_ifc) -> Any;

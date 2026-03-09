@@ -5,6 +5,8 @@
 #include <ios>
 #include <sstream>
 
+// Absolute Includes:
+#include "lib/stdprint.hpp"
 
 // Macros:
 /*!
@@ -97,22 +99,30 @@ DEFINE_PRINTER_METHOD(ReturnType)
 DEFINE_PRINTER_METHOD(Let)
 DEFINE_PRINTER_METHOD(Var)
 
-auto AstPrinter::visit(Variable* t_var) -> Any
+auto AstPrinter::visit(IdentifierNode* t_id) -> Any
 {
   COUNTG_INIT();
 
-  print_hl("Variable: ", t_var->identifier());
-  print_traits(t_var);
+  print_hl("IdentifierNode: ", t_id->identifier());
+  print_traits(t_id);
 
   return {};
 }
 
-auto AstPrinter::visit(Subscript* t_subscript) -> Any
+DEFINE_PRINTER_METHOD(Subscript)
+
+auto AstPrinter::visit(ScopeResolution* t_scope_res) -> Any
 {
+  using lib::stdprint::detail::print_seq;
+
   COUNTG_INIT();
 
-  print_hl("Subscript");
-  print_traits(t_subscript);
+  std::ostringstream oss{};
+  print_seq(oss, t_scope_res->path());
+
+  print_hl("ScopeResolution");
+  print("| Path: ", oss.view());
+  print_traits(t_scope_res);
 
   return {};
 }
@@ -251,6 +261,8 @@ auto AstPrinter::visit(UnaryPrefix* t_up) -> Any
   return {};
 }
 
+DEFINE_PRINTER_METHOD(ToCast)
+
 // Logical:
 DEFINE_PRINTER_METHOD(Not)
 DEFINE_PRINTER_METHOD(And)
@@ -376,12 +388,15 @@ auto AstPrinter::visit(TypeName* t_type) -> Any
 }
 
 // User Types:
+DEFINE_PRINTER_METHOD(EnumField)
+DEFINE_PRINTER_METHOD(Enum)
+
 auto AstPrinter::visit(Method* t_meth) -> Any
 {
   COUNTG_INIT();
 
   print_hl("Method");
-  print("Receiver Type: ", t_meth->get_receiver());
+  print("ReceiverType: ", t_meth->get_receiver());
   print_traits(t_meth);
 
   return {};

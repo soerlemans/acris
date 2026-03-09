@@ -47,6 +47,7 @@ class AcrisParser : public Parser, public PrattParserDelegate {
    * @param[in] t_context Context to check for.
    */
   auto context_check(Context t_context) -> void;
+  auto context_check_enum() -> void;
 
   public:
   AcrisParser(TokenStream t_token_stream);
@@ -55,6 +56,10 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   // Grammar:
   virtual auto newline_opt() -> void;
   virtual auto terminator() -> void;
+
+  // Needed for cross access in type and pratt parser.
+  virtual auto type_expr() -> NodePtr;
+  virtual auto expr() -> NodePtr;
 
   // Expressions:
   virtual auto literal_list() -> NodeListPtr;
@@ -93,6 +98,14 @@ class AcrisParser : public Parser, public PrattParserDelegate {
 
   // Body:
   virtual auto body() -> NodeListPtr;
+
+  // User Types:
+  virtual auto scope_resolution() -> NodePtr;
+
+  // Enum my beloved:
+  virtual auto enum_field() -> NodePtr;
+  virtual auto enum_field_list() -> NodeListPtr;
+  virtual auto enum_def() -> NodePtr;
 
   // Struct:
   virtual auto member_decl() -> NodePtr;

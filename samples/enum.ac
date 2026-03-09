@@ -1,0 +1,13 @@
+module enum_module
+
+enum Color: u8 {
+  RED = 0,
+  BLUE,
+  GREEN,
+}
+
+func main() -> int {
+  let enum_val = Color::RED
+
+  return 0
+}

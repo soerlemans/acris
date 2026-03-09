@@ -19,13 +19,36 @@ using binding::InfixMap;
 using binding::PostfixMap;
 using binding::PrefixMap;
 
+using ParseFn = std::function<NodePtr(int)>;
 //! This type is used to get the right hand side of a binary expressions
-using RhsFn = std::function<NodePtr(TokenType)>;
+using RhsFn = std::function<NodePtr(TokenType, ParseFn)>;
+
+struct RhsContext {
+  RhsFn m_rhs;
+  ParseFn m_parse;
+
+  auto operator()(const TokenType t_type) const -> NodePtr
+  {
+    // Use default parsing target.
+    return m_rhs(t_type, m_parse);
+  }
+
+  auto operator()(const TokenType t_type, ParseFn&& t_fn) const -> NodePtr
+  {
+    // If we need custom behavior, like parsing a type spec.
+    return m_rhs(t_type, t_fn);
+  }
+};
 
 // Structs:
 struct PrattParserDelegate {
   PrattParserDelegate() = default;
 
+  virtual auto type_expr() -> NodePtr = 0;
+  virtual auto scope_resolution() -> NodePtr = 0;
+
+  // Needed to check if we can use iota.
+  virtual auto context_check_enum() -> void = 0;
   virtual auto expr_list_opt() -> NodeListPtr = 0;
   virtual auto self() -> NodePtr = 0;
 
@@ -75,20 +98,22 @@ class PrattParser : public Parser {
   virtual auto prefix_chain() -> NodePtr;
 
   // Infix parsing:
-  virtual auto infix_chain(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto infix_chain(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
 
-  virtual auto arithmetic(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-  virtual auto logical(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-  virtual auto comparison(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto arithmetic(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
+  virtual auto logical(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
+  virtual auto comparison(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
 
-  virtual auto infix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto infix(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
 
   // Postfix parsing:
-  virtual auto member_access(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-  virtual auto subscript(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-  virtual auto call(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto member_access(NodePtr& t_lhs, const RhsContext& t_ctx)
+    -> NodePtr;
+  virtual auto subscript(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
+  virtual auto call(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
+  virtual auto to_cast(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
 
-  virtual auto postfix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
+  virtual auto postfix(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr;
 
   // Expressions:
   //! Continues a chain expression not an entry.
@@ -97,33 +122,12 @@ class PrattParser : public Parser {
   //! Entry for normal expressions.
   virtual auto expr(int t_min_bp = 0) -> NodePtr;
 
-  // Lvalue specific:
-  virtual auto lvalue_chain(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-  virtual auto lvalue_infix(NodePtr& t_lhs, const RhsFn& t_fn) -> NodePtr;
-
+  // Side effect escape hatch.
   /*!
-   * Continue's a member access chain.
-   * Which derives from an lvalue_expr().
-   * Not an entry.
+   * Escape hatch for statements which produce side effects.
+   * Usually function calls/method calls.
    */
-  virtual auto lvalue_member_expr(int t_min_bp = 0) -> NodePtr;
-
-  /*!
-   * Generally an expression is universal.
-   * But when we are dealing with precedence as the destination for a value.
-   * We only allow assignable statements on the left hand side.
-   * So no assigning to the result of function calls.
-   * Entry for Lvalue expressions.
-   */
-  virtual auto lvalue_expr(int t_min_bp = 0) -> NodePtr;
-
-  // Method call specific.
-  /*!
-   * The only free standing chain expr which we do not assign to.
-   * Is a method_call at the end of a chain expr.
-   * This is an entry for Method Call expressions.
-   */
-  virtual auto method_call_expr(int t_min_bp = 0) -> NodePtr;
+  virtual auto effect_expr(int t_min_bp = 0) -> NodePtr;
 
   virtual ~PrattParser() = default;
 };

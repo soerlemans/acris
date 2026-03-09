@@ -5,6 +5,12 @@
 
 // Using Statements:
 namespace types::core {
+// EnumType:
+auto EnumType::native_type() const -> core::NativeTypeOpt
+{
+  return {};
+}
+
 // StructType:
 auto StructType::native_type() const -> core::NativeTypeOpt
 {
@@ -37,6 +43,30 @@ auto VarType::native_type() const -> core::NativeTypeOpt
 } // namespace types::core
 
 // Functions:
+auto operator<<(std::ostream& t_os, types::core::EnumTypePtr t_enum)
+  -> std::ostream&
+{
+  if(t_enum) {
+    t_os << "(enum ut: {" << t_enum->m_underlying_type << "} ";
+
+    t_os << '{';
+    std::string_view sep{""};
+    for(auto&& field : t_enum->m_fields) {
+      t_os << sep << field;
+
+      sep = ", ";
+    }
+
+    t_os << "})";
+  } else {
+    DBG_ERROR("(EnumTypePtr) nullptr!");
+
+    t_os << "nullptr";
+  }
+
+  return t_os;
+}
+
 auto operator<<(std::ostream& t_os, types::core::StructTypePtr t_struct)
   -> std::ostream&
 {

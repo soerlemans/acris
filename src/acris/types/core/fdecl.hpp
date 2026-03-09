@@ -10,6 +10,7 @@ namespace types::core {
 // Forward Declarations:
 enum class NativeType;
 
+struct EnumType;
 struct StructType;
 struct FnType;
 struct PointerType;
@@ -19,6 +20,7 @@ struct VarType;
 class TypeVariant;
 
 // Aliases:
+using EnumTypePtr = std::shared_ptr<EnumType>;
 using StructTypePtr = std::shared_ptr<StructType>;
 using FnTypePtr = std ::shared_ptr<FnType>;
 using PointerTypePtr = std::shared_ptr<PointerType>;

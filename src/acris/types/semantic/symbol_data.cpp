@@ -63,6 +63,31 @@ auto nullptr_check(const std::string_view t_str,
 
 namespace types::symbol {
 // Methods:
+auto SymbolData::is_enum() const -> bool
+{
+  return std::holds_alternative<EnumTypePtr>(*this);
+}
+
+auto SymbolData::is_struct() const -> bool
+{
+  return std::holds_alternative<StructTypePtr>(*this);
+}
+
+auto SymbolData::is_ptr() const -> bool
+{
+  return std::holds_alternative<PointerTypePtr>(*this);
+}
+
+auto SymbolData::is_array() const -> bool
+{
+  return std::holds_alternative<ArrayTypePtr>(*this);
+}
+
+auto SymbolData::as_enum() const -> EnumTypePtr
+{
+  return std::get<EnumTypePtr>(*this);
+}
+
 auto SymbolData::as_struct() const -> StructTypePtr
 {
   return std::get<StructTypePtr>(*this);
@@ -86,21 +111,6 @@ auto SymbolData::as_array() const -> ArrayTypePtr
 auto SymbolData::as_var() const -> VarTypePtr
 {
   return std::get<VarTypePtr>(*this);
-}
-
-auto SymbolData::is_struct() const -> bool
-{
-  return std::holds_alternative<StructTypePtr>(*this);;
-}
-
-auto SymbolData::is_ptr() const -> bool
-{
-  return std::holds_alternative<PointerTypePtr>(*this);;
-}
-
-auto SymbolData::is_array() const -> bool
-{
-  return std::holds_alternative<ArrayTypePtr>(*this);;
 }
 
 auto SymbolData::is_mutable() const -> bool
@@ -214,6 +224,7 @@ auto SymbolData::operator==(const SymbolData& t_rhs) const -> bool
         // clang-format off
       } else if constexpr(
 				 lib::IsAnyOf<L,
+				   EnumTypePtr,
 					 StructTypePtr, FnTypePtr,
            PointerTypePtr, ArrayTypePtr, VarTypePtr
 				 >) {

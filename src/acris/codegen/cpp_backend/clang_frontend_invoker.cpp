@@ -25,11 +25,6 @@ ClangFrontendInvoker::ClangFrontendInvoker(): m_compiler_flags{}, m_out{}
 
   // Add C++23 standard flag.
   add_flags("-std=c++23"sv);
-
-  // Always link against our static library, it must be installed.
-  // add_flags("-nolibc"sv);
-  add_flags("-nostdlib"sv);
-  add_flags("-lstdacris"sv);
 }
 
 auto ClangFrontendInvoker::add_flags(const std::string_view t_str) -> void
@@ -55,9 +50,11 @@ auto ClangFrontendInvoker::set_out(const std::string_view t_out) -> void
 // Public Methods:
 auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
 {
-  const auto stem{t_source.stem()};
+  fs::path source{t_source};
+  source.make_preferred();
 
-  const auto tmp_base{t_source.parent_path() / stem};
+  const auto stem{source.stem()};
+  const auto tmp_base{source.parent_path() / stem};
 
   auto tmp_obj{tmp_base};
   tmp_obj += ".o";
@@ -79,7 +76,7 @@ auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
   DBG_PRINTLN("# C++ codegeneration:");
 
   const auto cmd_cat{
-    std::format("clang-format --style=Google < {}", t_source.native())};
+    std::format("clang-format --style=Google < {}", t_source.c_str())};
   std::system(cmd_cat.c_str());
 
   DBG_PRINTLN();
@@ -98,7 +95,7 @@ auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
 
   const auto flags{m_compiler_flags.view()};
   const auto cmd{std::format("export SRC_STEM=\"{}\"; {} {} {} -o {}",
-                             stem.native(), cpp_compiler, t_source.native(),
+                             stem.c_str(), cpp_compiler, t_source.c_str(),
                              flags, out)};
 
   DBG_NOTICE("Compiler command: ", cmd);

@@ -15,18 +15,18 @@ using node_traits::NodePosition;
 using node_traits::TypeData;
 
 // Classes:
-class Variable : public NodePosition, public Identifier, public TypeData {
+class IdentifierNode : public NodePosition, public Identifier, public TypeData {
   public:
-  Variable(TextPosition t_pos, std::string_view t_identifier);
+  IdentifierNode(TextPosition t_pos, std::string_view t_identifier);
 
-  AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(Variable, NodePosition, Identifier)
+  AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(IdentifierNode, NodePosition, Identifier)
   AST_VISITOR_MAKE_VISITABLE(visitor::NodeVisitor);
 
-  virtual ~Variable() = default;
+  virtual ~IdentifierNode() = default;
 };
 } // namespace ast::node::lvalue
 
 // Cereal type registration:
-REGISTER_ARCHIVEABLE_TYPE(ast::node::lvalue, Variable);
+REGISTER_ARCHIVEABLE_TYPE(ast::node::lvalue, IdentifierNode);
 
 #endif // ACRIS_ACRIS_AST_NODE_LVALUE_VARIABLE_HPP

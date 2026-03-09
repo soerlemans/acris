@@ -1,0 +1,15 @@
+module to_cast_sample
+
+// Standard library include.
+#<include_once <core/core.ac>
+
+func main() -> int {
+  var target: u32
+  var ptr = &target
+
+  var more = ptr to <*uint>
+  var test = 10 to <uint> + 20 to <uint>
+  var test2 = (10 + 20) to <uint>
+
+  return 0
+}

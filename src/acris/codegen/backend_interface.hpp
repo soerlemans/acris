@@ -8,6 +8,7 @@
 #include "acris/ast/visitor/node_visitor.hpp"
 #include "acris/codegen/interop_backend_interface.hpp"
 #include "acris/mir/mir.hpp"
+#include "acris/unit/session_unit.hpp"
 #include "lib/filesystem.hpp"
 
 namespace codegen {
@@ -22,12 +23,14 @@ class BackendInterface;
 
 // Aliases:
 using BackendPtr = std::shared_ptr<BackendInterface>;
+using unit::SessionUnitPtr;
 
 namespace fs = std::filesystem;
 
 // Enums:
 enum class Backend {
   LLVM_BACKEND,
+  WASM_BACKEND,
   JS_BACKEND,
   CPP_BACKEND,
   C_BACKEND,
@@ -46,6 +49,8 @@ enum class Optimize {
  * Utility structure packing all required parameters for compiling.
  */
 struct CompileParams {
+  SessionUnitPtr m_session;
+
   NodePtr m_ast;
   ModulePtr m_mir;
 

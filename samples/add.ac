@@ -1,5 +1,5 @@
-module add
+module add_sample
 
-func add(t_l: int, t_r: int) -> int {
-   return t_l + t_r
+func main() -> int {
+   return 10 + 20
 }

@@ -3,11 +3,11 @@ module str_sample
 // let g_str = "Global"
 
 
-func testFunc() -> void {
-  let l_str = "Somewhere"
+// func testFunc() -> void {
+//   let l_str = "Somewhere"
 
-	let reassign = l_str
-}
+// 	let reassign = l_str
+// }
 
 func main() -> int {
   let str_lit = "Test"

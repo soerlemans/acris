@@ -99,10 +99,23 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto phi_arg_val2llvm(const PhiArgValue& t_phi_arg,
                         std::string_view t_id = "phi") -> llvm::Value*;
 
+	// Opcodes:
   auto on_const_int(Instruction& t_instr) -> void;
+
+  auto on_iadd(Instruction& t_instr) -> void;
   auto on_isub(Instruction& t_instr) -> void;
+  auto on_imul(Instruction& t_instr) -> void;
+  auto on_idiv(Instruction& t_instr) -> void;
+  auto on_imod(Instruction& t_instr) -> void;
+  auto on_ineg(Instruction& t_instr) -> void;
+
+  auto on_icmp_lt(Instruction& t_instr) -> void;
+  auto on_icmp_lte(Instruction& t_instr) -> void;
+  auto on_icmp_eq(Instruction& t_instr) -> void;
+  auto on_icmp_ne(Instruction& t_instr) -> void;
   auto on_icmp_gt(Instruction& t_instr) -> void;
   auto on_icmp_gte(Instruction& t_instr) -> void;
+
   auto on_bind(Instruction& t_instr) -> void;
   auto on_update(Instruction& t_instr) -> void;
   auto on_cond_jmp(Instruction& t_instr) -> void;
@@ -127,6 +140,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto set_passess() -> void;
 
   auto requires_mir() -> bool override;
+
+	auto invoke_clang_driver(const char* t_tmp_obj, const char* t_out) -> void;
   auto compile(CompileParams& t_params) -> void override;
 
   virtual ~LlvmBackend() = default;

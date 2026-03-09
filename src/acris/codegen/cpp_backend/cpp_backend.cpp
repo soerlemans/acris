@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string_view>
 
+// Library Includes:
+#include <libassert/assert.hpp>
+
 // Absolute Includes:
 #include "acris/ast/node/include_nodes.hpp"
 #include "acris/codegen/cpp_backend/interop/python_backend/python_backend.hpp"
@@ -38,7 +41,9 @@ auto CppBackend::prologue() -> std::string
 
   // FIXME: Temporary input for printing purposes.
   oss << "// Stdacris Includes:\n";
-  oss << R"(#include "stdacris/core/linux/core.h")" << "\n";
+  if(no_libc()) {
+    oss << R"(#include "stdacris/core/linux/core.h")" << "\n";
+  }
   oss << R"(#include "stdacris/internal/internal.hpp")" << "\n\n";
 
   // Loop through the interop backends and add the prologue from each backend.
@@ -108,7 +113,11 @@ auto CppBackend::resolve(NodePtr t_ptr, const bool t_terminate) -> std::string
 
 // Public:
 CppBackend::CppBackend()
-  : m_inv{}, m_interop_backends{}, m_terminate{}, m_id_defer_count{0}
+  : m_inv{},
+    m_session{},
+    m_interop_backends{},
+    m_terminate{},
+    m_id_defer_count{0}
 {}
 
 // Control:
@@ -324,9 +333,9 @@ auto CppBackend::visit(Var* t_var) -> Any
   }
 }
 
-auto CppBackend::visit(Variable* t_var) -> Any
+auto CppBackend::visit(IdentifierNode* t_id) -> Any
 {
-  const auto identifier{t_var->identifier()};
+  const auto identifier{t_id->identifier()};
 
   return std::format("{}", identifier);
 }
@@ -337,6 +346,27 @@ auto CppBackend::visit(Subscript* t_subscript) -> Any
   const auto index_expr{resolve(t_subscript->right())};
 
   return std::format("{}[{}]", expr, index_expr);
+}
+
+auto CppBackend::visit(ScopeResolution* t_scope_res) -> Any
+{
+  const auto scope_path{t_scope_res->path()};
+  const auto expr{t_scope_res->expr()};
+
+  DEBUG_ASSERT(!scope_path.empty(), R"(Empty scope path cant be resolved.)");
+
+  std::ostringstream oss{};
+
+  std::string_view sep{""};
+  for(auto&& elem : scope_path) {
+    oss << sep << elem;
+
+    sep = "::";
+  }
+
+  oss << "::" << resolve(expr);
+
+  return oss.str();
 }
 
 // Meta:
@@ -468,7 +498,7 @@ auto CppBackend::visit(AddressOf* t_addr_of) -> Any
   auto left{t_addr_of->left()};
   const auto elem{resolve(left)};
 
-  if(auto var_ptr{dynamic_cast<Variable*>(left.get())}; var_ptr) {
+  if(auto var_ptr{dynamic_cast<IdentifierNode*>(left.get())}; var_ptr) {
     // For arrays we need to access .data().
     auto type_var{var_ptr->get_type().as_var()};
     if(type_var->m_type.is_array()) {
@@ -492,6 +522,17 @@ auto CppBackend::visit(UnaryPrefix* t_up) -> Any
   const auto left{resolve(t_up->left())};
 
   return std::format("({}{})", op, left);
+}
+
+auto CppBackend::visit(ToCast* t_cast) -> Any
+{
+	// Do not terminate expression.
+  const auto left{resolve(t_cast->left(), false)};
+
+  const auto type_variant{t_cast->get_type()};
+  const auto type{type_spec2cpp({type_variant})};
+
+  return std::format("static_cast<{}>({})", type, left);
 }
 
 // Logical:
@@ -602,6 +643,41 @@ auto CppBackend::visit([[maybe_unused]] Boolean* t_bool) -> Any
 }
 
 // User Types:
+auto CppBackend::visit(EnumField* t_field) -> Any
+{
+  const auto field_id{t_field->identifier()};
+  const auto field_expr{t_field->expr()};
+
+  std::ostringstream oss{};
+
+  oss << field_id;
+
+  if(field_expr) {
+    // Resolve assignment expression.
+    oss << " = " << resolve(field_expr);
+  }
+
+  oss << ", ";
+
+  return oss.str();
+}
+
+auto CppBackend::visit(Enum* t_enum) -> Any
+{
+  const auto enum_id{t_enum->identifier()};
+  const auto enum_type{t_enum->get_type().as_enum()};
+  const auto enum_ut{type_spec2cpp({enum_type->m_underlying_type})};
+  const auto enum_body{t_enum->body()};
+
+  std::ostringstream oss{};
+
+  oss << "enum class " << enum_id << " : " << enum_ut << "{";
+  oss << resolve(enum_body);
+  oss << "};";
+
+  return oss.str();
+}
+
 auto CppBackend::visit(Method* t_meth) -> Any
 {
   using node::node_traits::AttributeType;
@@ -859,6 +935,11 @@ auto CppBackend::set_optimize(const Optimize t_level) -> void
   }
 }
 
+auto CppBackend::no_libc() const -> bool
+{
+  return m_session->no_libc();
+}
+
 auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
 {
   std::ofstream ofs{t_out};
@@ -867,6 +948,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
   // similar.
   ofs << "// Prologue:\n";
   ofs << prologue() << '\n';
+  ofs << '\n';
 
   // Generate forward declarations, to make code position
   // independent. ofs << "// Protoypes:\n"; ofs << "// TODO:
@@ -875,6 +957,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
   // Generate C++ code.
   ofs << "// C++ code:\n";
   ofs << resolve(t_ast);
+  ofs << '\n';
 
   ofs << "// Epilogue:\n";
   ofs << epilogue() << '\n';
@@ -887,7 +970,10 @@ auto CppBackend::requires_mir() -> bool
 
 auto CppBackend::compile(CompileParams& t_params) -> void
 {
-  const auto& [ast, mir, build_dir, source_path] = t_params;
+  const auto& [session, ast, mir, build_dir, source_path] = t_params;
+
+  // TODO: Check for nullptr?
+  m_session = session;
 
   fs::path stem{source_path.stem()};
   const fs::path tmp_src{build_dir / stem.concat(".cpp")};
@@ -899,10 +985,18 @@ auto CppBackend::compile(CompileParams& t_params) -> void
   // Generate C++ source file.
   codegen(ast, tmp_src);
 
+  // Allow optional toggling libc.
+  if(no_libc()) {
+    // Always link against our static library, it must be installed.
+    m_inv.add_flags("-nostdlib");
+    m_inv.add_flags("-lstdacris");
+  }
+
   // Invoke clang frontend to generate a binary.
   m_inv.compile(tmp_src);
 
   // Clear members, for next compilation.
+  m_session.reset();
   m_terminate = {};
   m_id_defer_count = 0;
 }

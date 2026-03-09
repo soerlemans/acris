@@ -10,4 +10,5 @@ target_sources(${TARGET_ACRIS_LIB} PRIVATE
   ternary.cpp
 	address_of.cpp
   unary_prefix.cpp
+  to_cast.cpp
 )

@@ -1,9 +1,6 @@
 #ifndef ACRIS_ACRIS_AST_NODE_OPERATORS_ADDRESS_OF_HPP
 #define ACRIS_ACRIS_AST_NODE_OPERATORS_ADDRESS_OF_HPP
 
-// Absolute Includes:
-#include "acris/token/token_type.hpp"
-
 // Includes:
 #include "../node_traits/include.hpp"
 

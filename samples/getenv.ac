@@ -1,0 +1,13 @@
+module getenv_sample
+
+// Standard library include.
+#<include_once <core/core.ac>
+
+func main() -> int {
+  var path = getenv("PATH") to<*ro char>
+
+  write_str("PATH: ")
+  writeln_str(path)
+
+  return strlen(path)
+}

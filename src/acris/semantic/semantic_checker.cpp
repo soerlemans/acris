@@ -540,15 +540,15 @@ auto SemanticChecker::visit(Var* t_var) -> Any
   return {};
 }
 
-auto SemanticChecker::visit(Variable* t_var) -> Any
+auto SemanticChecker::visit(IdentifierNode* t_id) -> Any
 {
-  const auto id{t_var->identifier()};
+  const auto id{t_id->identifier()};
   const auto var_data{get_symbol_data_from_env(id)};
 
-  DBG_INFO("Variable ", std::quoted(id), " of type ", var_data);
+  DBG_INFO("IdentifierNode ", std::quoted(id), " of type ", var_data);
 
   // Annotate AST.
-  m_annot_queue.push({t_var, var_data});
+  m_annot_queue.push({t_id, var_data});
 
   return {var_data};
 }
@@ -577,6 +577,47 @@ auto SemanticChecker::visit(Subscript* t_subscript) -> Any
   m_annot_queue.push({t_subscript, type});
 
   // return {var_data};
+
+  return type;
+}
+
+auto SemanticChecker::visit(ScopeResolution* t_scope_res) -> Any
+{
+  SymbolData type{};
+
+  const auto scope_path{t_scope_res->path()};
+  auto expr{t_scope_res->expr()};
+
+  DEBUG_ASSERT(!scope_path.empty(), R"(Empty scope path cant be resolved.)");
+
+  // For now only resolve in-module.
+  const auto entity_id{scope_path.front()};
+
+  const auto [iter, exists] = m_symbol_state.find(entity_id);
+  if(exists) {
+    auto& [status, type_data] = iter->second;
+
+    if(type_data.is_enum()) {
+      const auto enum_type{type_data.as_enum()};
+      auto* id_node{dynamic_cast<IdentifierNode*>(expr.get())};
+      DEBUG_ASSERT(id_node != nullptr, R"(Must be an IdentifierNode.)");
+
+      const std::string field_id{id_node->identifier()};
+      const auto has_field{enum_type->m_fields.contains(field_id)};
+      if(!has_field) {
+        const auto msg{
+          std::format("Enum {} has no field named {}.", entity_id, field_id)};
+
+        throw_type_error(msg);
+      }
+
+      // Annotate Queue.
+      m_annot_queue.push({t_scope_res, type_data});
+
+      // Set return value.
+      type = type_data;
+    }
+  }
 
   return type;
 }
@@ -681,7 +722,7 @@ auto SemanticChecker::visit(Arithmetic* t_arith) -> Any
   DBG_INFO("Typeof rhs: ", rhs);
 
   BinaryOperationData data{lhs, rhs, pos};
-  const auto ret{m_validator.validate_assignment(data)};
+  const auto ret{m_validator.validate_arithmetic(data)};
 
   // Annotate AST.
   m_annot_queue.push({t_arith, ret});
@@ -830,6 +871,19 @@ auto SemanticChecker::visit(UnaryPrefix* t_up) -> Any
   return left;
 }
 
+auto SemanticChecker::visit(ToCast* t_cast) -> Any
+{
+  const auto left{get_symbol_data(t_cast->left())};
+  const auto type_data{node2symbol_data(t_cast->right())};
+
+  // Annotate AST.
+  m_annot_queue.push({t_cast, type_data});
+
+  // TODO: Check if cast is possible.
+
+  return type_data;
+}
+
 // Logical:
 auto SemanticChecker::visit(Not* t_not) -> Any
 {
@@ -894,7 +948,13 @@ auto SemanticChecker::visit([[maybe_unused]] Char* t_ch) -> Any
 
 auto SemanticChecker::visit([[maybe_unused]] String* t_str) -> Any
 {
-  return SymbolData{NativeType::CSTR};
+  using types::symbol::make_pointer;
+  // TODO: Perhaps return pointer to readonly char?
+  // TODO: Consider implementing Slice type for cstr keyword?
+
+  // return SymbolData{NativeType::CSTR};
+
+  return make_pointer(SymbolData{NativeType::CHAR}, 1, true);
 }
 
 auto SemanticChecker::visit([[maybe_unused]] Boolean* t_bool) -> Any
@@ -934,6 +994,59 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 }
 
 // User Types:
+auto SemanticChecker::visit(EnumField* t_field) -> Any
+{
+  // Nothing to semantically validate yet, until iota comes along.
+  // The value of an enum should be computed at compile time.
+
+  // Also check for enum overflow values.
+
+  return {};
+}
+
+auto SemanticChecker::visit(Enum* t_enum) -> Any
+{
+  using types::symbol::IdentifierSet;
+  using types::symbol::make_enum;
+
+  const std::string enum_id{t_enum->identifier()};
+  const auto type{t_enum->type()}; // Underlying type.
+
+  // Default type for enums is an int.
+  // TODO: Have enum fields decide the underlying enum type.
+  SymbolData enum_ut{NativeType::INT};
+
+  // Underlying type can be optionally specified.
+  if(type) {
+    enum_ut = node2symbol_data(type);
+  }
+
+  const auto enum_body{t_enum->body()};
+
+  IdentifierSet id_set{};
+  for(const auto& node : *enum_body) {
+    const auto* enum_field{dynamic_cast<EnumField*>(node.get())};
+    DEBUG_ASSERT(enum_field != nullptr,
+                 R"(Was unable to cast to "*EnumField"!)");
+
+    // TODO: Check if iota, is only used once.
+
+    // Store enum identifier names.
+    id_set.emplace(enum_field->identifier());
+  }
+
+  const auto enum_data{make_enum(enum_id, enum_ut, id_set)};
+
+  add_symbol_definition(enum_id, enum_data);
+
+  DBG_INFO("Enum: ", enum_data);
+
+  // Annotate AST.
+  m_annot_queue.push({t_enum, enum_data});
+
+  return {};
+}
+
 auto SemanticChecker::visit(Method* t_meth) -> Any
 {
   using types::symbol::make_function;

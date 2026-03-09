@@ -42,31 +42,42 @@ namespace keywords {
 	// Meta:
 	// TODO: Consider renaming to just decl.
   DEFINE_TERMINAL(g_declare, "decl", DECLARE);
-  DEFINE_TERMINAL(g_macro,   "macro",   MACRO);
+  DEFINE_TERMINAL(g_macro,   "macro", MACRO);
+
+  DEFINE_TERMINAL(g_size_of, "size_of", SIZE_OF);
+  DEFINE_TERMINAL(g_len,     "len", LEN);
+
 
 	// TODO: Decide between these two:
-  DEFINE_TERMINAL(g_const,   "const",   CONST); // Compile time constants.
-  DEFINE_TERMINAL(g_comp,   "comp",   COMP); // Compile time constants.
+  DEFINE_TERMINAL(g_const, "const", CONST); // Compile time constants.
+  DEFINE_TERMINAL(g_comp,  "comp",  COMP); // Compile time constants.
 
   // User Types:
   DEFINE_TERMINAL(g_alias,  "alias",  ALIAS);
   DEFINE_TERMINAL(g_enum,   "enum",   ENUM);
-  DEFINE_TERMINAL(g_union,   "union",   UNION);
+  DEFINE_TERMINAL(g_iota,   "iota",   IOTA);
+  DEFINE_TERMINAL(g_union,  "union",  UNION);
   DEFINE_TERMINAL(g_struct, "struct", STRUCT);
   DEFINE_TERMINAL(g_self,   "self",   SELF);
 
   DEFINE_TERMINAL(g_proto, "proto", PROTO);
 
+  DEFINE_TERMINAL(g_to, "to", TO);
+
   // Control statements:
-  DEFINE_TERMINAL(g_slot,  "slot",  SLOT);
-  DEFINE_TERMINAL(g_func,  "func",  FUNCTION);
+  DEFINE_TERMINAL(g_slot,   "slot",  SLOT);
+  DEFINE_TERMINAL(g_pure,   "pure",  PURE); // TODO: Look into something like how D does it.
+  DEFINE_TERMINAL(g_func,   "func",  FUNCTION);
   // DEFINE_TERMINAL(g_meth,  "meth",  METHOD);
   DEFINE_TERMINAL(g_switch, "switch", SWITCH);
-  DEFINE_TERMINAL(g_match, "match", MATCH);
-  DEFINE_TERMINAL(g_if,    "if",    IF);
-  DEFINE_TERMINAL(g_else,  "else",  ELSE);
-  DEFINE_TERMINAL(g_elif,  "elif",  ELIF);
-  DEFINE_TERMINAL(g_loop,  "loop",  LOOP);
+  DEFINE_TERMINAL(g_match,  "match",  MATCH);
+  DEFINE_TERMINAL(g_if,     "if",     IF);
+  DEFINE_TERMINAL(g_else,   "else",   ELSE);
+  DEFINE_TERMINAL(g_elif,   "elif",   ELIF);
+  DEFINE_TERMINAL(g_loop,   "loop",   LOOP);
+  DEFINE_TERMINAL(g_do,     "do",     DO);
+  DEFINE_TERMINAL(g_in,     "in",     IN);
+  // DEFINE_TERMINAL(g_in,   "for",   LOOP);
 
   // Jump:
   DEFINE_TERMINAL(g_break,    "break",    BREAK);
@@ -77,13 +88,14 @@ namespace keywords {
   // Literals:
   DEFINE_TERMINAL(g_true,  "true",  TRUE);
   DEFINE_TERMINAL(g_false, "false", FALSE);
-  DEFINE_TERMINAL(g_null, "null",   NULL_LIT);
+  DEFINE_TERMINAL(g_null,  "null",  NULL_LIT)
+	;
 
 	// Primitives:
-  DEFINE_TERMINAL(g_void,  "void",  VOID);
+  DEFINE_TERMINAL(g_void, "void", VOID);
 
-  DEFINE_TERMINAL(g_f32,  "f32",   F32);
-  DEFINE_TERMINAL(g_f64,  "f64",   F64);
+  DEFINE_TERMINAL(g_f32, "f32", F32);
+  DEFINE_TERMINAL(g_f64, "f64", F64);
 
   DEFINE_TERMINAL(g_int, "int", INT);
   DEFINE_TERMINAL(g_i8,  "i8",  I8);
@@ -129,6 +141,7 @@ namespace keywords {
     g_declare.pair(), g_macro.pair(), g_const.pair(),
     g_alias.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
 		g_proto.pair(),
+		g_to.pair(),
     g_func.pair(),
     g_match.pair(),
     g_if.pair(), g_else.pair(), g_elif.pair(),
@@ -149,6 +162,9 @@ namespace symbols {
   // Meta:
   DEFINE_TERMINAL(g_hash, '#', HASH);
 
+  DEFINE_TERMINAL(g_scope_resolution, "::", SCOPE_RESOLUTION);
+
+	// Attributes:
   DEFINE_TERMINAL(g_attribute_open,  "[[", ATTRIBUTE_OPEN);
   DEFINE_TERMINAL(g_attribute_close, "]]", ATTRIBUTE_CLOSE);
 
@@ -178,6 +194,15 @@ namespace symbols {
   DEFINE_TERMINAL(g_add_assign, "+=", ADD_ASSIGN);
   DEFINE_TERMINAL(g_sub_assign, "-=", SUB_ASSIGN);
 
+  DEFINE_TERMINAL(g_bw_and_assign, "&=", BITWISE_AND_ASSIGN);
+  DEFINE_TERMINAL(g_bw_or_assign,  "|=", BITWISE_OR_ASSIGN);
+  DEFINE_TERMINAL(g_bw_xor_assign, "^=", BITWISE_XOR_ASSIGN);
+
+  DEFINE_TERMINAL(g_bw_lhs_assign, "<<=", BITWISE_LHS_ASSIGN);
+  DEFINE_TERMINAL(g_bw_rhs_assign, ">>=", BITWISE_RHS_ASSIGN);
+
+  // TODO: Add bitwise assignment operators.
+
   DEFINE_TERMINAL(g_assignment, '=',  ASSIGNMENT);
 
   // Comparisons:
@@ -195,12 +220,20 @@ namespace symbols {
   DEFINE_TERMINAL(g_or,  "||", OR);
   DEFINE_TERMINAL(g_and, "&&", AND);
 
+	// Bitwise:
+  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_NOT);
+  DEFINE_TERMINAL(g_bitwise_and,  '&', BITWISE_AND);
+  DEFINE_TERMINAL(g_bitwise_or,  '|', BITWISE_OR);
+  DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
+
+  DEFINE_TERMINAL(g_bitwise_lhs,  "<<", BITWISE_LHS);
+  DEFINE_TERMINAL(g_bitwise_rhs,  ">>", BITWISE_RHS);
+
   // Miscellaneous:
   DEFINE_TERMINAL(g_arrow,         "->", ARROW);
   DEFINE_TERMINAL(g_dot,           '.',  DOT);
   DEFINE_TERMINAL(g_comma,         ',',  COMMA);
   DEFINE_TERMINAL(g_question_mark, '?',  QUESTION_MARK);
-  DEFINE_TERMINAL(g_double_colon,  "::", DOUBLE_COLON);
   DEFINE_TERMINAL(g_colon,         ':',  COLON);
   DEFINE_TERMINAL(g_semicolon,     ';',  SEMICOLON);
   DEFINE_TERMINAL(g_ampersand,     '&',  AMPERSAND);
@@ -265,7 +298,7 @@ namespace symbols {
     g_and.pair(),
 
     g_arrow.pair(),
-    g_double_colon.pair()
+    g_scope_resolution.pair()
   };
 
   namespace none {

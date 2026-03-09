@@ -99,7 +99,7 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<InitExpr>(t_ptr, [&](auto t_ptr) {
-      lambda("Init Expr", t_ptr->init_expr());
+      lambda("InitExpr", t_ptr->init_expr());
     });
 
     when_derived<Condition>(t_ptr, [&](auto t_ptr) {
@@ -115,7 +115,7 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<TypeAnnotation>(t_ptr, [&](auto t_ptr) {
-      lambda("Type Annotation: ", t_ptr->type());
+      lambda("TypeAnnotation: ", t_ptr->type());
 
       // print("| Type Annotation:");
 
@@ -128,11 +128,11 @@ class AstPrinter : public NodeVisitor {
     });
 
     when_derived<TypeData>(t_ptr, [&](auto t_ptr) {
-      print("| Type Data: ", t_ptr->get_type());
+      print("| TypeData: ", t_ptr->get_type());
     });
 
     when_derived<AttributeData>(t_ptr, [&](auto t_ptr) {
-      print("| Attribute Data: ", t_ptr->get_attributes());
+      print("| AttributeData: ", t_ptr->get_attributes());
     });
 
     when_derived<Body>(t_ptr, [&](auto t_ptr) {
@@ -176,8 +176,9 @@ class AstPrinter : public NodeVisitor {
   // Lvalue:
   auto visit(node::lvalue::Let* t_let) -> Any override;
   auto visit(node::lvalue::Var* t_var) -> Any override;
-  auto visit(node::lvalue::Variable* t_var) -> Any override;
+  auto visit(node::lvalue::IdentifierNode* t_id) -> Any override;
   auto visit(node::lvalue::Subscript* t_subscript) -> Any override;
+  auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any override;
 
   // Meta:
   auto visit(node::meta::Attribute* t_attr) -> Any override;
@@ -196,6 +197,7 @@ class AstPrinter : public NodeVisitor {
   auto visit(node::operators::AddressOf* t_addr_of) -> Any override;
   auto visit(node::operators::Dereference* t_deref) -> Any override;
   auto visit(node::operators::UnaryPrefix* t_up) -> Any override;
+  auto visit(node::operators::ToCast* t_to) -> Any override;
 
   // Logical:
   auto visit(node::operators::Not* t_not) -> Any override;
@@ -222,6 +224,8 @@ class AstPrinter : public NodeVisitor {
   auto visit(node::builtin_types::TypeName* t_type) -> Any override;
 
   // User Types:
+  auto visit(node::user_types::EnumField* t_enum) -> Any override;
+  auto visit(node::user_types::Enum* t_field) -> Any override;
   auto visit(node::user_types::Method* t_meth) -> Any override;
   auto visit(node::user_types::MethodCall* t_meth_call) -> Any override;
   auto visit(node::user_types::Interface* t_ifc) -> Any override;

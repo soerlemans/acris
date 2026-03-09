@@ -2,22 +2,24 @@
 #define SESSION_UNIT_HPP
 
 // STL Includes:
+#include <map>
 #include <memory>
-
-// Absolute Includes:
-#include "acris/settings/settings.hpp"
+#include <set>
+#include <string>
 
 namespace unit {
 // Forward Declarations:
 class SessionUnit;
 
+namespace settings {
+struct Settings;
+}
+
 // Aliases:
 using SessionUnitPtr = std::shared_ptr<SessionUnit>;
 
-using settings::MacroDefs;
-using settings::Settings;
-
-using SessionUnitPtr = std::shared_ptr<SessionUnit>;
+using MacroDefs = std::map<std::string, std::string>;
+using MacroUndefs = std::set<std::string>;
 
 // Classes:
 /*!
@@ -34,12 +36,19 @@ class SessionUnit {
   SessionUnit(MacroDefs t_mdefs, bool t_no_libc);
 
   auto macro_defs() const -> const MacroDefs&;
+  auto no_libc() const -> bool;
 
   virtual ~SessionUnit() = default;
 };
 
 // Functions:
-auto make_session_unit(const Settings& t_settings) -> SessionUnitPtr;
+template<typename... Args>
+inline auto make_session_unit(Args&&... t_args) -> SessionUnitPtr
+{
+  using unit::SessionUnit;
+
+  return std::make_shared<SessionUnit>(std::forward<Args>(t_args)...);
+}
 } // namespace unit
 
 #endif // SESSION_UNIT_HPP

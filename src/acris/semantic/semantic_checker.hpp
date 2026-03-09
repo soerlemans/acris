@@ -159,8 +159,9 @@ class SemanticChecker : public NodeVisitor {
   // Lvalue:
   auto visit(node::lvalue::Let* t_let) -> Any override;
   auto visit(node::lvalue::Var* t_var) -> Any override;
-  auto visit(node::lvalue::Variable* t_var) -> Any override;
+  auto visit(node::lvalue::IdentifierNode* t_id) -> Any override;
   auto visit(node::lvalue::Subscript* t_subscript) -> Any override;
+  auto visit(node::lvalue::ScopeResolution* t_scope_res) -> Any override;
 
   // Meta:
   auto visit(node::meta::Attribute* t_attr) -> Any override;
@@ -179,6 +180,7 @@ class SemanticChecker : public NodeVisitor {
   auto visit(node::operators::AddressOf* t_addr_of) -> Any override;
   auto visit(node::operators::Dereference* t_deref) -> Any override;
   auto visit(node::operators::UnaryPrefix* t_up) -> Any override;
+  auto visit(node::operators::ToCast* t_cast) -> Any override;
 
   // Logical:
   auto visit(node::operators::Not* t_not) -> Any override;
@@ -200,6 +202,8 @@ class SemanticChecker : public NodeVisitor {
   auto visit(node::rvalue::Boolean* t_bool) -> Any override;
 
   // User Types:
+  auto visit(node::user_types::EnumField* t_enum) -> Any override;
+  auto visit(node::user_types::Enum* t_field) -> Any override;
   auto visit(node::user_types::Method* t_meth) -> Any override;
   auto visit(node::user_types::Interface* t_ifc) -> Any override;
   auto visit(node::user_types::MemberDecl* t_meth) -> Any override;

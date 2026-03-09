@@ -1,0 +1,11 @@
+module malloc_module
+
+#include_once <core/libc.ac>
+
+func main() -> int {
+  let target: *void = malloc(10)
+
+  free(target)
+
+  return 0
+}

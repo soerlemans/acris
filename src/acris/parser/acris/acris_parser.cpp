@@ -2,6 +2,7 @@
 
 // STL Includes:
 #include <exception>
+#include <format>
 #include <string>
 
 // Absolute Includes:
@@ -25,8 +26,16 @@ auto AcrisParser::context_check(const Context t_context) -> void
   const auto enabled{m_store.get(t_context)};
 
   if(!enabled) {
-    throw_syntax_error("Keyword used outside of proper context.");
+    const auto msg{std::format("Keyword used outside of proper context ({}).",
+                               context2str(t_context))};
+
+    throw_syntax_error(msg);
   }
+}
+
+auto AcrisParser::context_check_enum() -> void
+{
+  context_check(Context::ENUM);
 }
 
 // Public Methods:
@@ -69,6 +78,20 @@ auto AcrisParser::terminator() -> void
       break;
     }
   }
+}
+
+auto AcrisParser::type_expr() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+
+  return m_type.type_expr();
+}
+
+auto AcrisParser::expr() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+
+  return m_pratt.expr();
 }
 
 auto AcrisParser::literal_list() -> NodeListPtr
@@ -324,7 +347,7 @@ auto AcrisParser::result_statement() -> NodePtr
   } else if(auto ptr{assignment()}; ptr) {
     node = std::move(ptr);
     // Breaks stuff now.
-    // } else if(auto ptr{m_pratt.method_call_expr()}; ptr) {
+    // } else if(auto ptr{m_pratt.effect_expr()}; ptr) {
     //   node = std::move(ptr);
   }
 
@@ -511,6 +534,113 @@ auto AcrisParser::body() -> NodeListPtr
   return nodes;
 }
 
+auto AcrisParser::scope_resolution() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  // TODO: add recursive path resolution later.
+  const auto token{get_token()};
+  if(next_if(TokenType::IDENTIFIER)) {
+    const auto id{token.str()};
+    const auto pos{token.position()};
+
+    if(next_if(TokenType::SCOPE_RESOLUTION)) {
+      DBG_TRACE_PRINT(INFO, "Found 'SCOPE_RESOLUTION': ", id);
+
+      ScopeResolutionPath path{};
+      path.push_back(id);
+
+      // Qualified name target.
+      auto target_expr{m_pratt.lvalue()};
+
+      node = make_node<ScopeResolution>(pos, std::move(path),
+                                        std::move(target_expr));
+    } else {
+      // Not scope resolution undo peek-forward.
+      prev();
+    }
+  }
+
+  return node;
+}
+
+// Enum:
+auto AcrisParser::enum_field() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto token{get_token()};
+  if(next_if(TokenType::IDENTIFIER)) {
+    const auto id{token.str()};
+
+    NodePtr expr{};
+    if(next_if(TokenType::ASSIGNMENT)) {
+
+      expr = m_pratt.expr();
+    }
+
+    node = make_node<EnumField>(id, std::move(expr));
+  }
+
+  return node;
+}
+
+auto AcrisParser::enum_field_list() -> NodeListPtr
+{
+  DBG_TRACE_FN(VERBOSE);
+
+  return list_of([this] {
+    auto node{enum_field()};
+
+    if(next_if(TokenType::COMMA)) {
+      newline_opt(); // Remove newlines.
+    } else {
+      if(check(TokenType::ACCOLADE_CLOSE)) {
+        return node;
+      } else {
+        // If Comma is not present and we dont find end of enum body.
+        // We should throw as the enum is malformed.
+        throw_syntax_error("Expected a comma for next enum field.");
+      }
+    }
+
+    return node;
+  });
+}
+
+auto AcrisParser::enum_def() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(next_if(TokenType::ENUM)) {
+    PARSER_FOUND(TokenType::ENUM);
+
+    const auto id{expect(TokenType::IDENTIFIER).str()};
+    newline_opt();
+
+    // If type defined.
+    NodePtr type{};
+    if(next_if(TokenType::COLON)) {
+      type = m_type.type_expr();
+    }
+
+    // Needed to enable iota.
+    CONTEXT_GUARD(ENUM);
+    auto fields{accolades([this] {
+      newline_opt();
+
+      return enum_field_list();
+    })};
+
+    node = make_node<Enum>(id, std::move(type), std::move(fields));
+  }
+
+  return node;
+}
+
 // Struct:
 auto AcrisParser::member_decl() -> NodePtr
 {
@@ -569,6 +699,8 @@ auto AcrisParser::type_def() -> NodePtr
   NodePtr node{};
 
   if(auto ptr{struct_def()}; ptr) {
+    node = std::move(ptr);
+  } else if(auto ptr{enum_def()}; ptr) {
     node = std::move(ptr);
   }
 
@@ -1039,6 +1171,10 @@ auto AcrisParser::parse() -> NodePtr
   // If we are not at EOS, then we didnt parse everything.
   // Which is a parsing error or syntax error.
   // As the entirety of the token stream should be parsed and accounted for.
+  if(!eos()) {
+    // Possibly this should be an exception and not a SyntaxError.
+    throw_syntax_error("End of file reached without parsing everything.");
+  }
 
   return ast;
 }

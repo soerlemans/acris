@@ -8,6 +8,13 @@
 #include <vector>
 
 // Library Includes:
+#include "clang/Driver/Compilation.h"
+#include "clang/Frontend/TextDiagnosticPrinter.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/VirtualFileSystem.h"
+#include <clang/Driver/Driver.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <lld/Common/Driver.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
@@ -28,6 +35,11 @@
 
 // Local Includes:
 #include "type2llvm.hpp"
+
+// Make sure the ELF driver exists.
+LLD_HAS_DRIVER(elf);
+LLD_HAS_DRIVER(wasm);
+LLD_HAS_DRIVER(macho);
 
 namespace codegen::llvm_backend {
 // Using:
@@ -138,7 +150,7 @@ auto LlvmBackend::type2llvm(TypeVariant& t_type) -> llvm::Value*
 auto LlvmBackend::operand2llvm(const Operand& t_operand,
                                const std::string_view t_id) -> llvm::Value*
 {
-  DBG_WARNING("Operand: ", t_operand);
+  DBG_VERBOSE("Operand: ", t_operand);
 
   llvm::Value* val{nullptr};
   if(std::holds_alternative<Literal>(t_operand)) {
@@ -301,11 +313,27 @@ auto LlvmBackend::on_const_int(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val_lit{operand2llvm(first)};
 
   m_locals.emplace(result_id, val_lit);
+}
+
+auto LlvmBackend::on_iadd(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateAdd(lhs, rhs, "add_result");
+
+  m_locals.emplace(result_id, sub_result);
 }
 
 auto LlvmBackend::on_isub(Instruction& t_instr) -> void
@@ -313,7 +341,7 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
   auto& second{operands.at(1)};
 
   llvm::Value* lhs{operand2llvm(first)};
@@ -324,15 +352,153 @@ auto LlvmBackend::on_isub(Instruction& t_instr) -> void
   m_locals.emplace(result_id, sub_result);
 }
 
+auto LlvmBackend::on_imul(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateMul(lhs, rhs, "mul_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_idiv(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateSDiv(lhs, rhs, "mul_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_imod(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+  auto& second{operands.at(1)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+  llvm::Value* rhs{operand2llvm(second)};
+
+  llvm::Value* sub_result = m_builder->CreateSRem(lhs, rhs, "mod_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_ineg(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto& first{operands.at(0)};
+
+  llvm::Value* lhs{operand2llvm(first)};
+
+  llvm::Value* sub_result = m_builder->CreateNeg(lhs, "ineg_result");
+
+  m_locals.emplace(result_id, sub_result);
+}
+
+auto LlvmBackend::on_icmp_lte(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpSLE(lhs, rhs, "ilte_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_lt(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpSLT(lhs, rhs, "ilt_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_eq(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpEQ(lhs, rhs, "ieq_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
+auto LlvmBackend::on_icmp_ne(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+  auto first{operands.at(0)};
+  auto second{operands.at(1)};
+
+  auto* lhs{operand2llvm(first)};
+  auto* rhs{operand2llvm(second)};
+
+  lhs->getType()->dump();
+  rhs->getType()->dump();
+
+  llvm::Value* cmp_result = m_builder->CreateICmpNE(lhs, rhs, "ine_tmp");
+
+  m_locals.emplace(result_id, cmp_result);
+}
+
 auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  // auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  // auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
   // auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
 
-  auto first{operands.front()};
+  auto first{operands.at(0)};
   auto second{operands.at(1)};
 
   auto* lhs{operand2llvm(first)};
@@ -351,7 +517,7 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto first{std::get<LocalVarPtr>(operands.front())->m_id};
+  auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
   auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
 
   auto* lhs{m_locals.at(first)};
@@ -366,7 +532,7 @@ auto LlvmBackend::on_bind(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{operand2llvm(first)};
 
@@ -391,7 +557,7 @@ auto LlvmBackend::on_update(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{nullptr};
   if(std::holds_alternative<LocalVarPtr>(first)) {
@@ -409,7 +575,7 @@ auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
   auto var_ptr(std::get<LocalVarPtr>(first));
   auto* val = m_locals.at(var_ptr->m_id);
 
@@ -428,7 +594,7 @@ auto LlvmBackend::on_jmp(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto label{std::get<mir::Label>(operands.front()).m_target->m_label};
+  auto label{std::get<mir::Label>(operands.at(0)).m_target->m_label};
   auto bblock{m_bblocks.at(label)};
 
   m_builder->CreateBr(bblock);
@@ -438,7 +604,7 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.front()};
+  auto& first{operands.at(0)};
 
   llvm::Value* val{operand2llvm(first)};
 
@@ -483,7 +649,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
   // );
 
   // case Opcode::CONST_STRING: {
-  //   Literal literal{std::get<mir::Literal>(operands.front())};
+  //   Literal literal{std::get<mir::Literal>(operands.at(0))};
   //   auto str{std::get<std::string>(literal.m_value)};
 
   //   llvm::Constant* constant{
@@ -502,6 +668,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
     case Opcode::IADD:
+      on_isub(t_instr);
       break;
 
     case Opcode::ISUB:
@@ -509,21 +676,37 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
     case Opcode::IMUL:
+      on_imul(t_instr);
       break;
+
     case Opcode::IDIV:
+      on_idiv(t_instr);
       break;
+
     case Opcode::IMOD:
+      on_imod(t_instr);
       break;
+
     case Opcode::INEG:
+      on_ineg(t_instr);
       break;
+
     case Opcode::ICMP_LT:
+      on_icmp_lt(t_instr);
       break;
+
     case Opcode::ICMP_LTE:
+      on_icmp_lte(t_instr);
       break;
+
     case Opcode::ICMP_EQ:
+      on_icmp_eq(t_instr);
       break;
-    case Opcode::ICMP_NQ:
+
+    case Opcode::ICMP_NE:
+      on_icmp_ne(t_instr);
       break;
+
     case Opcode::ICMP_GT:
       on_icmp_gt(t_instr);
       break;
@@ -548,7 +731,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
     case Opcode::FCMP_EQ:
       break;
-    case Opcode::FCMP_NQ:
+    case Opcode::FCMP_NE:
       break;
     case Opcode::FCMP_GT:
       break;
@@ -773,6 +956,43 @@ auto LlvmBackend::requires_mir() -> bool
   return true;
 }
 
+auto LlvmBackend::invoke_clang_driver(const char* t_tmp_obj, const char* t_out)
+  -> void
+{
+  using namespace clang;
+  using namespace clang::driver;
+
+  IntrusiveRefCntPtr<DiagnosticOptions> diag_opts{new DiagnosticOptions()};
+  diag_opts->ShowColors = 1; // TODO: Toggle based on command line.
+
+
+  TextDiagnosticPrinter* diag_client{
+    new TextDiagnosticPrinter(llvm::errs(), &*diag_opts)};
+  IntrusiveRefCntPtr<DiagnosticIDs> diag_id(new DiagnosticIDs());
+  DiagnosticsEngine diags(diag_id, &*diag_opts, diag_client);
+
+  std::string target_triple = llvm::sys::getDefaultTargetTriple();
+  Driver clang_driver("clang", target_triple, diags);
+
+  std::vector<const char*> driver_args = {
+    "clang", t_tmp_obj, "-o", t_out,
+    "-fuse-ld=lld" // Tell the driver to use LLD internally
+  };
+
+  std::unique_ptr<Compilation> compile_job(
+    clang_driver.BuildCompilation(driver_args));
+
+  if(compile_job && !compile_job->containsError()) {
+    SmallVector<std::pair<int, const Command*>, 4> FailingCommands;
+    int result = clang_driver.ExecuteCompilation(*compile_job, FailingCommands);
+    if(result == 0) {
+      std::cout << std::format("Compiled {}!\n", t_out);
+    } else {
+      std::cerr << std::format("Failed to compile {}!\n", t_out);
+    }
+  }
+}
+
 //! FIXME: For now we do nothing with the @ref SymbolTable
 auto LlvmBackend::compile(CompileParams& t_params) -> void
 {
@@ -781,24 +1001,37 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
 
   using mir::mir_pass::MirPassParams;
 
-  const auto& [ast, mir_module, build_dir, source_path] = t_params;
+  auto [session, ast, mir_module, build_dir, source_path] = t_params;
 
   // FIXME: Check mir_module for nullptr.
 
-  fs::path stem{source_path.stem()};
-  const fs::path tmp_src{build_dir / stem.concat(".ll")};
+  // Handle encoding and similar.
+  source_path.make_preferred();
+  build_dir.make_preferred();
+
+  const fs::path stem{source_path.stem()};
+
+  fs::path tmp_src{build_dir / stem};
+  tmp_src.replace_extension(".ll");
+
+  fs::path tmp_obj{build_dir / stem};
+  tmp_obj.replace_extension(".o");
+
+  fs::path out{stem};
+  out += ".out";
 
   // Log filepath's:
   DBG_INFO("build_dir: ", build_dir);
   DBG_INFO("tmp_src: ", tmp_src);
+  DBG_INFO("tmp_obj: ", tmp_obj);
 
   // Initialize the LLVM target.
   initialize_target();
 
   // Obtain filehandle to destination file
-  const auto filename{tmp_src.c_str()};
+  const auto path_obj{tmp_obj.c_str()};
   std::error_code err_code{};
-  raw_fd_ostream dest{filename, err_code, sys::fs::OF_None};
+  raw_fd_ostream dest{path_obj, err_code, sys::fs::OF_None};
 
   if(err_code) {
     errs() << "Could not open file: " << err_code.message();
@@ -822,14 +1055,16 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
   const auto features{""};
 
   TargetOptions opt{};
-  std::optional<Reloc::Model> reloc_model{};
+  auto reloc_model{std::optional<llvm::Reloc::Model>(llvm::Reloc::PIC_)};
   auto target_machine{
     target->createTargetMachine(target_str, cpu, features, opt, reloc_model)};
 
+  m_module->setDataLayout(target_machine->createDataLayout());
+
   // Write object file:
-  legacy::PassManager pass{};
+  legacy::PassManager llvm_pass{};
   const auto fype{CGFT_ObjectFile};
-  if(target_machine->addPassesToEmitFile(pass, dest, nullptr, fype)) {
+  if(target_machine->addPassesToEmitFile(llvm_pass, dest, nullptr, fype)) {
     errs() << "target_machine can't emit a file of this type";
     return; // TODO: Fix
   }
@@ -845,22 +1080,19 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
     return; // Exit or handle the error appropriately
   }
 
-  //
-  pass.run(*m_module);
+  // Write LLVM IR to a file.
+  const auto path_src{tmp_src.c_str()};
+  raw_fd_ostream dest_src{path_src, err_code, sys::fs::OF_None};
+  m_module->print(dest_src, nullptr);
+
+  // Write to object file.
+  llvm_pass.run(*m_module);
   dest.flush();
 
   // Close so that the permissions can be set
   dest.close();
 
-  // Make object file executable:
-  const perms permissions{others_write | all_read | all_exe};
-  err_code = setPermissions(tmp_src.c_str(), permissions);
-
-  errs() << err_code.message() << " Done...\n";
-
-  if(err_code) {
-    errs() << "Could not change file permissions: " << err_code.message();
-    return;
-  }
+  // Compile produced IR.
+  invoke_clang_driver(tmp_obj.c_str(), out.c_str());
 }
 } // namespace codegen::llvm_backend

@@ -15,6 +15,29 @@ using namespace types::symbol;
 using namespace std::literals::string_view_literals;
 
 // Functions:
+auto operator<<(std::ostream& t_os, EnumTypePtr t_enum) -> std::ostream&
+{
+  if(t_enum) {
+    t_os << "(enum ut: {" << t_enum->m_underlying_type << "} ";
+
+    t_os << '{';
+    std::string_view sep{""};
+    for(auto&& field : t_enum->m_fields) {
+      t_os << sep << field;
+
+      sep = ", ";
+    }
+
+    t_os << "})";
+  } else {
+    DBG_ERROR("(EnumTypePtr) nullptr!");
+
+    t_os << "nullptr";
+  }
+
+  return t_os;
+}
+
 auto operator<<(std::ostream& t_os, StructTypePtr t_struct) -> std::ostream&
 {
   // TODO: Redo these operator<< functions they are outdated.
@@ -72,7 +95,7 @@ auto operator<<(std::ostream& t_os, PointerTypePtr t_ptr) -> std::ostream&
     }
 
     if(t_ptr->m_readonly) {
-      t_os << "ro";
+      t_os << "ro ";
     }
 
     t_os << t_ptr->m_type;

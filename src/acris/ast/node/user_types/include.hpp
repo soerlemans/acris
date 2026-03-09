@@ -2,6 +2,8 @@
 #define ACRIS_ACRIS_AST_NODE_USER_TYPES_INCLUDE_HPP
 
 // User Types:
+#include "enum.hpp"
+#include "enum_field.hpp"
 #include "interface.hpp"
 #include "member.hpp"
 #include "member_access.hpp"

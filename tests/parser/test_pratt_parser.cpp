@@ -123,7 +123,7 @@ TEST(TestPrattParser, BasicChainExpressions)
 
     try {
       auto node{parser.pratt_parse([](PrattParser& pratt) {
-        return pratt.chain_expr();
+        return pratt.expr();
       })};
 
       EXPECT_TRUE(node != nullptr) << report_parse_failure(program);

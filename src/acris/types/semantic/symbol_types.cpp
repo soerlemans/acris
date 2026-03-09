@@ -6,6 +6,31 @@
 
 // Using Statements:
 namespace types::symbol {
+// EnumType:
+auto EnumType::resolve_result_type() const -> SymbolData
+{
+  using types::symbol::make_enum;
+
+  return make_enum(*this);
+}
+
+auto EnumType::native_type() const -> NativeTypeOpt
+{
+  return {};
+}
+
+auto EnumType::type_variant() const -> TypeVariant
+{
+  using types::core::make_enum;
+
+  types::core::IdentifierSet id_set{};
+  for(auto&& field : m_fields) {
+    id_set.emplace(field);
+  }
+
+  return {make_enum(m_identifier, m_underlying_type.type_variant(), id_set)};
+}
+
 // StructType:
 auto StructType::resolve_result_type() const -> SymbolData
 {

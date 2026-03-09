@@ -1,1 +1,76 @@
-// Acris bindings for libc cause I am lazy.
+// Acris bindings for libc.
+// As parsing C headers is not something we can do yet.
+
+let STDIN = 0
+let STDOUT = 1
+let STDERR = 2
+
+// TODO: Later create more clean interfaces.
+// Stuff like memset not int but always byte.
+[[extern("C")]] {
+  // Heap:
+  decl func malloc(size: usz) -> *void
+  decl func free(p: *void) -> void
+
+  decl func calloc(n: usz, size: usz) -> *void
+  decl func realloc(p: *void, size: usz) -> *void
+  decl func reallocarray(p: *void, n: usz, size: usz) -> *void
+
+  // Memory:
+  decl func memcpy(dest: *void, src: *ro void, n: usz) -> *void
+  decl func memmove(dest: *void, src: *ro void, n: usz) -> *void
+  decl func memset(dest: *void, c: int, n: usz) -> *void
+
+  // String:
+  decl func strlen(s: *ro char) -> usz
+
+  decl func strcmp(s1: *ro char, s2: *ro char) -> int
+  decl func strncmp(s1: *ro char, s2: *ro char, n: usz) -> int
+
+  decl func strstr(haystack: *ro char, needle: *ro char) -> *char
+  decl func strcasestr(haystack: *ro char, needle: *ro char) -> *char
+
+  // Env:
+  decl func getenv(name: *ro char) -> *char
+  decl func secure_getenv(name: *ro char) -> *char
+
+  decl func setenv(name: *ro char, value: *ro char, overwrite: int) -> int
+  decl func unsetenv(name: *ro char) -> int
+
+  // TODO: Implement or create proper bindings for.
+  /*
+  int open(const char *path, int flags, mode_t mode);
+  int creat(const char *path, mode_t mode);
+  int openat(int dirfd, const char *path, int flags, mode_t mode);
+  int openat2(int dirfd, const char *path, const struct open_how *how, size_t size);
+
+  // Also do fopen, fclose, fread, fwrite, fseek, ftell.
+  */
+
+  decl func read(fd: int, buf: *void, count: usz) -> isz
+  decl func write(fd: int, buf: *ro void, count: usz) -> isz
+  decl func close(fd: int) -> int
+
+  // Error:
+  decl func perror(s: *ro char) -> void
+  decl func strerror(errnum: int) -> *char
+
+  // TODO: There are more error related function to port over.
+
+  /*
+  void qsort(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
+  void qsort_r(size_t n, size_t size; void base[n * size], size_t n, size_t size, typeof(int (const void [size], const void [size], void *)) *compar, void *arg);
+
+  void *bsearch(size_t n, size_t size; const void key[size], const void base[size * n], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
+  */
+
+  // System:
+  decl func system(cmd: *ro char) -> int
+
+  // TODO: Should have somekind of does not return annotation.
+  decl func exit(status: int) -> void
+  decl func abort() -> void
+}
+
+// TODO: Implement for simple printing.
+// decl func write_str(t_fd: int, t_buf: *ro char, t_count: usz) -> isz

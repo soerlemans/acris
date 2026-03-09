@@ -1,7 +1,7 @@
 module main
 
 // Standard library include.
-#include_once <core/linux/core.ac>
+#<include_once <core/linux/core.ac>
 
 func main() -> int {
   var msg = "Hello World!\n"

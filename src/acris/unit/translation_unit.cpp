@@ -218,7 +218,7 @@ auto TranslationUnit::execute() -> void
 
   // Perform compilation:
   const auto build_dir{m_build->build_dir()};
-  CompileParams params{m_ast, m_mir, build_dir, m_source_file};
+  CompileParams params{m_session, m_ast, m_mir, build_dir, m_source_file};
   backend(params);
 }
 } // namespace unit

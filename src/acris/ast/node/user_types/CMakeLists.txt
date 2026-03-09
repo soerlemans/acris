@@ -5,6 +5,8 @@ target_sources(${TARGET_ACRIS_LIB} PRIVATE
 	interface.cpp
 	struct.cpp
 	struct_decl.cpp
+	enum.cpp
+	enum_field.cpp
 	self.cpp
 	member_decl.cpp
 	member_access.cpp

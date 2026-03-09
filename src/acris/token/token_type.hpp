@@ -17,6 +17,7 @@ enum class TokenType {
   IDENTIFIER = 0,
   LET,
   VAR,
+  SCOPE_RESOLUTION,
 
   // Variable interaction specifiers.
   READONLY,
@@ -32,6 +33,8 @@ enum class TokenType {
   HASH, // Used for preprocessor directives.
   ATTRIBUTE_OPEN,
   ATTRIBUTE_CLOSE,
+  SIZE_OF,
+  LEN,
 
   DECLARE,
   MACRO,
@@ -41,14 +44,18 @@ enum class TokenType {
   // User Types:
   ALIAS,
   ENUM,
+  IOTA,
   UNION,
   STRUCT,
   SELF,
 
   PROTO,
 
+  TO,
+
   // Control statements:
   SLOT,
+  PURE,
   FUNCTION,
   METHOD,
   MATCH,
@@ -57,6 +64,8 @@ enum class TokenType {
   ELSE,
   ELIF,
   LOOP,
+  DO,
+  IN,
 
   // Jump:
   BREAK,
@@ -132,9 +141,16 @@ enum class TokenType {
   ADD_ASSIGN,
   SUB_ASSIGN,
 
+  BITWISE_NOT_ASSIGN,
+  BITWISE_AND_ASSIGN,
+  BITWISE_OR_ASSIGN,
+  BITWISE_XOR_ASSIGN,
+  BITWISE_LHS_ASSIGN,
+  BITWISE_RHS_ASSIGN,
+
   ASSIGNMENT,
 
-  // Comparison Tokens:
+  // Comparisons:
   LESS_THAN,
   LESS_THAN_EQUAL,
 
@@ -144,9 +160,18 @@ enum class TokenType {
   GREATER_THAN,
   GREATER_THAN_EQUAL,
 
+  // Logic:
   NOT,
   AND,
   OR,
+
+  // Bitwise:
+  BITWISE_NOT,
+  BITWISE_AND,
+  BITWISE_OR,
+  BITWISE_XOR,
+  BITWISE_LHS,
+  BITWISE_RHS,
 
   // Comments:
   LINE_COMMENT,  // Starts with "//".
@@ -157,7 +182,6 @@ enum class TokenType {
   DOT,
   COMMA,
   QUESTION_MARK,
-  DOUBLE_COLON,
   COLON,
   SEMICOLON,
   AMPERSAND,
