@@ -8,7 +8,7 @@ func main() -> int {
   var str = init_string("Hello World!")
   defer str.destroy()
 
-  // str.append(" And a whole lot more to come.");
+  str.append(" And a whole lot more to come.");
 
   writeln_str(str.c_str())
 

@@ -235,7 +235,7 @@ auto PrattParser::member_access() -> NodePtr
     const auto pos{token.position()};
 
     DBG_TRACE_PRINT(INFO, "Found 'MEMBER': ", id);
-    node = make_node<Member>(pos, id);
+    node = make_node<IdentifierNode>(pos, id);
   }
 
   return node;
@@ -304,7 +304,8 @@ auto PrattParser::prefix_chainable() -> NodePtr
 
   if(auto ptr{function_call()}; ptr) {
     node = std::move(ptr);
-  } else if(auto ptr{member_access()}; ptr) {
+    // TODO: Make use regular var for first entry.
+  } else if(auto ptr{lvalue()}; ptr) {
     node = std::move(ptr);
   }
 
@@ -318,7 +319,7 @@ auto PrattParser::prefix_chain() -> NodePtr
 
   if(auto ptr{method_call()}; ptr) {
     node = std::move(ptr);
-  } else if(auto ptr{member_access()}; ptr) {
+  } else if(auto ptr{lvalue()}; ptr) {
     node = std::move(ptr);
   }
 
@@ -343,12 +344,13 @@ auto PrattParser::infix_chain(NodePtr& t_lhs, const RhsContext& t_ctx)
   const auto* is_function_call{dynamic_cast<FunctionCall*>(t_lhs.get())};
   const auto* is_method_call{dynamic_cast<MethodCall*>(t_lhs.get())};
   const auto* is_member_access{dynamic_cast<MemberAccess*>(t_lhs.get())};
-  const auto* is_member{dynamic_cast<Member*>(t_lhs.get())};
+  // const auto* is_member{dynamic_cast<Member*>(t_lhs.get())};
 
   // Guard clause:
   // Only allow chain infix on following.
   if(!is_variable && !is_function_call && !is_method_call && !is_member_access
-     && !is_member) {
+     // && !is_member
+  ) {
     return node;
   }
 
@@ -588,11 +590,9 @@ auto PrattParser::to_cast(NodePtr& t_lhs, const RhsContext& t_ctx) -> NodePtr
     const auto token{get_token()};
     next();
 
-    auto type_parse_fn{
-      [this]([[maybe_unused]]
-             const int t_rbp) {
-        // We are parsing a type specification in this case.
-				// So we need to change the default behavior.
+    auto type_parse_fn{[this]([[maybe_unused]] const int t_rbp) {
+      // We are parsing a type specification in this case.
+      // So we need to change the default behavior.
       return m_delegate->type_expr();
     }};
 

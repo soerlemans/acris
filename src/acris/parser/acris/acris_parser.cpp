@@ -347,8 +347,8 @@ auto AcrisParser::result_statement() -> NodePtr
   } else if(auto ptr{assignment()}; ptr) {
     node = std::move(ptr);
     // Breaks stuff now.
-    // } else if(auto ptr{m_pratt.effect_expr()}; ptr) {
-    //   node = std::move(ptr);
+  } else if(auto ptr{m_pratt.effect_expr()}; ptr) {
+    node = std::move(ptr);
   }
 
   // Terminate result statement.

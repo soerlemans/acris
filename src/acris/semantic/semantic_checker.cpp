@@ -519,7 +519,7 @@ auto SemanticChecker::visit(Var* t_var) -> Any
     // Resolve the type.
     init_opt = get_symbol_data(init_expr).resolve_result_type();
 
-    DBG_INFO("init_opt", init_opt.value());
+    DBG_INFO("init_opt ", init_opt.value());
   }
 
   SymbolDataOpt type_opt{};
@@ -1177,6 +1177,8 @@ auto SemanticChecker::visit([[maybe_unused]] Self* t_self) -> Any
 
 auto SemanticChecker::visit(Member* t_member) -> Any
 {
+  // TODO: need to fix Member stuff? In Pratt parser?
+	
   const auto id{t_member->identifier()};
   // Rewrite:
   // const auto var_data{get_symbol_data_from_env(id)};
