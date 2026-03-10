@@ -3,16 +3,14 @@ module std_string_sample
 #<include_once <core/string.ac>
 
 func main() -> int {
-  let test = 10
+  var test = 10
 
-  // test.str()
-
-  // let str = init_string("Hello World!")
   var str = init_string("Hello World!")
   defer str.destroy()
 
+  // str.append(" And a whole lot more to come.");
+
   writeln_str(str.c_str())
-  writeln_str("")
 
   return 0
 }

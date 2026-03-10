@@ -86,7 +86,7 @@ auto AstPrinter::visit(FunctionCall* t_fn_call) -> Any
 {
   COUNTG_INIT();
 
-  print("Function call");
+  print_hl("FunctionCall");
   print("| Identifier: ", t_fn_call->identifier());
   print_if("Arguments: ", t_fn_call->args());
 
@@ -132,7 +132,7 @@ auto AstPrinter::visit(Attribute* t_attr) -> Any
 {
   COUNTG_INIT();
 
-  print("Attribute: ", t_attr->identifier());
+  print_hl("Attribute: ", t_attr->identifier());
   print_traits(t_attr);
 
   return {};
@@ -142,7 +142,7 @@ auto AstPrinter::visit(LetDecl* t_ldecl) -> Any
 {
   COUNTG_INIT();
 
-  print("LetDecl: ", t_ldecl->identifier());
+  print_hl("LetDecl: ", t_ldecl->identifier());
   print_traits(t_ldecl);
 
   return {};
@@ -152,7 +152,7 @@ auto AstPrinter::visit(VarDecl* t_vdecl) -> Any
 {
   COUNTG_INIT();
 
-  print("VarDecl: ", t_vdecl->identifier());
+  print_hl("VarDecl: ", t_vdecl->identifier());
   print_traits(t_vdecl);
 
   return {};
@@ -162,7 +162,7 @@ auto AstPrinter::visit(FunctionDecl* t_fdecl) -> Any
 {
   COUNTG_INIT();
 
-  print("FunctionDecl: ", t_fdecl->identifier());
+  print_hl("FunctionDecl: ", t_fdecl->identifier());
   print_traits(t_fdecl);
 
   return {};
@@ -283,7 +283,7 @@ auto AstPrinter::visit(Import* t_import) -> Any
 {
   COUNTG_INIT();
 
-  print("Import");
+  print_hl("Import");
 
   for(const auto& pair : t_import->imports()) {
     std::stringstream ss;
@@ -304,7 +304,7 @@ auto AstPrinter::visit(Float* t_float) -> Any
 {
   COUNTG_INIT();
 
-  print("Float: ", t_float->get());
+  print_hl("Float: ", t_float->get());
 
   return {};
 }
@@ -313,7 +313,7 @@ auto AstPrinter::visit(Integer* t_int) -> Any
 {
   COUNTG_INIT();
 
-  print("Integer: ", t_int->get());
+  print_hl("Integer: ", t_int->get());
 
   return {};
 }
@@ -322,7 +322,7 @@ auto AstPrinter::visit(Char* t_ch) -> Any
 {
   COUNTG_INIT();
 
-  print("Char: ", t_ch->get());
+  print_hl("Char: ", t_ch->get());
 
   return {};
 }
@@ -331,7 +331,7 @@ auto AstPrinter::visit(String* t_str) -> Any
 {
   COUNTG_INIT();
 
-  print("String: ", t_str->get());
+  print_hl("String: ", t_str->get());
 
   return {};
 }
@@ -350,7 +350,7 @@ auto AstPrinter::visit(Boolean* t_bool) -> Any
 {
   COUNTG_INIT();
 
-  print("Boolean: ", t_bool->get());
+  print_hl("Boolean: ", t_bool->get());
 
   return {};
 }
@@ -396,7 +396,7 @@ auto AstPrinter::visit(Method* t_meth) -> Any
   COUNTG_INIT();
 
   print_hl("Method");
-  print("ReceiverType: ", t_meth->get_receiver());
+  print("| ReceiverType: ", t_meth->get_receiver());
   print_traits(t_meth);
 
   return {};
