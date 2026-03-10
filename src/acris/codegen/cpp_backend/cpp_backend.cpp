@@ -39,7 +39,6 @@ auto CppBackend::prologue() -> std::string
   // oss << "#include <stdfloat>\n"; // TODO: Uncommnet when supported by clang.
   oss << "\n";
 
-  // FIXME: Temporary input for printing purposes.
   oss << "// Stdacris Includes:\n";
   if(no_libc()) {
     oss << R"(#include "stdacris/core/linux/core.h")" << "\n";

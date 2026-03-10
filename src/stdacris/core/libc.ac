@@ -24,6 +24,9 @@ let STDERR = 2
   // String:
   decl func strlen(s: *ro char) -> usz
 
+  decl func strncpy(dst: *char, src: *ro char, dsize: usz) -> *char
+  decl func stpncpy(dst: *char, src: *ro char, dsize: usz) -> *char
+
   decl func strcmp(s1: *ro char, s2: *ro char) -> int
   decl func strncmp(s1: *ro char, s2: *ro char, n: usz) -> int
 

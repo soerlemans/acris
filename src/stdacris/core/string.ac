@@ -11,14 +11,16 @@ func init_string(t_str: *ro char) -> String {
 
   let size = strlen(t_str)
 
-  init.m_buffer = malloc(size) to<*char>
+  init.m_buffer = malloc(size + 1) to<*char>
   init.m_length = size
   init.m_capacity = 2 * size
+
+  strncpy(init.m_buffer, t_str, size + 1)
 
   return init
 }
 
-// TODO: Parameters dont work yet?
+// TODO: Parameters dont work yet for in struct specification?
 // func (String) at(t_idx: usz) -> char {
 //   return self.m_buffer[t_idx]
 // }

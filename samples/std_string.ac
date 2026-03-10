@@ -11,5 +11,8 @@ func main() -> int {
   var str = init_string("Hello World!")
   defer str.destroy()
 
+  writeln_str(str.c_str())
+  writeln_str("")
+
   return 0
 }

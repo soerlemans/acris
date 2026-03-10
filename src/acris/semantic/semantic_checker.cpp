@@ -1203,9 +1203,8 @@ auto SemanticChecker::visit(MemberAccess* t_access) -> Any
 
   const auto& [struct_id, members, methods] = *(lhs.as_struct());
 
-  std::string_view member_id{};
   if(auto ptr{dynamic_cast<IdentifierNode*>(right.get())}; ptr) {
-    member_id = ptr->identifier();
+    const auto member_id{ptr->identifier()};
 
     auto iter{members.find(std::string{member_id})};
     if(iter == members.end()) {
@@ -1216,6 +1215,20 @@ auto SemanticChecker::visit(MemberAccess* t_access) -> Any
     }
 
     return {iter->second};
+  } else if(auto ptr{dynamic_cast<FunctionCall*>(right.get())}; ptr) {
+    const auto method_id{ptr->identifier()};
+
+    auto iter{methods.find(std::string{method_id})};
+    if(iter == methods.end()) {
+      const auto err{
+        std::format("Struct {} has no member named {}.", struct_id, method_id)};
+
+      throw_type_error(err);
+    }
+
+    const auto fn{iter->second.as_function()};
+
+    return {fn->m_return_type};
   }
 
   // Check type of left side, check if operation on the right side is possible.
