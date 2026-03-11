@@ -1,0 +1,30 @@
+module switch_sample
+
+enum Color: u8 {
+  RED = 0,
+  BLUE,
+  GREEN,
+}
+
+func main() -> int {
+  let enum_val = Color::RED
+
+  switch enum_val {
+    case Color::RED:
+      writeln_str("Red.")
+      fallthrough
+
+    case Color::BLUE:
+      writeln_str("Blue.")
+      fallthrough
+
+    case Color::GREEN:
+      writeln_str("Green.")
+      fallthrough
+
+    else:
+      writeln_str("No match.")
+  }
+
+  return 0
+}

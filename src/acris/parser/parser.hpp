@@ -5,6 +5,9 @@
 #include <functional>
 #include <memory>
 
+// Library Includes:
+#include <rang.hpp>
+
 // Absolute Includes:
 #include "acris/ast/node/fdecl.hpp"
 #include "acris/debug/trace.hpp"
@@ -16,11 +19,20 @@
 
 
 // Macros:
+// TODO: Rename TRACE_TOKEN or similar.
 #define PARSER_FOUND(t_tokentype, ...)                    \
   do {                                                    \
     const auto str{tokentype2str(t_tokentype)};           \
     const auto quoted{std::quoted(str, '\'')};            \
     DBG_TRACE_PRINT(INFO, "Found ", quoted, __VA_ARGS__); \
+  } while(false)
+
+// Use to log info about a node if found/parsed properly.
+#define TRACE_NODE(t_ptr, ...)                            \
+  do {                                                    \
+    if(t_ptr) {                                           \
+      DBG_TRACE_PRINT(INFO, "Node found: ", __VA_ARGS__); \
+    }                                                     \
   } while(false)
 
 namespace parser {

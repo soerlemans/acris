@@ -4,6 +4,7 @@
 // Control Statements:
 #include "break.hpp"
 #include "continue.hpp"
+#include "switch.hpp"
 #include "defer.hpp"
 #include "if.hpp"
 #include "loop.hpp"

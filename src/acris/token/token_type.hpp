@@ -54,12 +54,12 @@ enum class TokenType {
   TO,
 
   // Control statements:
-  SLOT,
   PURE,
   FUNCTION,
-  METHOD,
   MATCH,
   SWITCH,
+  CASE,
+  FALLTHROUGH,
   IF,
   ELSE,
   ELIF,

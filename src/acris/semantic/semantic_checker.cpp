@@ -996,6 +996,8 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 // User Types:
 auto SemanticChecker::visit(EnumField* t_field) -> Any
 {
+  // TODO: When we have assignment of values check.
+
   // Nothing to semantically validate yet, until iota comes along.
   // The value of an enum should be computed at compile time.
 
@@ -1178,7 +1180,7 @@ auto SemanticChecker::visit([[maybe_unused]] Self* t_self) -> Any
 auto SemanticChecker::visit(Member* t_member) -> Any
 {
   // TODO: need to fix Member stuff? In Pratt parser?
-	
+
   const auto id{t_member->identifier()};
   // Rewrite:
   // const auto var_data{get_symbol_data_from_env(id)};

@@ -235,7 +235,9 @@ auto Preprocessor::get_include_path(TextStreamPtr t_src) -> IncludePack
       t_src->next();
     }
   } else {
-    // TODO: Throw.
+    const auto pos{t_src->position()};
+    preprocessor_error(pos,
+                       "Unexpected character whilst getting include path.");
   }
 
   pack.m_include = ss.str();
@@ -315,7 +317,6 @@ auto Preprocessor::handle_ifdef(TextBufferPtr& t_dst, TextStreamPtr t_src)
   }
 
   if(t_src->eos()) {
-    // TODO: Throw endif was never hit till end of file.
     const auto end_pos{t_src->end_position()};
     preprocessor_error(end_pos, "End of file reached and found no #<endif.");
   }

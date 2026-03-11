@@ -4,6 +4,7 @@
 namespace ast::node::control {
 class If;
 class Loop;
+class Switch;
 
 class Continue;
 class Break;

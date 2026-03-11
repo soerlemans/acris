@@ -422,6 +422,141 @@ auto AcrisParser::loop_statement() -> NodePtr
   return node;
 }
 
+auto AcrisParser::case_key() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(auto ptr{scope_resolution()}; ptr) {
+    node = std::move(ptr);
+    // TODO: Define which literals can be used.
+    // } else if(auto ptr{m_pratt.literal()}; ptr) {
+    // node = std::move(node);
+  }
+
+  TRACE_NODE(node, "CASE KEY");
+  return node;
+}
+
+auto AcrisParser::case_body() -> NodeListPtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodeListPtr nodes{};
+
+  if(auto ptr{statement_list()}; ptr) {
+    nodes = std::move(ptr);
+    // TODO: Fallthrough.
+    // } else if() {
+  }
+
+  // Fallthrough shold always follow regular statements.
+  if(nodes && next_if(TokenType::FALLTHROUGH)) {
+    // TODO: Make fallthrough.
+    // nodes->push_back();
+    DBG_TRACE_PRINT(INFO, "Node found: FALLTHROUGH");
+  }
+
+  TRACE_NODE(nodes, "CASE BODY");
+  return nodes;
+}
+
+auto AcrisParser::switch_case() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::CASE)) {
+    PARSER_FOUND(TokenType::CASE);
+
+    // TODO: Allow only constant expressions.
+    const auto expr{scope_resolution()};
+
+    const auto cases{list_of([this] {
+      NodePtr key{case_key()};
+
+      if(key) {
+        newline_opt();
+
+        if(check(TokenType::COMMA)) {
+          next();
+        }
+      }
+
+
+      return key;
+    })};
+
+    expect(TokenType::COLON);
+
+    newline_opt();
+    const auto stmnts{case_body()};
+  }
+
+  TRACE_NODE(node, "SWITCH CASE");
+  return node;
+}
+
+auto AcrisParser::switch_else() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::ELSE)) {
+    PARSER_FOUND(TokenType::ELSE);
+
+    expect(TokenType::COLON);
+
+    newline_opt();
+    const auto stmnts{case_body()};
+  }
+
+  TRACE_NODE(node, "SWITCH ELSE");
+  return node;
+}
+
+auto AcrisParser::switch_statement() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::SWITCH)) {
+    PARSER_FOUND(TokenType::SWITCH);
+
+    auto cond_expr{m_pratt.expr()};
+    newline_opt();
+
+    expect(TokenType::ACCOLADE_OPEN);
+    newline_opt();
+
+    auto case_list{list_of([this] {
+      NodePtr node{switch_case()};
+
+      // TODO: Figure out if this will work properly.
+      if(!node) {
+        node = switch_else();
+      }
+
+      if(node) {
+        newline_opt();
+      }
+
+      return node;
+    })};
+    newline_opt();
+
+    expect(TokenType::ACCOLADE_CLOSE);
+
+    // TODO: Add body.
+    node = make_node<Switch>(pos, std::move(cond_expr));
+  }
+
+  TRACE_NODE(node, "SWITCH");
+  return node;
+}
+
 auto AcrisParser::branch_statement(const TokenType t_type) -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -479,6 +614,8 @@ auto AcrisParser::statement() -> NodePtr
   } else if(auto ptr{result_statement()}; ptr) {
     node = std::move(ptr);
   } else if(auto ptr{if_statement()}; ptr) {
+    node = std::move(ptr);
+  } else if(auto ptr{switch_statement()}; ptr) {
     node = std::move(ptr);
   } else if(auto ptr{loop_statement()}; ptr) {
     node = std::move(ptr);
