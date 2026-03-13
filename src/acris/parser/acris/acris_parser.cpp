@@ -422,7 +422,7 @@ auto AcrisParser::loop_statement() -> NodePtr
   return node;
 }
 
-auto AcrisParser::case_key() -> NodePtr
+auto AcrisParser::case_clause() -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
   NodePtr node{};
@@ -441,20 +441,7 @@ auto AcrisParser::case_key() -> NodePtr
 auto AcrisParser::case_body() -> NodeListPtr
 {
   DBG_TRACE_FN(VERBOSE);
-  NodeListPtr nodes{};
-
-  if(auto ptr{statement_list()}; ptr) {
-    nodes = std::move(ptr);
-    // TODO: Fallthrough.
-    // } else if() {
-  }
-
-  // Fallthrough shold always follow regular statements.
-  if(nodes && next_if(TokenType::FALLTHROUGH)) {
-    // TODO: Make fallthrough.
-    // nodes->push_back();
-    DBG_TRACE_PRINT(INFO, "Node found: FALLTHROUGH");
-  }
+  NodeListPtr nodes{statement_list()};
 
   TRACE_NODE(nodes, "CASE BODY");
   return nodes;
@@ -469,13 +456,10 @@ auto AcrisParser::switch_case() -> NodePtr
   if(next_if(TokenType::CASE)) {
     PARSER_FOUND(TokenType::CASE);
 
-    // TODO: Allow only constant expressions.
-    const auto expr{scope_resolution()};
+    auto case_clauses{list_of([this] {
+      NodePtr clause{case_clause()};
 
-    const auto cases{list_of([this] {
-      NodePtr key{case_key()};
-
-      if(key) {
+      if(clause) {
         newline_opt();
 
         if(check(TokenType::COMMA)) {
@@ -484,13 +468,27 @@ auto AcrisParser::switch_case() -> NodePtr
       }
 
 
-      return key;
+      return clause;
     })};
+
+    if(case_clauses->empty()) {
+      throw_syntax_error("Expected atleast one case in switch statement.");
+    }
 
     expect(TokenType::COLON);
 
     newline_opt();
-    const auto stmnts{case_body()};
+    auto stmnts{case_body()};
+
+    bool has_fallthrough{false};
+    if(auto ptr{switch_fallthrough()}; ptr) {
+      has_fallthrough = true;
+      stmnts->push_back(std::move(ptr));
+    }
+
+
+    node = make_node<SwitchCase>(pos, std::move(case_clauses),
+                                 std::move(stmnts), has_fallthrough);
   }
 
   TRACE_NODE(node, "SWITCH CASE");
@@ -516,6 +514,23 @@ auto AcrisParser::switch_else() -> NodePtr
   return node;
 }
 
+auto AcrisParser::switch_fallthrough() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(next_if(TokenType::FALLTHROUGH)) {
+    PARSER_FOUND(TokenType::FALLTHROUGH);
+
+    newline_opt();
+
+    node = make_node<Fallthrough>();
+  }
+
+  TRACE_NODE(node, "SWITCH FALLTHROUGH");
+  return node;
+}
+
 auto AcrisParser::switch_statement() -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -531,7 +546,7 @@ auto AcrisParser::switch_statement() -> NodePtr
     expect(TokenType::ACCOLADE_OPEN);
     newline_opt();
 
-    auto case_list{list_of([this] {
+    auto switch_body{list_of([this] {
       NodePtr node{switch_case()};
 
       // TODO: Figure out if this will work properly.
@@ -549,8 +564,7 @@ auto AcrisParser::switch_statement() -> NodePtr
 
     expect(TokenType::ACCOLADE_CLOSE);
 
-    // TODO: Add body.
-    node = make_node<Switch>(pos, std::move(cond_expr));
+    node = make_node<Switch>(pos, std::move(cond_expr), std::move(switch_body));
   }
 
   TRACE_NODE(node, "SWITCH");

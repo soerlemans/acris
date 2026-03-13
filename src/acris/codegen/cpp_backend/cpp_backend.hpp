@@ -42,7 +42,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   private:
   // CXX compiler front end.
   ClangFrontendInvoker m_inv;
-	SessionUnitPtr m_session;
+  SessionUnitPtr m_session;
 
   // Global symbol table used for quick symbol lookup.
   // Currently unused as the idea was to use it for interop.
@@ -99,6 +99,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   // Control:
   auto visit(node::control::If* t_if) -> Any override;
   auto visit(node::control::Loop* t_loop) -> Any override;
+  auto visit(node::control::Switch* t_sw) -> Any override;
+  auto visit(node::control::SwitchCase* t_case) -> Any override;
+  auto visit(node::control::Fallthrough* t_ft) -> Any override;
+
   auto visit(node::control::Continue* t_continue) -> Any override;
   auto visit(node::control::Break* t_break) -> Any override;
   auto visit(node::control::Defer* t_defer) -> Any override;
@@ -178,7 +182,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   //! Set the optimization level.
   auto set_optimize(Optimize t_level) -> void override;
 
-	auto no_libc() const -> bool;
+  auto no_libc() const -> bool;
 
   /*!
    * Transpile the @ref t_ast to valid C++ code and write it to @ref t_out.

@@ -5,8 +5,10 @@ namespace ast::node::control {
 class If;
 class Loop;
 class Switch;
+class SwitchCase;
 
 class Continue;
+class Fallthrough;
 class Break;
 class Defer;
 class Return;

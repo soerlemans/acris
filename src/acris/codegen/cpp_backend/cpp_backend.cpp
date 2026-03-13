@@ -162,6 +162,52 @@ auto CppBackend::visit(Loop* t_loop) -> Any
   return oss.str();
 }
 
+auto CppBackend::visit(Switch* t_sw) -> Any
+{
+  const auto cond{resolve(t_sw->condition())};
+  const auto body{resolve(t_sw->body())};
+
+  std::ostringstream oss{};
+
+  // clang-format off
+  oss << std::format("switch({})", cond)
+     << "{\n"
+     << body
+     << "}\n";
+  // clang-format on
+
+  return oss.str();
+}
+
+auto CppBackend::visit(SwitchCase* t_case) -> Any
+{
+  const auto clauses{t_case->clauses()};
+  const auto body{resolve(t_case->body())};
+
+  std::ostringstream oss{};
+
+	// We support multiple clauses for a single case.
+  std::string_view sep{};
+  for(auto& clause : *clauses) {
+    oss << sep << std::format("case {}:", resolve(clause));
+
+    sep = "[[fallthrough]];\n";
+  }
+
+  oss << "{\n" << body;
+  if(t_case->has_fallthrough() == false) {
+    oss << "break;\n";
+  }
+  oss << "}\n";
+
+  return oss.str();
+}
+
+auto CppBackend::visit([[maybe_unused]] Fallthrough* t_ft) -> Any
+{
+  return std::string{"[[fallthrough]];\n"};
+}
+
 auto CppBackend::visit([[maybe_unused]] Continue* t_continue) -> Any
 {
   return std::format("continue;\n");
@@ -179,7 +225,7 @@ auto CppBackend::visit(Defer* t_defer) -> Any
   const auto body{resolve(t_defer->body())};
 
   oss << std::format(
-    "const stdinternal::Defer defer_object{}{{ [&](){{ {} }} }};\n",
+    "const stdinternal::Defer defer_object{}{{ [&](){{\n {}\n }} }};\n",
     m_id_defer_count, body);
 
   m_id_defer_count++;
@@ -525,7 +571,7 @@ auto CppBackend::visit(UnaryPrefix* t_up) -> Any
 
 auto CppBackend::visit(ToCast* t_cast) -> Any
 {
-	// Do not terminate expression.
+  // Do not terminate expression.
   const auto left{resolve(t_cast->left(), false)};
 
   const auto type_variant{t_cast->get_type()};

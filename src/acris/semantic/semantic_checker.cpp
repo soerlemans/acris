@@ -359,6 +359,28 @@ auto SemanticChecker::visit(Loop* t_loop) -> Any
   return {};
 }
 
+auto SemanticChecker::visit(Switch* t_sw) -> Any
+{
+  // TODO:.
+
+  return {};
+}
+
+auto SemanticChecker::visit(SwitchCase* t_case) -> Any
+{
+  // TODO:.
+
+  return {};
+}
+
+auto SemanticChecker::visit(Fallthrough* t_ft) -> Any
+{
+  // TODO:.
+
+  return {};
+}
+
+
 AST_VISITOR_STUB(SemanticChecker, Continue)
 AST_VISITOR_STUB(SemanticChecker, Break)
 AST_VISITOR_STUB(SemanticChecker, Defer)

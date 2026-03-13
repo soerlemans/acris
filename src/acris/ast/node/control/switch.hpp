@@ -11,12 +11,13 @@ namespace ast::node::control {
 // Using Statements:
 using container::TextPosition;
 using node_traits::Condition;
+using node_traits::Body;
 using node_traits::NodePosition;
 
 // Classes:
-class Switch : public NodePosition, public Condition {
+	class Switch : public NodePosition, public Condition , public Body{
   public:
-  Switch(TextPosition t_pos, NodePtr&& t_condition);
+  Switch(TextPosition t_pos, NodePtr&& t_condition, NodeListPtr&& t_body);
 
   // AST_ARCHIVE_MAKE_TRAITS_ARCHIVEABLE(Switch, NodePosition, Condition)
   AST_VISITOR_MAKE_VISITABLE(visitor::NodeVisitor);

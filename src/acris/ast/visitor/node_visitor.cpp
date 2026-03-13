@@ -44,6 +44,10 @@ auto NodeVisitor::traverse(NodePtr t_node) -> Any
 // Stubs:
 STUB(If)
 STUB(Loop)
+STUB(Switch)
+STUB(SwitchCase)
+STUB(Fallthrough)
+
 STUB(Continue)
 STUB(Break)
 STUB(Defer)

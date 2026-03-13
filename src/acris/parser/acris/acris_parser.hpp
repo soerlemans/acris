@@ -88,11 +88,12 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   virtual auto loop_statement() -> NodePtr;
 
   // Switch statements:
-  virtual auto case_key() -> NodePtr;
+  virtual auto case_clause() -> NodePtr;
   virtual auto case_body() -> NodeListPtr;
 
   virtual auto switch_case() -> NodePtr;
   virtual auto switch_else() -> NodePtr;
+  virtual auto switch_fallthrough() -> NodePtr;
   virtual auto switch_statement() -> NodePtr;
 
   // Branch statements:
