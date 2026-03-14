@@ -11,5 +11,6 @@
 #include "return.hpp"
 #include "switch.hpp"
 #include "switch_case.hpp"
+#include "switch_else.hpp"
 
 #endif // ACRIS_ACRIS_AST_NODE_CONTROL_INCLUDE_HPP

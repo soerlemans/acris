@@ -9,7 +9,7 @@ enum Color: u8 {
 }
 
 func main() -> int {
-  let enum_val = Color::RED
+  let enum_val = Color::GREEN
 
   write_str("Enum: ")
 
@@ -20,11 +20,11 @@ func main() -> int {
     case Color::BLUE:
       writeln_str("Blue.")
 
-    case Color::GREEN:
-      writeln_str("Green.")
+    // case Color::GREEN:
+    //   writeln_str("Green.")
 
-    // else:
-    //   writeln_str("No match.")
+    else:
+      writeln_str("No match.")
   }
 
   return 0

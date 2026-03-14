@@ -46,6 +46,7 @@ STUB(If)
 STUB(Loop)
 STUB(Switch)
 STUB(SwitchCase)
+STUB(SwitchElse)
 STUB(Fallthrough)
 
 STUB(Continue)

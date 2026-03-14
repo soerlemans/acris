@@ -147,6 +147,7 @@ class SemanticChecker : public NodeVisitor {
   auto visit(node::control::Loop* t_loop) -> Any override;
   auto visit(node::control::Switch* t_sw) -> Any override;
   auto visit(node::control::SwitchCase* t_case) -> Any override;
+  auto visit(node::control::SwitchElse* t_else) -> Any override;
   auto visit(node::control::Fallthrough* t_ft) -> Any override;
 
   auto visit(node::control::Continue* t_continue) -> Any override;

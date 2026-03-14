@@ -186,7 +186,7 @@ auto CppBackend::visit(SwitchCase* t_case) -> Any
 
   std::ostringstream oss{};
 
-	// We support multiple clauses for a single case.
+  // We support multiple clauses for a single case.
   std::string_view sep{};
   for(auto& clause : *clauses) {
     oss << sep << std::format("case {}:", resolve(clause));
@@ -199,6 +199,22 @@ auto CppBackend::visit(SwitchCase* t_case) -> Any
     oss << "break;\n";
   }
   oss << "}\n";
+
+  return oss.str();
+}
+
+auto CppBackend::visit(SwitchElse* t_else) -> Any
+{
+  const auto body{resolve(t_else->body())};
+
+  std::ostringstream oss{};
+
+  // clang-format off
+  oss << "default: {\n"
+			<< body
+			<< "break;\n"
+			<< "}\n";
+  // clang-format on
 
   return oss.str();
 }

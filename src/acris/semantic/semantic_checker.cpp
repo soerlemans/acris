@@ -373,6 +373,13 @@ auto SemanticChecker::visit(SwitchCase* t_case) -> Any
   return {};
 }
 
+auto SemanticChecker::visit(SwitchElse* t_else) -> Any
+{
+  // TODO:.
+
+  return {};
+}
+
 auto SemanticChecker::visit(Fallthrough* t_ft) -> Any
 {
   // TODO:.

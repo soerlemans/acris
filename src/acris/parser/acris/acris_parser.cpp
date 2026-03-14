@@ -478,17 +478,17 @@ auto AcrisParser::switch_case() -> NodePtr
     expect(TokenType::COLON);
 
     newline_opt();
-    auto stmnts{case_body()};
+    auto body_ptr{case_body()};
 
     bool has_fallthrough{false};
     if(auto ptr{switch_fallthrough()}; ptr) {
       has_fallthrough = true;
-      stmnts->push_back(std::move(ptr));
+      body_ptr->push_back(std::move(ptr));
     }
 
 
     node = make_node<SwitchCase>(pos, std::move(case_clauses),
-                                 std::move(stmnts), has_fallthrough);
+                                 std::move(body_ptr), has_fallthrough);
   }
 
   TRACE_NODE(node, "SWITCH CASE");
@@ -507,7 +507,9 @@ auto AcrisParser::switch_else() -> NodePtr
     expect(TokenType::COLON);
 
     newline_opt();
-    const auto stmnts{case_body()};
+    auto body_ptr{case_body()};
+
+    node = make_node<SwitchElse>(pos, std::move(body_ptr));
   }
 
   TRACE_NODE(node, "SWITCH ELSE");

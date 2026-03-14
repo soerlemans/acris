@@ -6,6 +6,7 @@ class If;
 class Loop;
 class Switch;
 class SwitchCase;
+class SwitchElse;
 
 class Continue;
 class Fallthrough;
