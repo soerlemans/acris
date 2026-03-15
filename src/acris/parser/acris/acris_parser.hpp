@@ -87,6 +87,15 @@ class AcrisParser : public Parser, public PrattParserDelegate {
   // Loop statements:
   virtual auto loop_statement() -> NodePtr;
 
+  // Switch statements:
+  virtual auto case_clause() -> NodePtr;
+  virtual auto case_body() -> NodeListPtr;
+
+  virtual auto switch_case() -> NodePtr;
+  virtual auto switch_else() -> NodePtr;
+  virtual auto switch_fallthrough() -> NodePtr;
+  virtual auto switch_statement() -> NodePtr;
+
   // Branch statements:
   virtual auto branch_statement(TokenType t_type) -> NodePtr;
   virtual auto if_statement() -> NodePtr;

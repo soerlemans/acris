@@ -114,7 +114,7 @@ auto operator<<(std::ostream& t_os, types::core::PointerTypePtr t_ptr)
     }
 
     if(t_ptr->m_readonly) {
-      t_os << "ro";
+      t_os << "ro ";
     }
 
     t_os << t_ptr->m_type;

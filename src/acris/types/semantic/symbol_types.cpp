@@ -82,6 +82,10 @@ auto FnType::type_variant() const -> TypeVariant
   // TODO: Convert TypeList of @ref FnType to core::TypeList.
   TypeList params;
 
+  for(auto&& param : m_params) {
+    params.push_back(param.type_variant());
+  }
+
   return {make_function(params, m_return_type.type_variant())};
 }
 

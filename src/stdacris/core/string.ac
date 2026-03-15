@@ -1,0 +1,148 @@
+#<include_once <core/core.ac>
+
+struct String {
+  m_buffer: *char
+  m_length: usz
+  m_capacity: usz
+}
+
+func init_string(t_str: *ro char) -> String {
+  var init: String
+
+  let size = strlen(t_str)
+
+  init.m_buffer = malloc(size + 1) to<*char>
+  init.m_length = size
+  init.m_capacity = 2 * size
+
+  strncpy(init.m_buffer, t_str, size + 1)
+
+  return init
+}
+
+//! Index access.
+func (String) at(t_idx: usz) -> char {
+  if(t_idx >= self.m_length) {
+    panic("string index access (idx >= length).")
+  }
+
+  return self.m_buffer[t_idx]
+}
+
+//! Reverse index access.
+func (String) r_at(t_idx: usz) -> char {
+  if(t_idx >= self.m_length) {
+    panic("string reverse index access (idx >= length).")
+  }
+
+  let ridx := self.m_length - (t_idx - 1)
+
+  return self.m_buffer[ridx]
+}
+
+//! Reserve atleast the amount given.
+func (String) reserve(t_new_size: usz) -> void {
+  if(t_new_size > self.m_capacity) {
+    // self.m_capacity *= 2
+    self.m_capacity = t_new_size * 2
+
+    let new_buffer = realloc((self.m_buffer) to<*void>, self.m_capacity)
+    // if(!new_buffer) {
+    //   panic("String::shrink_to_fit() reallocation failed.")
+    // }
+
+    self.m_buffer = (new_buffer) to<*char>
+  }
+}
+
+//! Shrink string to fit contents.
+func (String) shrink_to_fit(t_new_size: usz) -> void {
+  let min_cap = self.m_length + 1 // Need to account for null terminator.
+
+  if(min_cap < self.m_capacity) {
+    let buf = (self.m_buffer) to<*void>
+
+    let new_buffer = realloc(buf, min_cap)
+    if(new_buffer) {
+      self.m_buffer = (new_buffer) to<*char>
+      self.m_capacity = min_cap
+    } else {
+      panic("String::shrink_to_fit() reallocation failed.")
+    }
+  }
+}
+
+//! Set the string contents.
+func (String) set(t_str: *ro char) -> void {
+  let size = strlen(t_str)
+  let new_size = size
+
+  // Reserve more space if needed.
+  // self.reserve(new_size)
+  if(new_size > self.m_capacity) {
+    // self.m_capacity *= 2
+    self.m_capacity = new_size * 2
+
+    let new_buffer = realloc((self.m_buffer) to<*void>, self.m_capacity)
+    self.m_buffer = (new_buffer) to<*char>
+  }
+
+  // Overwrite buffer contents.
+  self.m_buffer = strncpy(self.m_buffer, t_str, size + 1)
+  self.m_length = new_size
+}
+
+// TODO: Overloading append with String.
+//! Append a string to the end.
+func (String) append(t_str: *ro char) -> void {
+  let size = strlen(t_str)
+  let new_size = self.m_length + size
+
+  // Reserve more space if needed.
+  // self.reserve(new_size)
+  if(new_size > self.m_capacity) {
+    // self.m_capacity *= 2
+    self.m_capacity = new_size * 2
+
+    let new_buffer = realloc((self.m_buffer) to<*void>, self.m_capacity)
+    self.m_buffer = (new_buffer) to<*char>
+  }
+
+  // Append string to end.
+  self.m_buffer = strncat(self.m_buffer, t_str, size + 1)
+  self.m_length = new_size
+}
+
+//! Return a C string.
+func (String) c_str() -> *ro char {
+  let buf = (self.m_buffer) to<*ro char>
+
+  return buf
+}
+
+//! Get length.
+func (String) length() -> usz {
+  return self.m_length;
+}
+
+//! Get capacity.
+func (String) capacity() -> usz {
+  return self.m_capacity;
+}
+
+//! Clear the strings contents.
+func (String) clear() -> void {
+  var buf = (self.m_buffer) to <*void>
+
+  // Overwrite contents with null-terminators.
+  memset(buf, 0x0, self.m_length)
+
+  self.m_length = 0
+}
+
+//! Get capacity.
+func (String) destroy() -> void {
+  var buf = (self.m_buffer) to <*void>
+
+  free(buf)
+}

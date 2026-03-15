@@ -1,0 +1,9 @@
+module assert_sample
+
+#<include_once <core/core.ac>
+
+func main() -> int {
+  assert_msg(false, "Should fail!!")
+
+  return 0
+}

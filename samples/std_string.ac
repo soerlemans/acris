@@ -1,0 +1,20 @@
+module std_string_sample
+
+#<include_once <core/string.ac>
+
+func main() -> int {
+  var test = 10
+
+  var str = init_string("Hello World!")
+  defer str.destroy()
+
+  str.append(" And a whole lot more to come.");
+  str.clear()
+
+  str.set("Reset string.")
+  str.append("New appendage.")
+
+  writeln_str(str.c_str())
+
+  return 0
+}

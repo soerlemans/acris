@@ -65,12 +65,9 @@ namespace keywords {
   DEFINE_TERMINAL(g_to, "to", TO);
 
   // Control statements:
-  DEFINE_TERMINAL(g_slot,   "slot",  SLOT);
-  DEFINE_TERMINAL(g_pure,   "pure",  PURE); // TODO: Look into something like how D does it.
-  DEFINE_TERMINAL(g_func,   "func",  FUNCTION);
-  // DEFINE_TERMINAL(g_meth,  "meth",  METHOD);
-  DEFINE_TERMINAL(g_switch, "switch", SWITCH);
-  DEFINE_TERMINAL(g_match,  "match",  MATCH);
+  DEFINE_TERMINAL(g_pure,   "pure",   PURE); // TODO: Look into something like how D does it.
+  DEFINE_TERMINAL(g_func,   "func",   FUNCTION);
+
   DEFINE_TERMINAL(g_if,     "if",     IF);
   DEFINE_TERMINAL(g_else,   "else",   ELSE);
   DEFINE_TERMINAL(g_elif,   "elif",   ELIF);
@@ -78,6 +75,16 @@ namespace keywords {
   DEFINE_TERMINAL(g_do,     "do",     DO);
   DEFINE_TERMINAL(g_in,     "in",     IN);
   // DEFINE_TERMINAL(g_in,   "for",   LOOP);
+
+  DEFINE_TERMINAL(g_match,  "match",  MATCH);
+
+  DEFINE_TERMINAL(g_switch, "switch", SWITCH);
+  DEFINE_TERMINAL(g_case,   "case",   CASE);
+  DEFINE_TERMINAL(g_fallthrough, "fallthrough",   FALLTHROUGH);
+
+	// TODO: Implement for switch later.
+  // DEFINE_TERMINAL(g_else_unreachable,   "else_unreachable",   ELSE_UNREACHABLE);
+  // DEFINE_TERMINAL(g_else_panic,         "else_panic",   ELSE_PANIC);
 
   // Jump:
   DEFINE_TERMINAL(g_break,    "break",    BREAK);
@@ -88,8 +95,7 @@ namespace keywords {
   // Literals:
   DEFINE_TERMINAL(g_true,  "true",  TRUE);
   DEFINE_TERMINAL(g_false, "false", FALSE);
-  DEFINE_TERMINAL(g_null,  "null",  NULL_LIT)
-	;
+  DEFINE_TERMINAL(g_null,  "null",  NULL_LIT);
 
 	// Primitives:
   DEFINE_TERMINAL(g_void, "void", VOID);
@@ -143,6 +149,7 @@ namespace keywords {
 		g_proto.pair(),
 		g_to.pair(),
     g_func.pair(),
+    g_switch.pair(), g_case.pair(), g_fallthrough.pair(),
     g_match.pair(),
     g_if.pair(), g_else.pair(), g_elif.pair(),
     g_loop.pair(),
@@ -221,16 +228,23 @@ namespace symbols {
   DEFINE_TERMINAL(g_and, "&&", AND);
 
 	// Bitwise:
-  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_NOT);
+	// Follow Odin's syntax which uses prefix as a bit inversion.
+	// And infix as XOR.
+  DEFINE_TERMINAL(g_bitwise_not,  '~', BITWISE_XOR); // TODO: Rename tilde.
   DEFINE_TERMINAL(g_bitwise_and,  '&', BITWISE_AND);
   DEFINE_TERMINAL(g_bitwise_or,  '|', BITWISE_OR);
-  DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
+  // DEFINE_TERMINAL(g_bitwise_xor,  '^', BITWISE_XOR);
 
   DEFINE_TERMINAL(g_bitwise_lhs,  "<<", BITWISE_LHS);
   DEFINE_TERMINAL(g_bitwise_rhs,  ">>", BITWISE_RHS);
 
+	// Stream operators:
+  // DEFINE_TERMINAL(g_bitwise_lhs,  "<%", BITWISE_LHS);
+  // DEFINE_TERMINAL(g_bitwise_rhs,  "%>", BITWISE_RHS);
+
   // Miscellaneous:
   DEFINE_TERMINAL(g_arrow,         "->", ARROW);
+  DEFINE_TERMINAL(g_circumflex,    "*.", ARROW); // I like postfix syntax for this a lot more.
   DEFINE_TERMINAL(g_dot,           '.',  DOT);
   DEFINE_TERMINAL(g_comma,         ',',  COMMA);
   DEFINE_TERMINAL(g_question_mark, '?',  QUESTION_MARK);

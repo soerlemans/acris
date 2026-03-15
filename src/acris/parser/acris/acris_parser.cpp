@@ -347,8 +347,8 @@ auto AcrisParser::result_statement() -> NodePtr
   } else if(auto ptr{assignment()}; ptr) {
     node = std::move(ptr);
     // Breaks stuff now.
-    // } else if(auto ptr{m_pratt.effect_expr()}; ptr) {
-    //   node = std::move(ptr);
+  } else if(auto ptr{m_pratt.effect_expr()}; ptr) {
+    node = std::move(ptr);
   }
 
   // Terminate result statement.
@@ -422,6 +422,157 @@ auto AcrisParser::loop_statement() -> NodePtr
   return node;
 }
 
+auto AcrisParser::case_clause() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(auto ptr{scope_resolution()}; ptr) {
+    node = std::move(ptr);
+    // TODO: Define which literals can be used.
+    // } else if(auto ptr{m_pratt.literal()}; ptr) {
+    // node = std::move(node);
+  }
+
+  TRACE_NODE(node, "CASE KEY");
+  return node;
+}
+
+auto AcrisParser::case_body() -> NodeListPtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodeListPtr nodes{statement_list()};
+
+  TRACE_NODE(nodes, "CASE BODY");
+  return nodes;
+}
+
+auto AcrisParser::switch_case() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::CASE)) {
+    PARSER_FOUND(TokenType::CASE);
+
+    auto case_clauses{list_of([this] {
+      NodePtr clause{case_clause()};
+
+      if(clause) {
+        newline_opt();
+
+        if(check(TokenType::COMMA)) {
+          next();
+        }
+      }
+
+
+      return clause;
+    })};
+
+    if(case_clauses->empty()) {
+      throw_syntax_error("Expected atleast one case in switch statement.");
+    }
+
+    expect(TokenType::COLON);
+
+    newline_opt();
+    auto body_ptr{case_body()};
+
+    bool has_fallthrough{false};
+    if(auto ptr{switch_fallthrough()}; ptr) {
+      has_fallthrough = true;
+      body_ptr->push_back(std::move(ptr));
+    }
+
+
+    node = make_node<SwitchCase>(pos, std::move(case_clauses),
+                                 std::move(body_ptr), has_fallthrough);
+  }
+
+  TRACE_NODE(node, "SWITCH CASE");
+  return node;
+}
+
+auto AcrisParser::switch_else() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::ELSE)) {
+    PARSER_FOUND(TokenType::ELSE);
+
+    expect(TokenType::COLON);
+
+    newline_opt();
+    auto body_ptr{case_body()};
+
+    node = make_node<SwitchElse>(pos, std::move(body_ptr));
+  }
+
+  TRACE_NODE(node, "SWITCH ELSE");
+  return node;
+}
+
+auto AcrisParser::switch_fallthrough() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  if(next_if(TokenType::FALLTHROUGH)) {
+    PARSER_FOUND(TokenType::FALLTHROUGH);
+
+    newline_opt();
+
+    node = make_node<Fallthrough>();
+  }
+
+  TRACE_NODE(node, "SWITCH FALLTHROUGH");
+  return node;
+}
+
+auto AcrisParser::switch_statement() -> NodePtr
+{
+  DBG_TRACE_FN(VERBOSE);
+  NodePtr node{};
+
+  const auto pos{get_position()};
+  if(next_if(TokenType::SWITCH)) {
+    PARSER_FOUND(TokenType::SWITCH);
+
+    auto cond_expr{m_pratt.expr()};
+    newline_opt();
+
+    expect(TokenType::ACCOLADE_OPEN);
+    newline_opt();
+
+    auto switch_body{list_of([this] {
+      NodePtr node{switch_case()};
+
+      // TODO: Figure out if this will work properly.
+      if(!node) {
+        node = switch_else();
+      }
+
+      if(node) {
+        newline_opt();
+      }
+
+      return node;
+    })};
+    newline_opt();
+
+    expect(TokenType::ACCOLADE_CLOSE);
+
+    node = make_node<Switch>(pos, std::move(cond_expr), std::move(switch_body));
+  }
+
+  TRACE_NODE(node, "SWITCH");
+  return node;
+}
+
 auto AcrisParser::branch_statement(const TokenType t_type) -> NodePtr
 {
   DBG_TRACE_FN(VERBOSE);
@@ -479,6 +630,8 @@ auto AcrisParser::statement() -> NodePtr
   } else if(auto ptr{result_statement()}; ptr) {
     node = std::move(ptr);
   } else if(auto ptr{if_statement()}; ptr) {
+    node = std::move(ptr);
+  } else if(auto ptr{switch_statement()}; ptr) {
     node = std::move(ptr);
   } else if(auto ptr{loop_statement()}; ptr) {
     node = std::move(ptr);

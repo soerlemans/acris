@@ -16,6 +16,14 @@ auto SemanticValidator::handle_condition(const SymbolData& t_data,
 {
   std::stringstream ss{};
 
+  if(t_data.is_ptr()) {
+    // Pointers can always be checked for null.
+    //
+    // TODO: Later we need to account for optional ptrs, which can be null.
+    // And strict pointers which are never null.
+    return;
+  }
+
   if(const auto opt{t_data.native_type()}; opt) {
     if(!is_condition(opt.value())) {
       ss << "Expected a pointer, integer or a boolean for a conditional "
@@ -26,8 +34,9 @@ auto SemanticValidator::handle_condition(const SymbolData& t_data,
       throw_type_error(ss.str());
     }
   } else {
-    ss << "Non native types can not casted to " << std::quoted("bool")
-       << ".\n\n";
+    const auto type_tag{t_data.tag_str()};
+    ss << "Non native type " << std::quoted(type_tag) << " can not casted to "
+       << std::quoted("bool") << ".\n\n";
 
     ss << t_pos;
 
@@ -214,17 +223,23 @@ auto SemanticValidator::validate_comparison(const BinaryOperationData& t_data)
 {
   const auto& [lhs, rhs, pos] = t_data;
 
+
+  // We need to resolve to the underlying type of the variable.
+  // For type validation purposes.
+  const auto lhs_resolved{lhs.resolve_result_type()};
+  const auto rhs_resolved{rhs.resolve_result_type()};
+
   // We only check if the promotion is possible because we dont use the result.
-  const auto opt{promote(lhs, rhs, PromotionMode::PEAK)};
+  const auto opt{promote(lhs_resolved, rhs_resolved, PromotionMode::PEAK)};
 
   // If promotion fails and the types are not equal.
   // We have a type mismatch.
-  if(!opt && lhs != rhs) {
+  if(!opt && lhs_resolved != rhs_resolved) {
     std::stringstream ss{};
 
     ss << "Comparison operation contains a type mismatch.\n";
-    ss << "typeof lhs = " << lhs << "\n";
-    ss << "typeof rhs = " << rhs << "\n\n";
+    ss << "typeof lhs = " << lhs_resolved << "\n";
+    ss << "typeof rhs = " << rhs_resolved << "\n\n";
 
     ss << pos;
 

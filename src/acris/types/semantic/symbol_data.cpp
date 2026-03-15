@@ -63,6 +63,16 @@ auto nullptr_check(const std::string_view t_str,
 
 namespace types::symbol {
 // Methods:
+auto SymbolData::is_monostate() const -> bool
+{
+  return std::holds_alternative<std::monostate>(*this);
+}
+
+auto SymbolData::is_native() const -> bool
+{
+  return std::holds_alternative<NativeType>(*this);
+}
+
 auto SymbolData::is_enum() const -> bool
 {
   return std::holds_alternative<EnumTypePtr>(*this);
@@ -73,6 +83,11 @@ auto SymbolData::is_struct() const -> bool
   return std::holds_alternative<StructTypePtr>(*this);
 }
 
+auto SymbolData::is_fn() const -> bool
+{
+  return std::holds_alternative<FnTypePtr>(*this);
+}
+
 auto SymbolData::is_ptr() const -> bool
 {
   return std::holds_alternative<PointerTypePtr>(*this);
@@ -81,6 +96,11 @@ auto SymbolData::is_ptr() const -> bool
 auto SymbolData::is_array() const -> bool
 {
   return std::holds_alternative<ArrayTypePtr>(*this);
+}
+
+auto SymbolData::is_var() const -> bool
+{
+  return std::holds_alternative<VarTypePtr>(*this);
 }
 
 auto SymbolData::as_enum() const -> EnumTypePtr
@@ -111,6 +131,36 @@ auto SymbolData::as_array() const -> ArrayTypePtr
 auto SymbolData::as_var() const -> VarTypePtr
 {
   return std::get<VarTypePtr>(*this);
+}
+
+auto SymbolData::tag_str() const -> std::string_view
+{
+  // This is ugly and likely slow performance wise.
+  // But using std::variant::index() with a switch seems error prone.
+
+  if(is_native()) {
+    return {"native"};
+  } else if(is_enum()) {
+    return {"enum"};
+  } else if(is_struct()) {
+    return {"struct"};
+  } else if(is_fn()) {
+    return {"function"};
+  } else if(is_ptr()) {
+    return {"pointer"};
+  } else if(is_array()) {
+    return {"array"};
+  } else if(is_var()) {
+    return {"variable"};
+  } else if(is_monostate()) {
+    return {"monostate"};
+  } else {
+    using lib::stdexcept::LogicError;
+
+    throw LogicError("Unhandled tag state.");
+  }
+
+  return {};
 }
 
 auto SymbolData::is_mutable() const -> bool

@@ -39,7 +39,6 @@ auto CppBackend::prologue() -> std::string
   // oss << "#include <stdfloat>\n"; // TODO: Uncommnet when supported by clang.
   oss << "\n";
 
-  // FIXME: Temporary input for printing purposes.
   oss << "// Stdacris Includes:\n";
   if(no_libc()) {
     oss << R"(#include "stdacris/core/linux/core.h")" << "\n";
@@ -53,8 +52,14 @@ auto CppBackend::prologue() -> std::string
 
   oss << "\n\n";
 
+  // TODO: Consider using this?
+  oss << "// Macros:\n";
+  oss << "#define acris_self (*this)\n";
+  oss << "\n\n";
+
   oss << "// Aliases:\n";
   oss << "namespace stdinternal = stdlibacris::internal;\n";
+
 
   return oss.str();
 }
@@ -111,6 +116,18 @@ auto CppBackend::resolve(NodePtr t_ptr, const bool t_terminate) -> std::string
   return oss.str();
 }
 
+auto CppBackend::resolve_list(NodeListPtr t_list, const bool t_terminate)
+  -> std::string
+{
+  std::ostringstream oss{};
+
+  for(NodePtr& node : *t_list) {
+    oss << resolve(node, t_terminate);
+  }
+
+  return oss.str();
+}
+
 // Public:
 CppBackend::CppBackend()
   : m_inv{},
@@ -123,15 +140,15 @@ CppBackend::CppBackend()
 // Control:
 auto CppBackend::visit(If* t_if) -> Any
 {
-  const auto init_expr{resolve(t_if->init_expr(), false)};
+  const auto init_expr{resolve(t_if->init_expr())};
   const auto cond{resolve(t_if->condition())};
 
-  const auto then{resolve(t_if->then())};
-  const auto alt{resolve(t_if->alt())};
+  const auto then{resolve(t_if->then(), true)};
+  const auto alt{resolve(t_if->alt(), true)};
 
   std::ostringstream oss{};
 
-  oss << std::format("if({} {}) {{\n", init_expr, cond) << then;
+  oss << std::format("if({}; {}) {{\n", init_expr, cond) << then;
 
   // Dont create else branch if we dont have a statement for it.
   if(!alt.empty()) {
@@ -145,11 +162,11 @@ auto CppBackend::visit(If* t_if) -> Any
 
 auto CppBackend::visit(Loop* t_loop) -> Any
 {
-  const auto init_expr{resolve(t_loop->init_expr(), false)};
+  const auto init_expr{resolve(t_loop->init_expr())};
   const auto cond{resolve(t_loop->condition())};
 
-  const auto post_expr{resolve(t_loop->expr(), false)};
-  const auto body{resolve(t_loop->body())};
+  const auto post_expr{resolve(t_loop->expr())};
+  const auto body{resolve_list(t_loop->body(), true)};
 
   std::ostringstream oss{};
 
@@ -161,6 +178,68 @@ auto CppBackend::visit(Loop* t_loop) -> Any
   // clang-format on
 
   return oss.str();
+}
+
+auto CppBackend::visit(Switch* t_sw) -> Any
+{
+  const auto cond{resolve(t_sw->condition())};
+  const auto body{resolve_list(t_sw->body(), true)};
+
+  std::ostringstream oss{};
+
+  // clang-format off
+  oss << std::format("switch({})", cond)
+     << "{\n"
+     << body
+     << "}\n";
+  // clang-format on
+
+  return oss.str();
+}
+
+auto CppBackend::visit(SwitchCase* t_case) -> Any
+{
+  const auto clauses{t_case->clauses()};
+  const auto body{resolve_list(t_case->body(), true)};
+
+  std::ostringstream oss{};
+
+  // We support multiple clauses for a single case.
+  std::string_view sep{};
+  for(auto& clause : *clauses) {
+    oss << sep << std::format("case {}:", resolve(clause));
+
+    sep = "[[fallthrough]];\n";
+  }
+
+  oss << "{\n" << body;
+  if(t_case->has_fallthrough() == false) {
+    oss << "break;\n";
+  }
+  oss << "}\n";
+
+  return oss.str();
+}
+
+auto CppBackend::visit(SwitchElse* t_else) -> Any
+{
+  const auto body{resolve_list(t_else->body(), true)};
+
+  std::ostringstream oss{};
+
+  // clang-format off
+  oss << "default: {\n"
+			<< body
+			<< "break;\n"
+			<< "}\n";
+  // clang-format on
+
+  return oss.str();
+}
+
+auto CppBackend::visit([[maybe_unused]] Fallthrough* t_ft) -> Any
+{
+  return std::string{"[[fallthrough]];\n"};
 }
 
 auto CppBackend::visit([[maybe_unused]] Continue* t_continue) -> Any
@@ -177,10 +256,10 @@ auto CppBackend::visit(Defer* t_defer) -> Any
 {
   std::ostringstream oss{};
 
-  const auto body{resolve(t_defer->body())};
+  const auto body{resolve_list(t_defer->body(), true)};
 
   oss << std::format(
-    "const stdinternal::Defer defer_object{}{{ [&](){{ {} }} }};\n",
+    "const stdinternal::Defer defer_object{}{{ [&](){{\n {}\n }} }};\n",
     m_id_defer_count, body);
 
   m_id_defer_count++;
@@ -190,7 +269,7 @@ auto CppBackend::visit(Defer* t_defer) -> Any
 
 auto CppBackend::visit(Return* t_ret) -> Any
 {
-  const auto expr{resolve(t_ret->expr(), false)};
+  const auto expr{resolve(t_ret->expr())};
 
   return std::format("return {};\n", expr);
 }
@@ -238,7 +317,7 @@ auto CppBackend::visit(Function* t_fn) -> Any
 	// Cause trailing return
   oss << std::format("{} {}({})\n", ret_type, identifier, param_ss.str())
      << "{\n"
-     << resolve(t_fn->body())
+		 << resolve_list(t_fn->body(), true)
      << "}\n";
   // clang-format on
 
@@ -271,7 +350,7 @@ auto CppBackend::visit(FunctionCall* t_call) -> Any
   std::string_view sep{""};
 
   for(const auto& ptr : *args) {
-    const auto argument{resolve(ptr, false)};
+    const auto argument{resolve(ptr)};
     oss << sep << argument;
 
     sep = ", ";
@@ -305,7 +384,7 @@ auto CppBackend::visit(Let* t_let) -> Any
   const auto terminate_str{terminate()};
 
   if(init_expr) {
-    const auto init_expr_str{resolve(init_expr, false)};
+    const auto init_expr_str{resolve(init_expr)};
 
     return std::format("{} const {} = {}{}", type, id, init_expr_str,
                        terminate_str);
@@ -325,7 +404,7 @@ auto CppBackend::visit(Var* t_var) -> Any
   const auto terminate_str{terminate()};
 
   if(init_expr) {
-    const auto init_expr_str{resolve(init_expr, false)};
+    const auto init_expr_str{resolve(init_expr)};
 
     return std::format("{} {} = {}{}", type, id, init_expr_str, terminate_str);
   } else {
@@ -388,15 +467,15 @@ auto CppBackend::visit(Attribute* t_attr) -> Any
     switch(attr.m_type) {
       case AttributeType::EXTERN:
         // clang-format off
-      oss << R"(extern "C" {)" << "\n"
-				 << resolve(body)
-				 << "}\n";
+			  oss << R"(extern "C" {)" << "\n"
+			  		<< resolve_list(body, true)
+			  	  << "}\n";
         // clang-format on
         break;
 
       default:
         // Walk the body like normal.
-        oss << resolve(body);
+        oss << resolve_list(body, true);
         break;
     }
   }
@@ -461,8 +540,8 @@ auto CppBackend::visit(Assignment* t_assign) -> Any
 {
   const auto op{t_assign->op2str()};
 
-  const auto left{resolve(t_assign->left(), false)};
-  const auto right{resolve(t_assign->right(), false)};
+  const auto left{resolve(t_assign->left())};
+  const auto right{resolve(t_assign->right())};
 
   return std::format("{} {} {};\n", left, op, right);
 }
@@ -526,8 +605,8 @@ auto CppBackend::visit(UnaryPrefix* t_up) -> Any
 
 auto CppBackend::visit(ToCast* t_cast) -> Any
 {
-	// Do not terminate expression.
-  const auto left{resolve(t_cast->left(), false)};
+  // Do not terminate expression.
+  const auto left{resolve(t_cast->left())};
 
   const auto type_variant{t_cast->get_type()};
   const auto type{type_spec2cpp({type_variant})};
@@ -711,7 +790,7 @@ auto CppBackend::visit(Method* t_meth) -> Any
   // clang-format off
   oss << std::format("auto {}::{}({}) -> {}\n", receiver_type, identifier, param_ss.str(), ret_type)
      << "{\n"
-     << resolve(t_meth->body())
+		 << resolve_list(t_meth->body(), true)
      << "}\n";
   // clang-format on
 
@@ -744,7 +823,7 @@ auto CppBackend::visit(MethodCall* t_meth_call) -> Any
   std::string_view sep{""};
 
   for(const auto& ptr : *args) {
-    const auto argument{resolve(ptr, false)};
+    const auto argument{resolve(ptr)};
     oss << sep << argument;
 
     sep = ", ";
@@ -777,14 +856,13 @@ auto CppBackend::visit(Struct* t_struct) -> Any
   std::ostringstream oss{};
 
   oss << std::format("struct {} {{\n", identifier);
-  oss << resolve(members);
+  oss << resolve_list(members, true);
 
 
   oss << "// Methods:\n";
 
-  for(auto& [meth_identifier, method] : methods) {
+  for(auto& [meth_id, method] : methods) {
     const auto meth_type{method.as_function()};
-
     const auto ret_type{type_spec2cpp({meth_type->m_return_type})};
 
     std::ostringstream param_ss{};
@@ -797,7 +875,7 @@ auto CppBackend::visit(Struct* t_struct) -> Any
       sep = ", ";
     }
 
-    oss << std::format("auto {}({}) -> {};\n", meth_identifier, param_ss.str(),
+    oss << std::format("auto {}({}) -> {};\n", meth_id, param_ss.str(),
                        ret_type);
   }
 
@@ -821,7 +899,7 @@ auto CppBackend::visit(Member* t_member) -> Any
 auto CppBackend::visit(MemberAccess* t_access) -> Any
 {
   const auto lhs{resolve(t_access->left())};
-  const auto rhs{resolve(t_access->right(), false)};
+  const auto rhs{resolve(t_access->right())};
 
   return std::format("{}.{}{}", lhs, rhs, terminate());
 }
@@ -832,7 +910,8 @@ auto CppBackend::visit(List* t_list) -> Any
   std::ostringstream oss{};
 
   for(NodePtr& node : *t_list) {
-    oss << resolve(node);
+    // Forward termination status.
+    oss << resolve(node, should_terminate());
   }
 
   return oss.str();
@@ -956,7 +1035,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
 
   // Generate C++ code.
   ofs << "// C++ code:\n";
-  ofs << resolve(t_ast);
+  ofs << resolve(t_ast, true);
   ofs << '\n';
 
   ofs << "// Epilogue:\n";
