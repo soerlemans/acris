@@ -52,8 +52,14 @@ auto CppBackend::prologue() -> std::string
 
   oss << "\n\n";
 
+  // TODO: Consider using this?
+  oss << "// Macros:\n";
+  oss << "#define acris_self (*this)\n";
+  oss << "\n\n";
+
   oss << "// Aliases:\n";
   oss << "namespace stdinternal = stdlibacris::internal;\n";
+
 
   return oss.str();
 }
@@ -464,7 +470,7 @@ auto CppBackend::visit(Attribute* t_attr) -> Any
 			  oss << R"(extern "C" {)" << "\n"
 			  		<< resolve_list(body, true)
 			  	  << "}\n";
-			  // clang-format on
+        // clang-format on
         break;
 
       default:

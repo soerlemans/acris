@@ -20,33 +20,64 @@ func init_string(t_str: *ro char) -> String {
   return init
 }
 
-// TODO: Parameters dont work yet for in struct specification?
-// func (String) at(t_idx: usz) -> char {
-//   return self.m_buffer[t_idx]
-// }
+//! Index access.
+func (String) at(t_idx: usz) -> char {
+  if(t_idx >= self.m_length) {
+    panic("string index access (idx >= length).")
+  }
 
-// TODO: Overloading with String.
+  return self.m_buffer[t_idx]
+}
+
+//! Reverse index access.
+func (String) rat(t_idx: usz) -> char {
+  if(t_idx >= self.m_length) {
+    panic("string index access (idx <= ).")
+  }
+
+  let ridx := self.m_length - t_idx
+
+  return self.m_buffer[ridx]
+}
+
+//! Reserve atleast the amount given.
+func (String) reserve(t_new_size: usz) -> void {
+  if(t_new_size > self.m_capacity) {
+    // self.m_capacity *= 2
+    self.m_capacity = t_new_size * 2
+
+    let new_buffer = realloc((self.m_buffer) to<*void>, self.m_capacity)
+    self.m_buffer = (new_buffer) to<*char>
+  }
+}
+
+// TODO: Overloading append with String.
+//! Append a string to the end.
 func (String) append(t_str: *ro char) -> void {
   let size = strlen(t_str)
   let new_size = self.m_length + size
 
-  if(new_size > self.m_capacity) {
-    self.m_capacity *= 2
+  // Reserve more space if needed.
+  reserve(new_size)
 
-    let new_buffer = realloc((self.m_buffer) to<*void>, self.m_capacity)
-
-    self.m_buffer = (new_buffer) to<*char>
-  }
-
+  // Append string to end.
   self.m_buffer = strncat(self.m_buffer, t_str, size + 1)
-
   self.m_length = new_size
 }
 
+//! Return a C string.
 func (String) c_str() -> *ro char {
   let buf = (self.m_buffer) to<*ro char>
 
   return buf
+}
+
+func (String) length() -> usz {
+  return self.m_length;
+}
+
+func (String) capacity() -> usz {
+  return self.m_capacity;
 }
 
 func (String) destroy() -> void {

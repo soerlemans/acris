@@ -6,6 +6,7 @@
 #<include_once <core/libc.ac>
 #<endif
 
+// Simple IO:
 // TODO: Move?
 // TODO: Overload, or generics??
 func write_str(t_str: *ro char) -> void {
@@ -17,6 +18,25 @@ func write_str(t_str: *ro char) -> void {
 func writeln_str(t_str: *ro char) -> void {
   write_str(t_str)
   write(STDOUT, "\n" to<*ro void>, 0x1 to<usz>)
+}
+
+func ewrite_str(t_str: *ro char) -> void {
+  let len = strlen(t_str)
+
+  write(STDERR, t_str to<*ro void>, len)
+}
+
+func ewriteln_str(t_str: *ro char) -> void {
+  write_str(t_str)
+  write(STDERR, "\n" to<*ro void>, 0x1 to<usz>)
+}
+
+// Quitting:
+func panic(t_msg: *ro char) -> void {
+  ewrite_str("Panic: ")
+  ewriteln_str(t_msg)
+
+  abort()
 }
 
 // TODO: Should be macros later.
