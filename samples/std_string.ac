@@ -9,6 +9,10 @@ func main() -> int {
   defer str.destroy()
 
   str.append(" And a whole lot more to come.");
+  str.clear()
+
+  str.set("Reset string.")
+  str.append("New appendage.")
 
   writeln_str(str.c_str())
 

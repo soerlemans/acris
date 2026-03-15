@@ -861,11 +861,8 @@ auto CppBackend::visit(Struct* t_struct) -> Any
 
   oss << "// Methods:\n";
 
-  for(auto& [meth_identifier, method] : methods) {
+  for(auto& [meth_id, method] : methods) {
     const auto meth_type{method.as_function()};
-
-    DBG_VERBOSE("Method C++: ", meth_type);
-
     const auto ret_type{type_spec2cpp({meth_type->m_return_type})};
 
     std::ostringstream param_ss{};
@@ -878,7 +875,7 @@ auto CppBackend::visit(Struct* t_struct) -> Any
       sep = ", ";
     }
 
-    oss << std::format("auto {}({}) -> {};\n", meth_identifier, param_ss.str(),
+    oss << std::format("auto {}({}) -> {};\n", meth_id, param_ss.str(),
                        ret_type);
   }
 

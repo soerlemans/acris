@@ -16,6 +16,14 @@ auto SemanticValidator::handle_condition(const SymbolData& t_data,
 {
   std::stringstream ss{};
 
+  if(t_data.is_ptr()) {
+    // Pointers can always be checked for null.
+    //
+    // TODO: Later we need to account for optional ptrs, which can be null.
+    // And strict pointers which are never null.
+    return;
+  }
+
   if(const auto opt{t_data.native_type()}; opt) {
     if(!is_condition(opt.value())) {
       ss << "Expected a pointer, integer or a boolean for a conditional "
@@ -26,8 +34,9 @@ auto SemanticValidator::handle_condition(const SymbolData& t_data,
       throw_type_error(ss.str());
     }
   } else {
-    ss << "Non native types can not casted to " << std::quoted("bool")
-       << ".\n\n";
+    const auto type_tag{t_data.tag_str()};
+    ss << "Non native type " << std::quoted(type_tag) << " can not casted to "
+       << std::quoted("bool") << ".\n\n";
 
     ss << t_pos;
 

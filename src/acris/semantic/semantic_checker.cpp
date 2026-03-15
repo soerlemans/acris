@@ -227,31 +227,6 @@ auto SemanticChecker::get_symbol_data_from_env(const std::string_view t_key)
   return m_symbol_state.get_data(t_key);
 }
 
-// Type promotion related methods:
-auto SemanticChecker::handle_condition(const SymbolData& t_data,
-                                       const TextPosition& t_pos) const -> void
-{
-  std::stringstream ss{};
-
-  if(const auto opt{t_data.native_type()}; opt) {
-    if(!is_condition(opt.value())) {
-      ss << "Expected a pointer, integer or a boolean for a conditional "
-         << "expression.\n\n";
-
-      ss << t_pos;
-
-      throw_type_error(ss.str());
-    }
-  } else {
-    ss << "Non native types can not casted to " << std::quoted("bool")
-       << ".\n\n";
-
-    ss << t_pos;
-
-    throw_type_error(ss.str());
-  }
-}
-
 auto SemanticChecker::get_symbol_data(NodePtr t_ptr) -> SymbolData
 {
   using lib::stdexcept::throw_bad_any_cast;
@@ -327,13 +302,20 @@ auto SemanticChecker::visit(If* t_if) -> Any
   const auto cond{get_symbol_data(t_if->condition())};
   DBG_INFO("Condition: ", cond);
 
-  handle_condition(cond, t_if->position());
+  const auto cond_res{cond.resolve_result_type()};
+  DBG_INFO("Condition resolved result type: ", cond_res);
+
+  m_validator.handle_condition(cond_res, t_if->position());
 
   // Branch traversal:
+  push_env();
   traverse(then);
+  pop_env();
 
   if(alt) {
+    push_env();
     traverse(alt);
+    pop_env();
   }
 
   return {};
@@ -347,35 +329,47 @@ auto SemanticChecker::visit(Loop* t_loop) -> Any
   // A loops condition maybe empty, which is an endless loop.
   if(t_loop->condition()) {
     const auto cond{get_symbol_data(t_loop->condition())};
-
     DBG_INFO("Condition: ", cond);
 
-    handle_condition(cond, t_loop->position());
+    const auto cond_res{cond.resolve_result_type()};
+    DBG_INFO("Condition resolved: ", cond_res);
+
+    const auto pos{t_loop->position()};
+    m_validator.handle_condition(cond_res, pos);
   }
 
+  push_env();
   traverse(t_loop->body());
   traverse(t_loop->expr());
+  pop_env();
 
   return {};
 }
 
 auto SemanticChecker::visit(Switch* t_sw) -> Any
 {
-  // TODO:.
+  // TODO: Check if this type can be used in switch.
+  // E.g enum, pointer, integer, bool, etc.
+  const auto cond{get_symbol_data(t_sw->condition())};
+  traverse(t_sw->body());
 
   return {};
 }
 
 auto SemanticChecker::visit(SwitchCase* t_case) -> Any
 {
-  // TODO:.
+  push_env();
+  traverse(t_case->body());
+  pop_env();
 
   return {};
 }
 
 auto SemanticChecker::visit(SwitchElse* t_else) -> Any
 {
-  // TODO:.
+  push_env();
+  traverse(t_else->body());
+  pop_env();
 
   return {};
 }
@@ -584,6 +578,8 @@ auto SemanticChecker::visit(IdentifierNode* t_id) -> Any
 
 auto SemanticChecker::visit(Subscript* t_subscript) -> Any
 {
+  using types::symbol::make_pointer;
+
   SymbolData type{};
 
   const auto var_data{get_symbol_data(t_subscript->left())};
@@ -598,14 +594,25 @@ auto SemanticChecker::visit(Subscript* t_subscript) -> Any
     const auto array_ptr{result_data.as_array()};
 
     type = array_ptr->m_type;
+  } else if(result_data.is_ptr()) {
+    const auto ptr{result_data.as_ptr()};
+
+    // Subscript only resolves a single level of indirection.
+    if(ptr->m_indirection > 1) {
+      auto [ptr_type, ptr_indir, ptr_ro] = *ptr;
+
+      ptr_indir--;
+
+      type = make_pointer(ptr_type, ptr_indir, ptr_ro);
+    } else {
+      type = ptr->m_type;
+    }
   } else {
-    // TODO: Throw.
+    throw_type_error("Can only use subscript on arrays and pointers.");
   }
 
   // Annotate AST.
   m_annot_queue.push({t_subscript, type});
-
-  // return {var_data};
 
   return type;
 }
@@ -1101,10 +1108,7 @@ auto SemanticChecker::visit(Method* t_meth) -> Any
   // Add the function and ID to the environment.
   MethodSymbol sym{id, data};
   add_struct_method_definition(recv_type, sym);
-  DBG_INFO("Method: (", recv_type, ") ", id, "(", params_type_list, ") -> ",
-           ret_type);
-
-  DBG_INFO("Method: ", data);
+  DBG_INFO("Method: ", id, " => ", data);
 
   // Annotate AST.
   m_annot_queue.push({t_meth, data});

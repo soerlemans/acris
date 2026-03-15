@@ -122,16 +122,6 @@ class SemanticChecker : public NodeVisitor {
   [[nodiscard("Pure method must use result.")]]
   auto get_symbol_data_from_env(std::string_view t_id) -> SymbolData&;
 
-  // Helper methods for type promotion:
-  //! Handle type conversion for conditionals.
-  auto handle_condition(const SymbolData& t_data,
-                        const TextPosition& t_pos) const -> void;
-
-  //! Handle type promotion between two different types.
-  auto promote(const SymbolData& t_lhs, const SymbolData& rhs,
-               PromotionMode t_mode = PromotionMode::PROMOTE_TO_LHS) const
-    -> NativeTypeOpt;
-
   // Helper methods for dealing with resolving nodes to SymbolData:
   // NodeVisitor visitation is not marked const so these methods cant be const.
   auto get_symbol_data(NodePtr t_ptr) -> SymbolData;

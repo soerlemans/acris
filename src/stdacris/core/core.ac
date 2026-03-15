@@ -41,18 +41,14 @@ func panic(t_msg: *ro char) -> void {
 
 // TODO: Should be macros later.
 func assert(t_expr: bool) -> void {
-  if(t_expr == false){
-    writeln_str("Assertion!")
-
-    abort()
+  if(t_expr == false) {
+    panic("(Assertion failed)")
   }
 }
 
 func assert_msg(t_expr: bool, t_msg: *ro char) -> void {
-  if(t_expr == false){
-    write_str("Assertion: ")
-    writeln_str(t_msg)
-
-    abort()
+  if(t_expr == false) {
+    // TODO: Signify an assertion failed explicitly.
+    panic(t_msg)
   }
 }

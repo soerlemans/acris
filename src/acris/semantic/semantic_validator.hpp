@@ -57,6 +57,9 @@ class SemanticValidator {
   protected:
   // auto error();
 
+  public:
+  SemanticValidator() = default;
+
   auto handle_condition(const SymbolData& t_data,
                         const TextPosition& t_pos) const -> void;
 
@@ -65,9 +68,8 @@ class SemanticValidator {
                PromotionMode t_mode = PromotionMode::PROMOTE_TO_LHS) const
     -> NativeTypeOpt;
 
-  public:
-  SemanticValidator() = default;
 
+	/* TODO: Implement.
   auto register_struct() -> SymbolData;
   auto register_alias() -> SymbolData;
 
@@ -75,6 +77,7 @@ class SemanticValidator {
   auto validate_method() -> SymbolData;
 
   auto validate_call() -> SymbolData;
+	*/
 
   auto validate_binding_expr(const BindingExprData& t_data) -> SymbolData;
 
