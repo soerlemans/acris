@@ -30,12 +30,12 @@ func (String) at(t_idx: usz) -> char {
 }
 
 //! Reverse index access.
-func (String) rat(t_idx: usz) -> char {
+func (String) r_at(t_idx: usz) -> char {
   if(t_idx >= self.m_length) {
-    panic("string index access (idx <= ).")
+    panic("string reverse index access (idx >= length).")
   }
 
-  let ridx := self.m_length - t_idx
+  let ridx := self.m_length - (t_idx - 1)
 
   return self.m_buffer[ridx]
 }
