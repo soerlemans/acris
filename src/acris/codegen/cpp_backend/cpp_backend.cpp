@@ -110,6 +110,18 @@ auto CppBackend::resolve(NodePtr t_ptr, const bool t_terminate) -> std::string
   return oss.str();
 }
 
+auto CppBackend::resolve_list(NodeListPtr t_list, const bool t_terminate)
+  -> std::string
+{
+  std::ostringstream oss{};
+
+  for(NodePtr& node : *t_list) {
+    oss << resolve(node, t_terminate);
+  }
+
+  return oss.str();
+}
+
 // Public:
 CppBackend::CppBackend()
   : m_inv{},
@@ -299,7 +311,7 @@ auto CppBackend::visit(Function* t_fn) -> Any
 	// Cause trailing return
   oss << std::format("{} {}({})\n", ret_type, identifier, param_ss.str())
      << "{\n"
-     << resolve(t_fn->body())
+		 << resolve_list(t_fn->body(), true)
      << "}\n";
   // clang-format on
 
@@ -510,8 +522,8 @@ auto CppBackend::visit(Arithmetic* t_arith) -> Any
 {
   const auto op{t_arith->op2str()};
 
-  const auto left{resolve(t_arith->left())};
-  const auto right{resolve(t_arith->right())};
+  const auto left{resolve(t_arith->left(), false)};
+  const auto right{resolve(t_arith->right(), false)};
 
   // We surround the sub expressions in parenthesis to enforce the
   // precedence, Of Acris over C++.
@@ -846,6 +858,8 @@ auto CppBackend::visit(Struct* t_struct) -> Any
   for(auto& [meth_identifier, method] : methods) {
     const auto meth_type{method.as_function()};
 
+    DBG_VERBOSE("Method C++: ", meth_type);
+
     const auto ret_type{type_spec2cpp({meth_type->m_return_type})};
 
     std::ostringstream param_ss{};
@@ -1017,7 +1031,7 @@ auto CppBackend::codegen(NodePtr t_ast, const fs::path& t_out) -> void
 
   // Generate C++ code.
   ofs << "// C++ code:\n";
-  ofs << resolve(t_ast);
+  ofs << resolve(t_ast, true);
   ofs << '\n';
 
   ofs << "// Epilogue:\n";

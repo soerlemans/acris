@@ -18,6 +18,7 @@ namespace node = ast::node;
 namespace fs = std::filesystem;
 
 using ast::node::NodePtr;
+using ast::node::NodeListPtr;
 using ast::visitor::NodeVisitor;
 using interop::CppInteropBackendPtr;
 using visitor::Any;
@@ -91,7 +92,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
    * @warn Throws an exception if it fails at converting the @ref Any.
    */
   [[nodiscard("Pure method must use results.")]]
-  auto resolve(NodePtr t_ptr, bool t_terminate = true) -> std::string;
+  auto resolve(NodePtr t_ptr, bool t_terminate = false) -> std::string;
+
+  [[nodiscard("Pure method must use results.")]]
+  auto resolve_list(NodeListPtr t_list, bool t_terminate = false) -> std::string;
 
   public:
   CppBackend();

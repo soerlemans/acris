@@ -1104,6 +1104,8 @@ auto SemanticChecker::visit(Method* t_meth) -> Any
   DBG_INFO("Method: (", recv_type, ") ", id, "(", params_type_list, ") -> ",
            ret_type);
 
+  DBG_INFO("Method: ", data);
+
   // Annotate AST.
   m_annot_queue.push({t_meth, data});
   annotate_attr(t_meth);
