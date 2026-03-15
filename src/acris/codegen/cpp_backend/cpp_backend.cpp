@@ -134,15 +134,15 @@ CppBackend::CppBackend()
 // Control:
 auto CppBackend::visit(If* t_if) -> Any
 {
-  const auto init_expr{resolve(t_if->init_expr(), false)};
+  const auto init_expr{resolve(t_if->init_expr())};
   const auto cond{resolve(t_if->condition())};
 
-  const auto then{resolve(t_if->then())};
-  const auto alt{resolve(t_if->alt())};
+  const auto then{resolve(t_if->then(), true)};
+  const auto alt{resolve(t_if->alt(), true)};
 
   std::ostringstream oss{};
 
-  oss << std::format("if({} {}) {{\n", init_expr, cond) << then;
+  oss << std::format("if({}; {}) {{\n", init_expr, cond) << then;
 
   // Dont create else branch if we dont have a statement for it.
   if(!alt.empty()) {
@@ -156,11 +156,11 @@ auto CppBackend::visit(If* t_if) -> Any
 
 auto CppBackend::visit(Loop* t_loop) -> Any
 {
-  const auto init_expr{resolve(t_loop->init_expr(), false)};
+  const auto init_expr{resolve(t_loop->init_expr())};
   const auto cond{resolve(t_loop->condition())};
 
-  const auto post_expr{resolve(t_loop->expr(), false)};
-  const auto body{resolve(t_loop->body())};
+  const auto post_expr{resolve(t_loop->expr())};
+  const auto body{resolve_list(t_loop->body(), true)};
 
   std::ostringstream oss{};
 
@@ -177,7 +177,7 @@ auto CppBackend::visit(Loop* t_loop) -> Any
 auto CppBackend::visit(Switch* t_sw) -> Any
 {
   const auto cond{resolve(t_sw->condition())};
-  const auto body{resolve(t_sw->body())};
+  const auto body{resolve_list(t_sw->body(), true)};
 
   std::ostringstream oss{};
 
@@ -194,7 +194,7 @@ auto CppBackend::visit(Switch* t_sw) -> Any
 auto CppBackend::visit(SwitchCase* t_case) -> Any
 {
   const auto clauses{t_case->clauses()};
-  const auto body{resolve(t_case->body())};
+  const auto body{resolve_list(t_case->body(), true)};
 
   std::ostringstream oss{};
 
@@ -217,7 +217,7 @@ auto CppBackend::visit(SwitchCase* t_case) -> Any
 
 auto CppBackend::visit(SwitchElse* t_else) -> Any
 {
-  const auto body{resolve(t_else->body())};
+  const auto body{resolve_list(t_else->body(), true)};
 
   std::ostringstream oss{};
 
@@ -250,7 +250,7 @@ auto CppBackend::visit(Defer* t_defer) -> Any
 {
   std::ostringstream oss{};
 
-  const auto body{resolve(t_defer->body())};
+  const auto body{resolve_list(t_defer->body(), true)};
 
   oss << std::format(
     "const stdinternal::Defer defer_object{}{{ [&](){{\n {}\n }} }};\n",
@@ -263,7 +263,7 @@ auto CppBackend::visit(Defer* t_defer) -> Any
 
 auto CppBackend::visit(Return* t_ret) -> Any
 {
-  const auto expr{resolve(t_ret->expr(), false)};
+  const auto expr{resolve(t_ret->expr())};
 
   return std::format("return {};\n", expr);
 }
@@ -344,7 +344,7 @@ auto CppBackend::visit(FunctionCall* t_call) -> Any
   std::string_view sep{""};
 
   for(const auto& ptr : *args) {
-    const auto argument{resolve(ptr, false)};
+    const auto argument{resolve(ptr)};
     oss << sep << argument;
 
     sep = ", ";
@@ -378,7 +378,7 @@ auto CppBackend::visit(Let* t_let) -> Any
   const auto terminate_str{terminate()};
 
   if(init_expr) {
-    const auto init_expr_str{resolve(init_expr, false)};
+    const auto init_expr_str{resolve(init_expr)};
 
     return std::format("{} const {} = {}{}", type, id, init_expr_str,
                        terminate_str);
@@ -398,7 +398,7 @@ auto CppBackend::visit(Var* t_var) -> Any
   const auto terminate_str{terminate()};
 
   if(init_expr) {
-    const auto init_expr_str{resolve(init_expr, false)};
+    const auto init_expr_str{resolve(init_expr)};
 
     return std::format("{} {} = {}{}", type, id, init_expr_str, terminate_str);
   } else {
@@ -461,15 +461,15 @@ auto CppBackend::visit(Attribute* t_attr) -> Any
     switch(attr.m_type) {
       case AttributeType::EXTERN:
         // clang-format off
-      oss << R"(extern "C" {)" << "\n"
-				 << resolve(body)
-				 << "}\n";
-        // clang-format on
+			  oss << R"(extern "C" {)" << "\n"
+			  		<< resolve_list(body, true)
+			  	  << "}\n";
+			  // clang-format on
         break;
 
       default:
         // Walk the body like normal.
-        oss << resolve(body);
+        oss << resolve_list(body, true);
         break;
     }
   }
@@ -522,8 +522,8 @@ auto CppBackend::visit(Arithmetic* t_arith) -> Any
 {
   const auto op{t_arith->op2str()};
 
-  const auto left{resolve(t_arith->left(), false)};
-  const auto right{resolve(t_arith->right(), false)};
+  const auto left{resolve(t_arith->left())};
+  const auto right{resolve(t_arith->right())};
 
   // We surround the sub expressions in parenthesis to enforce the
   // precedence, Of Acris over C++.
@@ -534,8 +534,8 @@ auto CppBackend::visit(Assignment* t_assign) -> Any
 {
   const auto op{t_assign->op2str()};
 
-  const auto left{resolve(t_assign->left(), false)};
-  const auto right{resolve(t_assign->right(), false)};
+  const auto left{resolve(t_assign->left())};
+  const auto right{resolve(t_assign->right())};
 
   return std::format("{} {} {};\n", left, op, right);
 }
@@ -600,7 +600,7 @@ auto CppBackend::visit(UnaryPrefix* t_up) -> Any
 auto CppBackend::visit(ToCast* t_cast) -> Any
 {
   // Do not terminate expression.
-  const auto left{resolve(t_cast->left(), false)};
+  const auto left{resolve(t_cast->left())};
 
   const auto type_variant{t_cast->get_type()};
   const auto type{type_spec2cpp({type_variant})};
@@ -784,7 +784,7 @@ auto CppBackend::visit(Method* t_meth) -> Any
   // clang-format off
   oss << std::format("auto {}::{}({}) -> {}\n", receiver_type, identifier, param_ss.str(), ret_type)
      << "{\n"
-     << resolve(t_meth->body())
+		 << resolve_list(t_meth->body(), true)
      << "}\n";
   // clang-format on
 
@@ -817,7 +817,7 @@ auto CppBackend::visit(MethodCall* t_meth_call) -> Any
   std::string_view sep{""};
 
   for(const auto& ptr : *args) {
-    const auto argument{resolve(ptr, false)};
+    const auto argument{resolve(ptr)};
     oss << sep << argument;
 
     sep = ", ";
@@ -850,7 +850,7 @@ auto CppBackend::visit(Struct* t_struct) -> Any
   std::ostringstream oss{};
 
   oss << std::format("struct {} {{\n", identifier);
-  oss << resolve(members);
+  oss << resolve_list(members, true);
 
 
   oss << "// Methods:\n";
@@ -896,7 +896,7 @@ auto CppBackend::visit(Member* t_member) -> Any
 auto CppBackend::visit(MemberAccess* t_access) -> Any
 {
   const auto lhs{resolve(t_access->left())};
-  const auto rhs{resolve(t_access->right(), false)};
+  const auto rhs{resolve(t_access->right())};
 
   return std::format("{}.{}{}", lhs, rhs, terminate());
 }
@@ -907,7 +907,8 @@ auto CppBackend::visit(List* t_list) -> Any
   std::ostringstream oss{};
 
   for(NodePtr& node : *t_list) {
-    oss << resolve(node);
+    // Forward termination status.
+    oss << resolve(node, should_terminate());
   }
 
   return oss.str();
