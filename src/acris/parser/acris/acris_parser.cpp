@@ -1090,10 +1090,10 @@ auto AcrisParser::attribute() -> NodePtr
   if(next_if(TokenType::ATTRIBUTE_OPEN)) {
     PARSER_FOUND(TokenType::ATTRIBUTE_OPEN);
     const auto id{expect(TokenType::IDENTIFIER).str()};
-    NodeListPtr params_ptr{};
+    NodeListPtr params_ptr{make_node<List>()};
     NodeListPtr body_ptr{make_node<List>()};
 
-    // Get any potential parameters (can be nullptr or zero).
+    // Get any potential parameters (can be nullptr if none are given).
     if(next_if(TokenType::PAREN_OPEN)) {
       params_ptr = literal_list();
 

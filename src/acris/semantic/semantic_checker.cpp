@@ -374,13 +374,12 @@ auto SemanticChecker::visit(SwitchElse* t_else) -> Any
   return {};
 }
 
-auto SemanticChecker::visit(Fallthrough* t_ft) -> Any
+auto SemanticChecker::visit([[maybe_unused]] Fallthrough* t_ft) -> Any
 {
-  // TODO:.
+  // TODO: Maybe check for duplicate fallthroug's?
 
   return {};
 }
-
 
 AST_VISITOR_STUB(SemanticChecker, Continue)
 AST_VISITOR_STUB(SemanticChecker, Break)
@@ -667,8 +666,22 @@ auto SemanticChecker::visit(Attribute* t_attr) -> Any
   const auto params{t_attr->params()};
   const auto body{t_attr->body()};
 
-  // TODO: Resolve parameters, and get them as strings.
+  DBG_INFO("Attribute: ", id);
+
   AttributeArgs args{};
+  for(const auto& param : *params) {
+    const auto* str{dynamic_cast<String*>(param.get())};
+    if(!str) {
+      // TODO: Support a scala of stuff, maybe even later move this into.
+      // The compile time resolution phase of the compiler.
+      // (Currently non existant as of writing).
+      throw_type_error(
+        "Attributes only support String arguments as of writing.");
+    }
+
+    args.emplace_back(str->get());
+  }
+
   AttributeMetadata attr{id, std::move(args)};
 
   // Annotate attribute.

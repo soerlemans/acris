@@ -46,6 +46,8 @@ class InteropBackendInterface {
   public:
   InteropBackendInterface() = default;
 
+  virtual auto backend_id() const -> std::string_view = 0;
+
   virtual ~InteropBackendInterface() = default;
 };
 

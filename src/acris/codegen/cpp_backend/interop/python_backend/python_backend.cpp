@@ -9,6 +9,11 @@ PythonBackend::PythonBackend(): m_ss{}, m_symbols{}
   // m_symbols.reserve();
 }
 
+auto PythonBackend::backend_id() const -> std::string_view
+{
+  return {"python"};
+}
+
 auto PythonBackend::prologue() -> std::string
 {
   std::stringstream ss;
@@ -55,8 +60,8 @@ auto PythonBackend::epilogue() -> std::string
         break;
 
       case ExportSymbolType::FUNCTION:
-        ss << std::format(
-          R"(mod.def("{}", &{}, "Acris exported function.");)", id, id)
+        ss << std::format(R"(mod.def("{}", &{}, "Acris exported function.");)",
+                          id, id)
            << '\n';
         break;
 

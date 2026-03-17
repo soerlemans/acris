@@ -90,6 +90,8 @@ auto str2attribute_type(std::string_view t_str) -> AttributeType
     type = AttributeType::INLINE;
   } else if(t_str == "deprecated") {
     type = AttributeType::DEPRECATED;
+  } else if(t_str == "export") {
+    type = AttributeType::EXTERN;
   } else if(t_str == "extern") {
     type = AttributeType::EXTERN;
   } else {

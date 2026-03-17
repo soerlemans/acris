@@ -50,6 +50,8 @@ class PythonBackend : public CppInteropBackendInterface {
   public:
   PythonBackend();
 
+  auto backend_id() const -> std::string_view override;
+
   auto prologue() -> std::string override;
 
   auto register_constant(std::string_view t_id) -> void override;

@@ -324,8 +324,8 @@ auto CppBackend::visit(Function* t_fn) -> Any
   // FIXME: We should do this by looping through the toplevel.
   // Of the SymbolTable instead.
   // Register function to interop backend.
-  for(auto& ptr : m_interop_backends) {
-    ptr->register_function(identifier);
+  for(auto& iback : m_interop_backends) {
+    iback->register_function(identifier);
   }
 
   return oss.str();
@@ -461,7 +461,7 @@ auto CppBackend::visit(Attribute* t_attr) -> Any
 
   // TODO: This should probably be somewhere else.
   // Also we should not allow the extern attribute, inside of function
-  // bodies.
+  // bodies, for example attributes for variables.
   const auto attrs{t_attr->get_attributes()};
   for(const auto& attr : attrs) {
     switch(attr.m_type) {

@@ -29,6 +29,8 @@ class CppInteropBackendInterface : public InteropBackendInterface {
   public:
   CppInteropBackendInterface() = default;
 
+  virtual auto backend_id() const -> std::string_view = 0;
+
   virtual auto prologue() -> std::string = 0;
 
   // TODO: Need to consider the registration interface more in the future.

@@ -19,7 +19,7 @@ class Literal : public NodeInterface {
   Literal(const T t_value): m_value{t_value}
   {}
 
-  auto get() -> T
+  auto get() const -> T
   {
     return m_value;
   }
