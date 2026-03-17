@@ -1,0 +1,10 @@
+module export_sample
+
+#<include_once <core/string.ac>
+
+// Export an Acris function to Python.
+
+func print(t_msg: *ro char) -> void {
+  write_str("Hello from Acris: ")
+  writeln_str(t_msg)
+}

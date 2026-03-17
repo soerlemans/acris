@@ -4,22 +4,23 @@
 // Absolute Includes:
 #include "stdacris/core/types.h"
 
-namespace std {
+namespace stdlibacris::internal {
 // Compiler is hardcoded to search for this in a -nostdlib environment.
 template<class T>
-class initializer_list {
+class InitList {
   private:
   const T* m_series;
   unsigned long m_size;
 
+  public:
   // The compiler expects this specific private constructor
   // to link the internal array to the object.
-  initializer_list(const T* t_series, usize_t t_size)
+  InitList(const T* t_series, usize_t t_size)
     : m_series{t_series}, m_size{t_size}
   {}
 
   public:
-  initializer_list(): m_series{nullptr}, m_size{0}
+  InitList(): m_series{nullptr}, m_size{0}
   {}
 
   usize_t size() const
@@ -37,9 +38,7 @@ class initializer_list {
     return (m_series + m_size);
   }
 };
-} // namespace std
 
-namespace stdlibacris::internal {
 /*!
  * Lazy helper struct for dealing with arrays.
  */
@@ -48,9 +47,9 @@ struct Array {
   T m_data[N];
   static constexpr usize_t m_len = N;
 
-  Array(std::initializer_list<T> t_list)
+  Array(InitList<T> t_list)
   {
-    // Deal with std::initializer_list.
+    // Deal with InitList.
     auto* iter{t_list.begin()};
     if(iter == nullptr) {
       return;

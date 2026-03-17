@@ -586,6 +586,11 @@ auto SemanticChecker::visit(Subscript* t_subscript) -> Any
 
   // TODO: Move to type validator.
   // TODO: Check index data if numeric.
+  // TODO: Currently this breaks as when we return a native type in this case.
+  // We lose all info about if this is a lvalue or rvalue so assigning to a
+  // array subscript is currently broken.
+  // We need to fix this and likely expand SymbolData to keep track of the
+  // LValue in the specific context.
   DBG_INFO("Subscript of type ", var_data);
 
   auto result_data{var_data.resolve_result_type()};

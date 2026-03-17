@@ -14,13 +14,13 @@
 #define ACRIS_PROJECT_VERSION "0.1.0"
 
 //! Absolute path to the root of the acris project.
-#define ACRIS_PROJECT_ROOT_DIRECTORY "/home/hackerman/Projects/Git/Personal/acris"
+#define ACRIS_PROJECT_ROOT_DIRECTORY "/home/hackerman/.bmarks/acris"
 
 //! Absolute path to the source directory of the acris project.
-#define ACRIS_PROJECT_SRC_DIRECTORY "/home/hackerman/Projects/Git/Personal/acris/src"
+#define ACRIS_PROJECT_SRC_DIRECTORY "/home/hackerman/.bmarks/acris/src"
 
 //! Absolute path to the test directory of the acris project.
-#define ACRIS_PROJECT_TEST_DIRECTORY "/home/hackerman/Projects/Git/Personal/acris/test"
+#define ACRIS_PROJECT_TEST_DIRECTORY "/home/hackerman/.bmarks/acris/test"
 
 /*!
  * Convert @ref __FILE__ into a relative path.

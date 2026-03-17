@@ -1,6 +1,7 @@
 #include "cpp_backend.hpp"
 
 // STL Includes:
+#include <algorithm>
 #include <format>
 #include <fstream>
 #include <sstream>
@@ -285,12 +286,55 @@ auto CppBackend::visit(Parameter* t_param) -> Any
 
 auto CppBackend::visit(Function* t_fn) -> Any
 {
+  using lib::stdexcept::InvalidArgument;
+  using lib::stdexcept::throwf;
   using node::node_traits::AttributeType;
 
   const auto identifier{t_fn->identifier()};
+  const auto attributes{t_fn->get_attributes()};
 
   const auto fn_type{t_fn->get_type().as_function()};
   const auto ret_type{type_spec2cpp({fn_type->m_return_type})};
+
+  std::ostringstream oss{};
+
+  // Attribute insertion:
+  // TODO: Move to a  generic function implementation (Method will need to use
+  // this as well).
+  for(const auto& attr : attributes) {
+    switch(attr.m_type) {
+      case AttributeType::INLINE:
+        oss << "inline\n";
+        break;
+
+      case AttributeType::EXPORT: {
+        auto& args{attr.m_args};
+        if(args.size() != 1) {
+          throwf<InvalidArgument>(
+            "Attribute: Export expects exactly one parameter "
+            "denoting the language to export to.");
+        }
+
+        const auto& target_lang{args.front()};
+        for(auto& iback : m_interop_backends) {
+          const auto iback_id{iback->backend_id()};
+
+          if(target_lang == iback_id) {
+            // We only expect a single target language for now so we should
+            // quite.
+            iback->register_function(identifier);
+            break;
+          }
+        }
+
+        break;
+      }
+
+      default:
+        // Unhandled ignore.
+        break;
+    }
+  }
 
   std::ostringstream param_ss{};
 
@@ -300,16 +344,6 @@ auto CppBackend::visit(Function* t_fn) -> Any
     param_ss << sep << resolve(param);
 
     sep = ", ";
-  }
-
-  std::ostringstream oss{};
-
-  // Attribute insertion:
-  const auto attrs{t_fn->get_attributes()};
-  for(const auto& attr : attrs) {
-    if(attr.m_type == AttributeType::INLINE) {
-      oss << "inline\n";
-    }
   }
 
   // clang-format off
@@ -700,7 +734,9 @@ auto CppBackend::visit(ArrayExpr* t_arr) -> Any
 
   const auto list{t_arr->get()};
 
-  oss << '{';
+  // TODO: Dynamically pass compound literal type.
+  oss << "stdlibacris::internal::InitList((int[]){";
+  // (int[]){1,2,3}
 
   std::string_view sep{};
   for(NodePtr& elem : *list) {
@@ -709,7 +745,7 @@ auto CppBackend::visit(ArrayExpr* t_arr) -> Any
     sep = ", ";
   }
 
-  oss << '}' << terminate();
+  oss << "}, " << list->size() << ")" << terminate();
 
   return oss.str();
 }
