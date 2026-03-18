@@ -557,6 +557,13 @@ auto CppBackend::visit(FunctionDecl* t_fdecl) -> Any
   return std::format("{} {}({});\n", ret_type, identifier, param_ss.str());
 }
 
+auto CppBackend::visit(StructDecl* t_sdecl) -> Any
+{
+  const auto struct_id{t_sdecl->identifier()};
+
+  return std::format("struct {}{}", struct_id, terminate());
+}
+
 // Operators:
 auto CppBackend::visit(Arithmetic* t_arith) -> Any
 {

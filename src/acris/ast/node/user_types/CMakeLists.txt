@@ -4,7 +4,6 @@ target_sources(${TARGET_ACRIS_LIB} PRIVATE
 	method_call.cpp
 	interface.cpp
 	struct.cpp
-	struct_decl.cpp
 	enum.cpp
 	enum_field.cpp
 	self.cpp

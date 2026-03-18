@@ -1122,7 +1122,12 @@ auto AcrisParser::declare() -> NodePtr
     NodePtr type{};
     NodePtr ret_type{};
 
-    if(next_if(TokenType::FUNCTION)) {
+    if(next_if(TokenType::STRUCT)) {
+      id = expect(TokenType::IDENTIFIER).str();
+
+      node = make_node<StructDecl>(id);
+
+    } else if(next_if(TokenType::FUNCTION)) {
       id = expect(TokenType::IDENTIFIER).str();
 
       auto params{parens([this] {
@@ -1133,20 +1138,23 @@ auto AcrisParser::declare() -> NodePtr
 
       node =
         make_node<FunctionDecl>(id, std::move(params), std::move(ret_type));
+
     } else if(next_if(TokenType::LET)) {
       id = expect(TokenType::IDENTIFIER).str();
       expect(TokenType::COLON);
       type = m_type.type_expr();
 
       node = make_node<LetDecl>(id, std::move(type));
+
     } else if(next_if(TokenType::VAR)) {
       id = expect(TokenType::IDENTIFIER).str();
       expect(TokenType::COLON);
       type = m_type.type_expr();
 
       node = make_node<VarDecl>(id, std::move(type));
+
     } else {
-      // TODO: Error handle.
+      throw_syntax_error("Keyword decl followed by invalid declaration.");
     }
   }
 

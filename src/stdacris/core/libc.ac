@@ -5,9 +5,13 @@ let STDIN = 0
 let STDOUT = 1
 let STDERR = 2
 
+// TODO: Forward declare FILE structure for popen and similar.
+
 // TODO: Later create more clean interfaces.
 // Stuff like memset not int but always byte.
 [[extern("C")]] {
+  decl struct FILE
+
   // Heap:
   decl func malloc(size: usz) -> *void
   decl func free(p: *void) -> void

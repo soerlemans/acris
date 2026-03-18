@@ -7,7 +7,7 @@
 // Local Includes:
 #include "fdecl.hpp"
 
-namespace ast::node::user_types {
+namespace ast::node::meta {
 // Using Statements:
 using node_traits::Identifier;
 
@@ -21,9 +21,9 @@ class StructDecl : public Identifier {
 
   virtual ~StructDecl() = default;
 };
-} // namespace ast::node::user_types
+} // namespace ast::node::meta
 
 // Cereal type registration:
-REGISTER_ARCHIVEABLE_TYPE(ast::node::user_types, StructDecl);
+REGISTER_ARCHIVEABLE_TYPE(ast::node::meta, StructDecl);
 
 #endif // ACRIS_ACRIS_AST_NODE_USER_TYPES_STRUCT_DECL_HPP

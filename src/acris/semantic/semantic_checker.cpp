@@ -105,7 +105,13 @@ auto SemanticChecker::add_symbol_declaration(const std::string_view t_key,
     std::stringstream ss{};
     switch(symbol.m_status) {
       case SymbolStatus::DECLARED:
+        if(t_data.is_struct()) {
+          DBG_INFO("Opaque struct ", std::quoted(t_key),
+                   " skip check for conflicting types.");
+          break;
+        }
         [[fallthrough]];
+
       case SymbolStatus::DEFINED: {
         // Check for conflicting.
         if(t_data != symbol.m_data) {
@@ -764,6 +770,27 @@ auto SemanticChecker::visit(FunctionDecl* t_fdecl) -> Any
   return {};
 }
 
+auto SemanticChecker::visit(StructDecl* t_sdecl) -> Any
+{
+  using types::symbol::make_struct;
+
+  const std::string id{t_sdecl->identifier()};
+
+  // Register opaque struct.
+  const SymbolData struct_data{make_struct(id)};
+
+  add_symbol_declaration(id, struct_data);
+  DBG_INFO("StructDecl: ", id);
+
+  // TODO: Figure this stuff out, attributes should be allowed.
+  // But maybe no TypeData annotation cause its an opaque struct?
+  // Annotate AST.
+  // m_annot_queue.push({t_sdecl, data});
+  // annotate_attr(t_fdecl);
+
+  return {};
+}
+
 // Operators:
 auto SemanticChecker::visit(Arithmetic* t_arith) -> Any
 {
@@ -1048,7 +1075,7 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 }
 
 // User Types:
-auto SemanticChecker::visit(EnumField* t_field) -> Any
+auto SemanticChecker::visit([[maybe_unused]] EnumField* t_field) -> Any
 {
   // TODO: When we have assignment of values check.
 
