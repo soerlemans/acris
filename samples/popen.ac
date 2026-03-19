@@ -10,7 +10,7 @@ func main() -> int {
   // TODO: Still need to implement null comparison.
   if pipe {
   } else {
-    return 0x1
+    return 1
   }
 
   loop {
