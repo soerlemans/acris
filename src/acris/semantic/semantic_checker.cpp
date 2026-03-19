@@ -1109,9 +1109,12 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 
   const auto size{list->size()};
 
-  auto symbol_data{make_array(type, size)};
+  auto array_data{make_array(type, size)};
 
-  return symbol_data;
+  // Annotate AST.
+  m_annot_queue.push({t_arr, array_data});
+
+  return array_data;
 }
 
 // User Types:

@@ -741,9 +741,10 @@ auto CppBackend::visit(ArrayExpr* t_arr) -> Any
 
   const auto list{t_arr->get()};
 
-  // TODO: Dynamically pass compound literal type.
-  oss << "stdlibacris::internal::InitList((int[]){";
-  // (int[]){1,2,3}
+  const auto type_variant{t_arr->get_type()};
+  const auto elem_type{type_spec2cpp({type_variant})};
+
+  oss << "stdlibacris::internal::InitList((" << elem_type << "[]){";
 
   std::string_view sep{};
   for(NodePtr& elem : *list) {
