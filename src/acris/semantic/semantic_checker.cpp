@@ -329,15 +329,22 @@ auto SemanticChecker::visit(If* t_if) -> Any
 
 auto SemanticChecker::visit(Loop* t_loop) -> Any
 {
-  // Init expression must be evaluated before condition.
-  traverse(t_loop->init_expr());
+  const auto init_expr{t_loop->init_expr()};
+  const auto post_expr{t_loop->expr()};
+  const auto cond{t_loop->condition()};
+
+  // Init expression is optional.
+  if(init_expr) {
+    traverse(init_expr);
+  }
+
 
   // A loops condition maybe empty, which is an endless loop.
-  if(t_loop->condition()) {
-    const auto cond{get_symbol_data(t_loop->condition())};
-    DBG_INFO("Condition: ", cond);
+  if(cond) {
+    const auto cond_data{get_symbol_data(cond)};
+    DBG_INFO("Condition: ", cond_data);
 
-    const auto cond_res{cond.resolve_result_type()};
+    const auto cond_res{cond_data.resolve_result_type()};
     DBG_INFO("Condition resolved: ", cond_res);
 
     const auto pos{t_loop->position()};
@@ -346,7 +353,9 @@ auto SemanticChecker::visit(Loop* t_loop) -> Any
 
   push_env();
   traverse(t_loop->body());
-  traverse(t_loop->expr());
+  if(post_expr) {
+    traverse(post_expr);
+  }
   pop_env();
 
   return {};
@@ -356,7 +365,7 @@ auto SemanticChecker::visit(Switch* t_sw) -> Any
 {
   // TODO: Check if this type can be used in switch.
   // E.g enum, pointer, integer, bool, etc.
-  const auto cond{get_symbol_data(t_sw->condition())};
+  const auto cond_data{get_symbol_data(t_sw->condition())};
   traverse(t_sw->body());
 
   return {};
@@ -471,9 +480,11 @@ auto SemanticChecker::visit(FunctionCall* t_fn_call) -> Any
   const auto params{fn->m_params};
   const auto return_type{fn->m_return_type};
 
-  if(args != params) {
-    std::stringstream ss;
+  const auto args_size{args.size()};
+  const auto params_size{params.size()};
 
+  std::ostringstream ss{};
+  const auto error_out{[&]() {
     ss << "Arguments passed to " << std::quoted(id)
        << " do not match parameters.\n";
 
@@ -483,6 +494,35 @@ auto SemanticChecker::visit(FunctionCall* t_fn_call) -> Any
     ss << "FunctionCall signature: " << id << "(" << args << ")";
 
     throw_type_error(ss.str());
+  }};
+
+  // TODO: Bloat.
+  if(args_size > params_size) {
+    const auto excess{args_size - params_size};
+    ss << std::format("Passed {} more arguments then expected to function.\n\n",
+                      excess);
+
+    error_out();
+  }
+
+  if(params_size > args_size) {
+    const auto lack{params_size - params_size};
+    ss << std::format("Function expects {} more arguments then given.\n\n",
+                      lack);
+
+    error_out();
+  }
+
+  // We have already guarenteed equal count at this point.
+  auto iter{args.begin()};
+  for(auto& param : params) {
+    const auto& arg{*iter};
+
+    if(arg != param) {
+      error_out();
+    }
+
+    iter++;
   }
 
   return fn->m_return_type;

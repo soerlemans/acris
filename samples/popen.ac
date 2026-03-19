@@ -14,10 +14,15 @@ func main() -> int {
   }
 
   loop {
-    let result = fgets(buffer, 128, pipe)
+    let result = fgets(&buffer, 128, pipe)
+    if result {
+      let ro_buf = (&buffer) to<*ro char>
 
-    write_str("Output: ")
-    writeln_str(&buffer)
+      write_str("Output: ")
+      write_str(ro_buf)
+    }else {
+      break
+    }
   }
 
   pclose(pipe)

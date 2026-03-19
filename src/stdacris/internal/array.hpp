@@ -47,6 +47,8 @@ struct Array {
   T m_data[N];
   static constexpr usize_t m_len = N;
 
+  Array() = default;
+
   Array(InitList<T> t_list)
   {
     // Deal with InitList.
