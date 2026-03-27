@@ -425,8 +425,8 @@ auto LlvmBackend::on_icmp_lte(Instruction& t_instr) -> void
   auto* lhs{operand2llvm(first)};
   auto* rhs{operand2llvm(second)};
 
-  lhs->getType()->dump();
-  rhs->getType()->dump();
+  // DBG_INFO("lhs: ", *(lhs->getType()));
+  // DBG_INFO("rhs: ", *(rhs->getType()));
 
   llvm::Value* cmp_result = m_builder->CreateICmpSLE(lhs, rhs, "ilte_tmp");
 
@@ -444,8 +444,8 @@ auto LlvmBackend::on_icmp_lt(Instruction& t_instr) -> void
   auto* lhs{operand2llvm(first)};
   auto* rhs{operand2llvm(second)};
 
-  lhs->getType()->dump();
-  rhs->getType()->dump();
+  // DBG_INFO("lhs: ", *(lhs->getType()));
+  // DBG_INFO("rhs: ", *(rhs->getType()));
 
   llvm::Value* cmp_result = m_builder->CreateICmpSLT(lhs, rhs, "ilt_tmp");
 
@@ -463,8 +463,8 @@ auto LlvmBackend::on_icmp_eq(Instruction& t_instr) -> void
   auto* lhs{operand2llvm(first)};
   auto* rhs{operand2llvm(second)};
 
-  lhs->getType()->dump();
-  rhs->getType()->dump();
+  // DBG_INFO("lhs: ", *(lhs->getType()));
+  // DBG_INFO("rhs: ", *(rhs->getType()));
 
   llvm::Value* cmp_result = m_builder->CreateICmpEQ(lhs, rhs, "ieq_tmp");
 
@@ -482,8 +482,8 @@ auto LlvmBackend::on_icmp_ne(Instruction& t_instr) -> void
   auto* lhs{operand2llvm(first)};
   auto* rhs{operand2llvm(second)};
 
-  lhs->getType()->dump();
-  rhs->getType()->dump();
+  // DBG_INFO("lhs: ", *(lhs->getType()));
+  // DBG_INFO("rhs: ", *(rhs->getType()));
 
   llvm::Value* cmp_result = m_builder->CreateICmpNE(lhs, rhs, "ine_tmp");
 
@@ -504,8 +504,8 @@ auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
   auto* lhs{operand2llvm(first)};
   auto* rhs{operand2llvm(second)};
 
-  lhs->getType()->dump();
-  rhs->getType()->dump();
+  // DBG_INFO("lhs: ", *(lhs->getType()));
+  // DBG_INFO("rhs: ", *(rhs->getType()));
 
   llvm::Value* cmp_result = m_builder->CreateICmpSGT(lhs, rhs, "sgt_tmp");
 

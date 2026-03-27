@@ -62,3 +62,6 @@ doxygen/*
 # Ignore Python environment:
 __pycache__/
 .venv/
+
+# Ignore when compile_commands.json is copied or linked in project dir.
+**/compile_commands.json
