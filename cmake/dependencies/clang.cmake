@@ -2,7 +2,10 @@
 message(STATUS "[+] Finding Clang driver.")
 
 # Needed to find LLDConfig.cmake.
-list(APPEND CMAKE_PREFIX_PATH "/usr/lib/llvm-17")
+# list(APPEND CMAKE_PREFIX_PATH "/usr/lib/llvm-17") # Linux.
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/llvm@17/lib/cmake/llvm") # MacOS.
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/llvm@17/lib/cmake/clang") # MacOS Clang.
+
 
 find_package(
 	Clang
@@ -18,6 +21,6 @@ target_link_libraries(
 	${TARGET_ACRIS_LIB}
 	PUBLIC
 	clangDriver        # The orchestrator.
-  clangFrontend      # For Diagnostic printers.
-  clangBasic         # Source locations and error IDs.
+    clangFrontend      # For Diagnostic printers.
+    clangBasic         # Source locations and error IDs.
 )

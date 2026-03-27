@@ -40,7 +40,7 @@ class TextBuffer : public TextStream {
 
   auto source() const -> std::string_view override;
   auto character() const -> char override;
-  auto line() const -> std::string_view;
+  auto line() const -> std::string_view override;
 
   auto eos() const -> bool override;
   auto reset() -> void override;

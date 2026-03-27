@@ -29,8 +29,11 @@ add_executable(${TARGET_ACRIS})
 # Configure include-what-you-use.
 #include(cmake/iwyu.cmake)
 
+# Always generate compile_commands.json.
 set_target_properties(
   ${TARGET_ACRIS}
+  ${TARGET_ACRIS_LIB}
+  ${TARGET_ACRIS_STDACRIS}
   PROPERTIES
   EXPORT_COMPILE_COMMANDS ON
 )

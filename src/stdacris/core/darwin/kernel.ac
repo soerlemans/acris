@@ -1,0 +1,53 @@
+// module core
+
+// Define default file descriptors.
+let STDIN = 0
+let STDOUT = 1
+let STDERR = 2
+
+// Syscall wrapper API.
+[[extern("C")]] {
+  decl func read(t_fd: int, t_buf: *u8, t_count: usz) -> isz
+  /// FIXME: These conflict as of writing with core.h, fix signature.
+  decl func write(t_fd: int, t_buf: *u8, t_count: usz) -> isz
+  decl func read_str(t_fd: int, t_buf: cstr, t_count: usz) -> isz
+  decl func write_str(t_fd: int, t_buf: cstr, t_count: usz) -> isz
+  decl func open(t_path: cstr, t_flags: i32, t_mode: u32) -> int
+  decl func close(t_fd: int) -> int
+  decl func getpid() -> int
+  decl func exit(t_code: int) -> void
+  decl func getppid() -> int
+
+  decl func strlen(t_str: cstr) -> usz
+}
+
+func print_str(t_str: cstr) -> isz {
+  let len = strlen(t_str)
+
+  return write_str(STDOUT, t_str, len)
+}
+
+func eprint_str(t_str: cstr) -> isz {
+  let len = strlen(t_str)
+
+  return write_str(STDERR, t_str, len)
+}
+
+func println_str(t_str: cstr) -> usz {
+  let len = strlen(t_str)
+
+  return write_str(STDOUT, t_str, len)
+}
+
+// Not working yet.
+// func my_strlen(t_str: cstr) -> usz {
+//   var char: *char = t_str
+
+//   var len: usz = 0
+//   loop char != '\0' {
+//     len++
+//     char++
+//   }
+
+//   return len
+// }
