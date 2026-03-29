@@ -987,20 +987,11 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       const auto includes{shell_getline("python3 -m pybind11 --includes")};
       m_inv.add_flags(std::format("-shared -fPIC {}", includes));
 
-      // TODO: Find a cleaner way to utilize environment
-      // variables. Maybe register environment variables for
-      // later usage.
-
-      // Set the out file (SRC_STEM is set in
-      // ClangFrontendInvoker).
-      // clang-format off
-      // m_inv.set_out("acris_${SRC_STEM:-cpython}_export$(python3-config --extension-suffix)");
-      // clang-format on
-
       const auto python_ldflags{
         shell_getline("python3-config --ldflags")};
       m_inv.add_flags(python_ldflags);
 
+      // Need to gete actual outpath to properly generate this and not depend on SRC_STEM or similar.
       const auto pybind11_extension_suffix{
         shell_getline("python3 -m pybind11 --extension-suffix")};
       m_inv.set_out(std::format("acris_export{}", pybind11_extension_suffix));
