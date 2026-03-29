@@ -320,6 +320,10 @@ auto CppBackend::visit(Function* t_fn) -> Any
           const auto iback_id{iback->backend_id()};
 
           if(target_lang == iback_id) {
+            // FIXME: We should do this by looping through the toplevel.
+            // Of the SymbolTable instead.
+            // As the symboltable should also have attribute data.
+
             // We only expect a single target language for now so we should
             // quite.
             iback->register_function(identifier);
@@ -354,13 +358,6 @@ auto CppBackend::visit(Function* t_fn) -> Any
 		 << resolve_list(t_fn->body(), true)
      << "}\n";
   // clang-format on
-
-  // FIXME: We should do this by looping through the toplevel.
-  // Of the SymbolTable instead.
-  // Register function to interop backend.
-  for(auto& iback : m_interop_backends) {
-    iback->register_function(identifier);
-  }
 
   return oss.str();
 }
@@ -561,6 +558,11 @@ auto CppBackend::visit(StructDecl* t_sdecl) -> Any
 {
   const auto struct_id{t_sdecl->identifier()};
 
+  return std::string{""};
+
+  // Need to have attributes affect StructDecl, and skip forward declaration.
+  // On MacOS X as it breaks for forward declaring FILE in extern C context.
+  // See libc.ac.
   return std::format("struct {}{}", struct_id, terminate());
 }
 
@@ -978,11 +980,12 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
   CppInteropBackendPtr ptr{};
 
   switch(t_type) {
-    case InteropBackend::PYTHON_INTEROP_BACKEND:
+    case InteropBackend::PYTHON_INTEROP_BACKEND: {
       ptr = std::make_shared<py_interop::PythonBackend>();
 
       // Add compiler flags for compiling python3 support.
-      m_inv.add_flags("-shared -fPIC $(python3 -m pybind11 --includes)");
+      const auto includes{shell_getline("python3 -m pybind11 --includes")};
+      m_inv.add_flags(std::format("-shared -fPIC {}", includes));
 
       // TODO: Find a cleaner way to utilize environment
       // variables. Maybe register environment variables for
@@ -993,9 +996,16 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       // clang-format off
       // m_inv.set_out("acris_${SRC_STEM:-cpython}_export$(python3-config --extension-suffix)");
       // clang-format on
-      m_inv.set_out("acris_export$(python3-config "
-                    "--extension-suffix)");
+
+      const auto python_ldflags{
+        shell_getline("python3-config --ldflags")};
+      m_inv.add_flags(python_ldflags);
+
+      const auto pybind11_extension_suffix{
+        shell_getline("python3 -m pybind11 --extension-suffix")};
+      m_inv.set_out(std::format("acris_export{}", pybind11_extension_suffix));
       break;
+    }
 
       // case InteropBackend::LUA_INTEROP_BACKEND:
       //   break;

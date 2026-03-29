@@ -62,6 +62,7 @@ auto attribute_type2str(AttributeType t_type) -> std::string_view
     MATCH(INLINE, "inline");
     MATCH(DEPRECATED, "deprecated");
     MATCH(EXTERN, "extern");
+    MATCH(EXPORT, "export");
     MATCH(UNKNOWN, "unknown");
 
     default: {
@@ -91,7 +92,7 @@ auto str2attribute_type(std::string_view t_str) -> AttributeType
   } else if(t_str == "deprecated") {
     type = AttributeType::DEPRECATED;
   } else if(t_str == "export") {
-    type = AttributeType::EXTERN;
+    type = AttributeType::EXPORT;
   } else if(t_str == "extern") {
     type = AttributeType::EXTERN;
   } else {

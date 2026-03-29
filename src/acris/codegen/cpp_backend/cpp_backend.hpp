@@ -58,7 +58,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   // Is incremented after each usage to prevent collision.
   u64 m_id_defer_count;
 
-  Optimize m_optimize;
+  // Unused.
+  // Optimize m_optimize;
 
   protected:
   /*!

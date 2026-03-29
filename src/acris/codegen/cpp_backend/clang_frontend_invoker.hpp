@@ -43,6 +43,9 @@ class ClangFrontendInvoker {
 };
 
 auto shell_exec(std::string t_cmd) -> ProcessResult;
+
+//! Get a single line of stdout output from @ref shell_exec.
+auto shell_getline(std::string t_cmd) -> std::string;
 } // namespace codegen::cpp_backend
 
 #endif // ACRIS_ACRIS_CODEGEN_CPP_BACKEND_CLANG_FRONTEND_INVOKER_HPP

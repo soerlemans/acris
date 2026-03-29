@@ -37,7 +37,7 @@ namespace keywords {
   // Package:
   DEFINE_TERMINAL(g_module, "module", MODULE);
   DEFINE_TERMINAL(g_import, "import", IMPORT);
-  DEFINE_TERMINAL(g_export, "export", EXPORT);
+  // DEFINE_TERMINAL(g_export, "export", EXPORT); // Used for attribute now.
 
 	// Meta:
 	// TODO: Consider renaming to just decl.
@@ -143,7 +143,8 @@ namespace keywords {
 
   const std::map g_keywords {
     g_let.pair(), g_var.pair(), g_readonly.pair(),
-    g_module.pair(), g_import.pair(), g_export.pair(),
+    g_module.pair(), g_import.pair(),
+    // g_export.pair(),
     g_declare.pair(), g_macro.pair(), g_const.pair(),
     g_alias.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
 		g_proto.pair(),
