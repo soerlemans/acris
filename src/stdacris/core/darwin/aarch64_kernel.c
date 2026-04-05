@@ -27,10 +27,10 @@ isize_t read(int_t t_fd, u8_t* t_buf, usize_t t_count)
 
   // clang-format off
   __asm__ volatile(
-		"syscall\n"
-		: "=a"(err)
-		: "0"(SYS_read), "D"((u64_t)t_fd), "S"(t_buf), "d"(t_count)
-		: "rcx", "r11", "memory" // clobbered registers.
+    "syscall\n"
+    : "=a"(err)
+    : "0"(SYS_read), "D"((u64_t)t_fd), "S"(t_buf), "d"(t_count)
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -43,10 +43,10 @@ isize_t write(int_t t_fd, const u8_t* t_buf, usize_t t_count)
 
   // clang-format off
   __asm__ volatile(
-		"syscall\n"
-		: "=a"(err)
-		: "0"(SYS_write), "D"((u64_t)t_fd), "S"(t_buf), "d"(t_count)
-		: "rcx", "r11", "memory" // clobbered registers.
+    "syscall\n"
+    : "=a"(err)
+    : "0"(SYS_write), "D"((u64_t)t_fd), "S"(t_buf), "d"(t_count)
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -69,10 +69,10 @@ int_t open(const char* t_path, int_t t_flags, umode_t t_mode)
 
   // clang-format off
   __asm__ volatile(
-		"syscall\n"
-		: "=a"(err)
-		: "0"(SYS_open), "D"(t_path), "S"(t_flags), "d"(t_mode)
-		: "rcx", "r11", "memory" // clobbered registers.
+    "syscall\n"
+    : "=a"(err)
+    : "0"(SYS_open), "D"(t_path), "S"(t_flags), "d"(t_mode)
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -85,10 +85,10 @@ int_t close(int_t t_fd)
 
   // clang-format off
   __asm__ volatile(
-		"syscall\n"
-		: "=a"(err)
-		: "0"(SYS_close), "d"(t_fd)
-		: "rcx", "r11", "memory" // clobbered registers.
+    "syscall\n"
+    : "=a"(err)
+    : "0"(SYS_close), "d"(t_fd)
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -104,7 +104,7 @@ int_t getpid()
     "syscall\n"
     : "=a"(pid)
     : "0"(SYS_getpid)
-		: "rcx", "r11", "memory" // clobbered registers.
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -118,7 +118,7 @@ void __attribute__((noreturn)) exit(int_t t_errc)
     "syscall\n"
     :
     : "a"(SYS_exit), "D"(t_errc)
-		: "rcx", "r11", "memory" // clobbered registers.
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 
@@ -134,7 +134,7 @@ int_t getppid()
     "syscall\n"
     : "=a"(pid)
     : "0"(SYS_getppid)
-		: "rcx", "r11", "memory" // clobbered registers.
+    : "rcx", "r11", "memory" // clobbered registers.
   );
   // clang-format on
 

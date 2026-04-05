@@ -30,6 +30,7 @@ class CppInteropBackendInterface : public InteropBackendInterface {
   CppInteropBackendInterface() = default;
 
   virtual auto backend_id() const -> std::string_view = 0;
+  virtual auto set_target(std::string_view t_target) -> void = 0;
 
   virtual auto prologue() -> std::string = 0;
 

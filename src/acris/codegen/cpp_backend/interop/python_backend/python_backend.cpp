@@ -14,6 +14,11 @@ auto PythonBackend::backend_id() const -> std::string_view
   return {"python"};
 }
 
+auto PythonBackend::set_target(std::string_view t_target) -> void
+{
+  m_target = t_target;
+}
+
 auto PythonBackend::prologue() -> std::string
 {
   std::stringstream ss;

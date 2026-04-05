@@ -12,6 +12,7 @@
 
 // Absolute Includes:
 #include "acris/ast/node/include_nodes.hpp"
+#include "acris/codegen/cpp_backend/interop/lua_backend/lua_backend.hpp"
 #include "acris/codegen/cpp_backend/interop/python_backend/python_backend.hpp"
 #include "acris/debug/log.hpp"
 #include "lib/stdexcept/stdexcept.hpp"
@@ -976,6 +977,7 @@ auto CppBackend::visit([[maybe_unused]] NodeInterface* t_node) -> Any
 auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
 {
   namespace py_interop = cpp_backend::interop::python_backend;
+  namespace lua_interop = cpp_backend::interop::lua_backend;
 
   CppInteropBackendPtr ptr{};
 
@@ -987,11 +989,19 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       const auto includes{shell_getline("python3 -m pybind11 --includes")};
       m_inv.add_flags(std::format("-shared -fPIC {}", includes));
 
-      const auto python_ldflags{
-        shell_getline("python3-config --ldflags")};
+      const auto python_ldflags{shell_getline("python3-config --ldflags")};
       m_inv.add_flags(python_ldflags);
 
-      // Need to gete actual outpath to properly generate this and not depend on SRC_STEM or similar.
+      // TODO: Use this for MACOS.
+      auto framework_prefix{shell_getline(
+        "python3 -c \"import sysconfig; "
+        "print(sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX'))\"")};
+      auto framework_name{
+        shell_getline("python3 -c \"import sysconfig; "
+                      "print(sysconfig.get_config_var('PYTHONFRAMEWORK'))\"")};
+
+      // Need to gete actual outpath to properly generate this and not depend on
+      // SRC_STEM or similar.
       const auto pybind11_extension_suffix{
         shell_getline("python3 -m pybind11 --extension-suffix")};
       m_inv.set_out(std::format("acris_export{}", pybind11_extension_suffix));
@@ -1002,9 +1012,15 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       //   break;
 
       // Fallthrough all the way to default.
+    case InteropBackend::LUA_INTEROP_BACKEND: {
+      ptr = std::make_shared<lua_interop::LuaBackend>();
+      m_inv.add_flags("-shared -fPIC -llua");
+
+      m_inv.set_out("export.so");
+      break;
+    }
+
     case InteropBackend::C_INTEROP_BACKEND:
-      [[fallthrough]];
-    case InteropBackend::LUA_INTEROP_BACKEND:
       [[fallthrough]];
     case InteropBackend::JS_INTEROP_BACKEND: {
       const auto err_msg{std::format("Unsupported interopability backend "

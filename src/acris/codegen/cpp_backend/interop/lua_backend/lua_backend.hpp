@@ -1,15 +1,14 @@
-#ifndef ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_PYTHON_BACKEND_PYTHON_BACKEND_HPP
-#define ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_PYTHON_BACKEND_PYTHON_BACKEND_HPP
+#ifndef ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_LUA_BACKEND_LUA_BACKEND_HPP
+#define ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_LUA_BACKEND_LUA_BACKEND_HPP
 
 // STL Includes:
 #include <sstream>
 #include <vector>
-#include <string>
 
 // Absolute Includes:
 #include "acris/codegen/cpp_backend/interop/cpp_interop_backend_interface.hpp"
 
-namespace codegen::cpp_backend::interop::python_backend {
+namespace codegen::cpp_backend::interop::lua_backend {
 // Forward Declarations:
 struct ExportSymbol;
 
@@ -42,7 +41,7 @@ struct ExportSymbol {
  * Generate pythong bindings for use with pybind11.
  * TODO: Describe usage generate(), dont run on whole ast.
  */
-class PythonBackend : public CppInteropBackendInterface {
+class LuaBackend : public CppInteropBackendInterface {
   private:
   std::stringstream m_ss;
 
@@ -50,7 +49,7 @@ class PythonBackend : public CppInteropBackendInterface {
   ExportSymbols m_symbols;
 
   public:
-  PythonBackend();
+  LuaBackend();
 
   auto backend_id() const -> std::string_view override;
   auto set_target(std::string_view t_target) -> void override;
@@ -63,8 +62,8 @@ class PythonBackend : public CppInteropBackendInterface {
 
   auto epilogue() -> std::string override;
 
-  virtual ~PythonBackend() = default;
+  virtual ~LuaBackend() = default;
 };
-} // namespace codegen::cpp_backend::interop::python_backend
+} // namespace codegen::cpp_backend::interop::lua_backend
 
-#endif // ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_PYTHON_BACKEND_PYTHON_BACKEND_HPP
+#endif // ACRIS_ACRIS_CODEGEN_CPP_BACKEND_INTEROP_LUA_BACKEND_LUA_BACKEND_HPP
