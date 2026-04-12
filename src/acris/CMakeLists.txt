@@ -20,6 +20,9 @@ add_subdirectory(diagnostic)
 # Handles compiler settings.
 add_subdirectory(settings)
 
+# Build-system:
+add_subdirectory(driver)
+
 # Invokes all the phases:
 add_subdirectory(unit)
 

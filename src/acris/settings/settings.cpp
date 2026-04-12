@@ -46,6 +46,7 @@ auto operator<<(std::ostream& t_os, const settings::Settings& t_settings)
   // clang-format off
   t_os << "Settings{" << cond_nl;
   t_os << "source_paths: " << t_settings.m_source_paths << ", " << cond_nl;
+  // t_os << "output_path: " << t_settings.m_output_path << ", " << cond_nl;
   t_os << "macro_definitions: " << t_settings.m_mdefs << ", " << cond_nl;
   t_os << "backend: " << t_settings.m_backend << ", " << cond_nl;
   t_os << "interop_backends: " << t_settings.m_ibackends << ", " << cond_nl;

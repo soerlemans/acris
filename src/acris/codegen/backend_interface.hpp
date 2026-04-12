@@ -56,6 +56,7 @@ struct CompileParams {
 
   fs::path m_build_dir;
   fs::path m_source_path;
+  fs::path m_target;
 };
 
 // Classes:

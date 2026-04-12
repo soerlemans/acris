@@ -1,25 +1,25 @@
-# Boost (C++ utility libraries):
+# Lua (For build-system and other):
 
 # FIXME: Currently developing on MacOS and this is a pain, so ignore.
-# message(STATUS "[+] Finding Lua interpreter.")
+message(STATUS "[+] Finding Lua interpreter.")
 
-# message(STATUS "[+] Linking Boost statically.")
-# set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Link Boost statically.")
+message(STATUS "[+] Linking Boost statically.")
+set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Link Boost statically.")
 
-# # TODO: Add minimum version?
-# find_package(
-#   Lua
-#   REQUIRED
-# )
+# TODO: Add minimum version?
+find_package(
+  Lua
+  REQUIRED
+)
 
-# message(STATUS "[+] Lua version: ${Lua_VERSION}")
+message(STATUS "[+] Lua found: ${LUA_VERSION_STRING}")
 
-# include_directories(
-#   SYSTEM
-#   "${LUA_INCLUDE_DIR}"
-# )
+include_directories(
+  SYSTEM
+  "${LUA_INCLUDE_DIR}"
+)
 
-# target_link_libraries(
-#   ${TARGET_ACRIS_LIB}
-#   PUBLIC ${LUA_LIBRARIES}
-# )
+target_link_libraries(
+  ${TARGET_ACRIS_LIB}
+  PUBLIC ${LUA_LIBRARIES}
+)

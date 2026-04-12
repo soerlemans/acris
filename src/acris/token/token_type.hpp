@@ -42,7 +42,8 @@ enum class TokenType {
   COMP,
 
   // User Types:
-  ALIAS,
+  USE,
+  TYPE,
   ENUM,
   IOTA,
   UNION,

@@ -3,6 +3,7 @@
 
 // STL Includes:
 #include <filesystem>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -26,6 +27,7 @@ using debug::LogLevel;
 using unit::MacroDefs;
 using unit::MacroUndefs;
 
+using PathOpt = std::optional<fs::path>;
 using FileVec = std::vector<fs::path>;
 using StringVec = std::vector<std::string>;
 using InteropBackendVec = std::vector<codegen::InteropBackend>;
@@ -35,6 +37,7 @@ using InteropBackendVec = std::vector<codegen::InteropBackend>;
 // Structs:
 struct Settings {
   FileVec m_source_paths;
+  PathOpt m_output_path;
   MacroDefs m_mdefs;
 
   bool m_no_libc;
@@ -48,6 +51,7 @@ struct Settings {
   // Methods:
   Settings()
     : m_source_paths{},
+      m_output_path{},
       m_mdefs{},
       m_no_libc{false},
       m_backend{Backend::CPP_BACKEND},
