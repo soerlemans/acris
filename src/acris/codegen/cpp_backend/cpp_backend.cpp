@@ -133,6 +133,7 @@ auto CppBackend::resolve_list(NodeListPtr t_list, const bool t_terminate)
 // Public:
 CppBackend::CppBackend()
   : m_inv{},
+    m_ctx{},
     m_session{},
     m_interop_backends{},
     m_terminate{},
@@ -974,12 +975,19 @@ auto CppBackend::visit([[maybe_unused]] NodeInterface* t_node) -> Any
 }
 
 // Util:
+auto CppBackend::set_context(BackendContext t_ctx) -> void
+{
+  m_ctx = std::move(t_ctx);
+}
+
 auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
 {
   namespace py_interop = cpp_backend::interop::python_backend;
   namespace lua_interop = cpp_backend::interop::lua_backend;
 
   CppInteropBackendPtr ptr{};
+
+  const auto module_name{m_ctx.m_output_path.stem().native()};
 
   switch(t_type) {
     case InteropBackend::PYTHON_INTEROP_BACKEND: {
@@ -1004,7 +1012,8 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       // SRC_STEM or similar.
       const auto pybind11_extension_suffix{
         shell_getline("python3 -m pybind11 --extension-suffix")};
-      m_inv.set_out(std::format("acris_export{}", pybind11_extension_suffix));
+      m_inv.set_out(
+        std::format("{}{}", module_name, pybind11_extension_suffix));
       break;
     }
 
@@ -1016,7 +1025,7 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       ptr = std::make_shared<lua_interop::LuaBackend>();
       m_inv.add_flags("-shared -fPIC -llua");
 
-      m_inv.set_out("export.so");
+      m_inv.set_out(std::format("{}.so", module_name));
       break;
     }
 
@@ -1110,12 +1119,14 @@ auto CppBackend::requires_mir() -> bool
 
 auto CppBackend::compile(CompileParams& t_params) -> void
 {
-  const auto& [session, ast, mir, build_dir, source_path] = t_params;
+  const auto& [session, ast, mir, source_path] = t_params;
 
   // TODO: Check for nullptr?
   m_session = session;
 
   fs::path stem{source_path.stem()};
+
+  const fs::path build_dir{m_ctx.m_build_dir};
   const fs::path tmp_src{build_dir / stem.concat(".cpp")};
 
   // Log filepath's:

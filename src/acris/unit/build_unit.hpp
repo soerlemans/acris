@@ -30,14 +30,10 @@ struct BuildUnitParams {
   Backend m_backend_selector;
   InteropSelectors m_interop_selectors;
   Optimize m_olevel;
-  PathOpt m_build_dir_opt;
-};
 
-struct Config {
-  // Other build configuration options.
-  // Maybe I will need a configuration_unit later down the line.
-  // For all of the different types of settings needed at various points.
-  // In the build process.
+  // Intended for BackendContext.
+  PathOpt m_output_path;
+  PathOpt m_build_dir;
 };
 
 // Classes:
@@ -49,14 +45,12 @@ struct Config {
 class BuildUnit {
   private:
   BackendPtr m_backend;
-  fs::path m_build_dir;
 
   public:
-  BuildUnit(BackendPtr&& t_backend, fs::path t_build_dir);
+  BuildUnit(BackendPtr&& t_backend);
 
   auto backend_requires_mir() -> bool;
   auto compile(codegen::CompileParams& t_params) -> void;
-  auto build_dir() -> const fs::path&;
 
   virtual ~BuildUnit() = default;
 };

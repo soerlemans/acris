@@ -3,6 +3,7 @@
 
 // STL Includes:
 #include <memory>
+#include <optional>
 
 // Absolute Includes:
 #include "acris/ast/visitor/node_visitor.hpp"
@@ -12,28 +13,28 @@
 #include "lib/filesystem.hpp"
 
 namespace codegen {
+// Forward Declarations:
+class BackendInterface;
+
 // Using:
 namespace node = ast::node;
 
 using ast::node::NodePtr;
 using mir::ModulePtr;
 
-// Forward Declarations:
-class BackendInterface;
+namespace fs = std::filesystem;
 
 // Aliases:
+using PathOpt = std::optional<fs::path>;
 using BackendPtr = std::shared_ptr<BackendInterface>;
 using unit::SessionUnitPtr;
-
-namespace fs = std::filesystem;
 
 // Enums:
 enum class Backend {
   LLVM_BACKEND,
-  WASM_BACKEND,
-  JS_BACKEND,
   CPP_BACKEND,
   C_BACKEND,
+  WASM_BACKEND
 };
 
 enum class Optimize {
@@ -45,6 +46,11 @@ enum class Optimize {
 };
 
 // Structs:
+struct BackendContext {
+  fs::path m_output_path;
+  fs::path m_build_dir;
+};
+
 /*!
  * Utility structure packing all required parameters for compiling.
  */
@@ -54,9 +60,7 @@ struct CompileParams {
   NodePtr m_ast;
   ModulePtr m_mir;
 
-  fs::path m_build_dir;
   fs::path m_source_path;
-  fs::path m_target;
 };
 
 // Classes:
@@ -66,6 +70,11 @@ struct CompileParams {
 class BackendInterface {
   public:
   BackendInterface() = default;
+
+  /*!
+   * Set context which is consistent inbetween builds.
+   */
+  virtual auto set_context(BackendContext t_ctx) -> void = 0;
 
   /*!
    * How an interop backend is added is backend specific.

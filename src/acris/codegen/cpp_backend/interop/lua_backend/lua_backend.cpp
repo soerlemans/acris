@@ -4,7 +4,7 @@
 #include <format>
 
 namespace codegen::cpp_backend::interop::lua_backend {
-LuaBackend::LuaBackend(): m_ss{}, m_symbols{}
+LuaBackend::LuaBackend(): m_ss{}, m_module{}, m_symbols{}
 {
   // m_symbols.reserve();
 }
@@ -12,11 +12,6 @@ LuaBackend::LuaBackend(): m_ss{}, m_symbols{}
 auto LuaBackend::backend_id() const -> std::string_view
 {
   return {"lua"};
-}
-
-auto LuaBackend::set_target(std::string_view t_target) -> void
-{
-  m_target = t_target;
 }
 
 auto LuaBackend::prologue() -> std::string
@@ -28,6 +23,11 @@ auto LuaBackend::prologue() -> std::string
   ss << "#include <lualib.h>\n\n";
 
   return ss.str();
+}
+
+auto LuaBackend::register_module(const std::string_view t_module) -> void
+{
+  m_module = t_module;
 }
 
 auto LuaBackend::register_constant(const std::string_view t_id) -> void
@@ -49,7 +49,7 @@ auto LuaBackend::epilogue() -> std::string
 {
   std::stringstream ss;
 
-  // TODO: Inject lib name.
+  // TODO: Inject module name.
   ss << R"(extern "C" {\n)";
   ss << "int luaopen_mylib(lua_State *L) {\n";
   ss << "\treturn 1;\n";

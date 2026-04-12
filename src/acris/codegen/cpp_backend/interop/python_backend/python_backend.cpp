@@ -4,7 +4,7 @@
 #include <format>
 
 namespace codegen::cpp_backend::interop::python_backend {
-PythonBackend::PythonBackend(): m_ss{}, m_symbols{}
+PythonBackend::PythonBackend(): m_ss{}, m_module{}, m_symbols{}
 {
   // m_symbols.reserve();
 }
@@ -12,11 +12,6 @@ PythonBackend::PythonBackend(): m_ss{}, m_symbols{}
 auto PythonBackend::backend_id() const -> std::string_view
 {
   return {"python"};
-}
-
-auto PythonBackend::set_target(std::string_view t_target) -> void
-{
-  m_target = t_target;
 }
 
 auto PythonBackend::prologue() -> std::string
@@ -27,6 +22,11 @@ auto PythonBackend::prologue() -> std::string
   ss << "#include <pybind11/pybind11.h>\n\n";
 
   return ss.str();
+}
+
+auto PythonBackend::register_module(std::string_view t_module) -> void
+{
+  m_module = t_module;
 }
 
 auto PythonBackend::register_constant(const std::string_view t_id) -> void
@@ -49,7 +49,7 @@ auto PythonBackend::epilogue() -> std::string
   std::stringstream ss;
 
   // TODO: Set the module name based on package/module name or macro value.
-  ss << "PYBIND11_MODULE(acris_export, mod) {\n";
+  ss << std::format("PYBIND11_MODULE({}, mod) {{\n", m_module);
   ss << "namespace py = pybind11;\n";
   ss << R"(mod.doc() = "Acris program exported symbols.";)" << '\n';
 

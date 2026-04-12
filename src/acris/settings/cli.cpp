@@ -23,7 +23,7 @@ using settings::Settings;
 auto add_output_flag(CLI::App& t_app, Settings& t_settings)
   -> void
 {
-  t_app.add_option("-o,--out", t_settings.m_level, "Output path can be a directory or a full name.");
+  t_app.add_option("-o,--out", t_settings.m_output_path, "Output path can be a directory or a full name.");
 }
 
 auto add_loglevel_flag([[maybe_unused]] CLI::App& t_app, Settings& t_settings)

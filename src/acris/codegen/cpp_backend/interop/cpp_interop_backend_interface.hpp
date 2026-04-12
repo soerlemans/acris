@@ -30,7 +30,6 @@ class CppInteropBackendInterface : public InteropBackendInterface {
   CppInteropBackendInterface() = default;
 
   virtual auto backend_id() const -> std::string_view = 0;
-  virtual auto set_target(std::string_view t_target) -> void = 0;
 
   virtual auto prologue() -> std::string = 0;
 
@@ -38,6 +37,7 @@ class CppInteropBackendInterface : public InteropBackendInterface {
   // As one day we might want to have the LLVM backend also have interop.
   // And this should then be generic enough.
   // But for now the source based interop can just use the name.
+  virtual auto register_module(std::string_view t_module) -> void = 0;
   virtual auto register_constant(std::string_view t_id) -> void = 0;
   virtual auto register_variable(std::string_view t_id) -> void = 0;
   virtual auto register_function(std::string_view t_id) -> void = 0;

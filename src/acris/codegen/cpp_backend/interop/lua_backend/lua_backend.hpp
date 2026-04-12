@@ -45,17 +45,17 @@ class LuaBackend : public CppInteropBackendInterface {
   private:
   std::stringstream m_ss;
 
-  std::string m_target;
+  std::string m_module;
   ExportSymbols m_symbols;
 
   public:
   LuaBackend();
 
   auto backend_id() const -> std::string_view override;
-  auto set_target(std::string_view t_target) -> void override;
 
   auto prologue() -> std::string override;
 
+  auto register_module(std::string_view t_module) -> void override;
   auto register_constant(std::string_view t_id) -> void override;
   auto register_variable(std::string_view t_id) -> void override;
   auto register_function(std::string_view t_id) -> void override;

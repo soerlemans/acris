@@ -53,7 +53,8 @@ using lib::stdexcept::throwf;
 
 // Methods:
 LlvmBackend::LlvmBackend()
-  : m_context{std::make_shared<llvm::LLVMContext>()},
+  : m_ctx{},
+    m_context{std::make_shared<llvm::LLVMContext>()},
     m_builder{std::make_shared<llvm::IRBuilder<>>(*m_context)},
     m_module{std::make_shared<llvm::Module>("Module", *m_context)},
     m_literals{},
@@ -918,6 +919,11 @@ auto LlvmBackend::dump_ir(std::ostream& t_os) -> void
   t_os << str;
 }
 
+auto LlvmBackend::set_context(BackendContext t_ctx) -> void
+{
+  m_ctx = std::move(t_ctx);
+}
+
 auto LlvmBackend::set_optimize(const Optimize t_olevel) -> void
 {
   // Set passes, later.
@@ -1001,13 +1007,14 @@ auto LlvmBackend::compile(CompileParams& t_params) -> void
 
   using mir::mir_pass::MirPassParams;
 
-  auto [session, ast, mir_module, build_dir, source_path] = t_params;
+  auto [session, ast, mir_module, source_path] = t_params;
 
   // FIXME: Check mir_module for nullptr.
 
+
   // Handle encoding and similar.
   source_path.make_preferred();
-  build_dir.make_preferred();
+  auto build_dir{m_ctx.m_build_dir.make_preferred()};
 
   const fs::path stem{source_path.stem()};
 

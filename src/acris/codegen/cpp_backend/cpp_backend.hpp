@@ -43,6 +43,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   private:
   // CXX compiler front end.
   ClangFrontendInvoker m_inv;
+  BackendContext m_ctx;
   SessionUnitPtr m_session;
 
   // Global symbol table used for quick symbol lookup.
@@ -183,6 +184,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto visit(node::NodeInterface* t_node) -> Any override;
 
   // Util:
+  auto set_context(BackendContext t_ctx) -> void override;
+
   //! CPP backend as of writing needs to refactor interop.
   // TODO: Add library targetname to this?
   auto register_interop_backend(InteropBackend t_type) -> void override;
