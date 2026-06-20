@@ -560,8 +560,6 @@ auto CppBackend::visit(StructDecl* t_sdecl) -> Any
 {
   const auto struct_id{t_sdecl->identifier()};
 
-  return std::string{""};
-
   // Need to have attributes affect StructDecl, and skip forward declaration.
   // On MacOS X as it breaks for forward declaring FILE in extern C context.
   // See libc.ac.

@@ -59,8 +59,10 @@ def cmake_parallel_arg(t_jobs: int) -> str:
     arg = ""
     if t_jobs == -1:
         # TODO: Fix halts my computer.
-        max_jobs = multiprocessing.cpu_count() // 4
+        max_jobs = multiprocessing.cpu_count() // 8
         arg = f'--parallel {max_jobs}'
+    else:
+        arg = f'--parallel {t_jobs}'
         pass
 
     return arg
@@ -138,7 +140,11 @@ def cmake(
 
     # Always print version info.
     run(t_ctx, "cmake --version")
+
+    print(f"@cmake -S . -B {t_mode}/ {build_args}")
     run(t_ctx, f"cmake -S . -B {t_mode}/ {build_args}")
+
+    print(f"@cmake --build {t_mode}/ {parallel_arg}")
     run(t_ctx, f"cmake --build {t_mode}/ {parallel_arg}")
     pass
 

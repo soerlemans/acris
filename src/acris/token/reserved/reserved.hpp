@@ -53,8 +53,8 @@ namespace keywords {
   DEFINE_TERMINAL(g_comp,  "comp",  COMP); // Compile time constants.
 
   // User Types:
-  DEFINE_TERMINAL(g_use,  "use",  USE);
-  DEFINE_TERMINAL(g_type,  "type",  TYPE);
+  DEFINE_TERMINAL(g_use,    "use",    USE);
+  DEFINE_TERMINAL(g_type,   "type",   TYPE);
   DEFINE_TERMINAL(g_enum,   "enum",   ENUM);
   DEFINE_TERMINAL(g_iota,   "iota",   IOTA);
   DEFINE_TERMINAL(g_union,  "union",  UNION);

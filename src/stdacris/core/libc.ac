@@ -68,7 +68,7 @@ let STDERR = 2
 
   // Platform dependent size, todo figure this out.
   // decl func getauxval(type: ulong) -> ulong
-  decl func getauxval(type: u64) -> u64
+  decl func getauxval(aux_type: u64) -> u64
 
   // Error:
   decl func perror(s: *ro char) -> void
@@ -90,7 +90,7 @@ let STDERR = 2
   decl func fclose(stream: *FILE) -> int
 
   // Process management:
-  decl func popen(command: *ro char, type: *ro char) -> *FILE
+  decl func popen(command: *ro char, io_type: *ro char) -> *FILE
   decl func pclose(stream: *FILE) -> int
 
   // System:

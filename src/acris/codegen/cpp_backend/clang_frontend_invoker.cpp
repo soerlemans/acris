@@ -77,9 +77,15 @@ auto ClangFrontendInvoker::compile(const fs::path& t_source) -> void
 #ifndef NDEBUG
   DBG_PRINTLN("# C++ codegeneration:");
 
-  const auto cmd_cat{
-    std::format("clang-format --style=Google < {}", t_source.c_str())};
-  std::system(cmd_cat.c_str());
+	// Do inplace.
+  const auto cmd_format{
+    std::format("clang-format -i --style=Google {}", t_source.c_str())};
+  std::system(cmd_format.c_str());
+
+	// We use bat cause I am a lazy solo dev and want color.
+  const auto cmd_bat{
+    std::format("bat --color=always {} | cat", t_source.c_str())};
+  std::system(cmd_bat.c_str());
 
   DBG_PRINTLN();
 #endif // NDEBUG
