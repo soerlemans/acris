@@ -823,10 +823,8 @@ auto SemanticChecker::visit(StructDecl* t_sdecl) -> Any
   DBG_INFO("StructDecl: ", id);
 
   // TODO: Figure this stuff out, attributes should be allowed.
-  // But maybe no TypeData annotation cause its an opaque struct?
-  // Annotate AST.
-  // m_annot_queue.push({t_sdecl, data});
-  // annotate_attr(t_fdecl);
+  // But maybe no TypeData annotation for opaque structs?
+  annotate_attr(t_sdecl);
 
   return {};
 }

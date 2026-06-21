@@ -39,6 +39,8 @@ auto CppBackend::prologue() -> std::string
   // To C++ fixed width integers and floats.
   oss << "// STL Includes:\n";
   // oss << "#include <stdfloat>\n"; // TODO: Uncommnet when supported by clang.
+  // We include cstdio for FILE struct as we cant forward declare it.
+  // oss << "#include <cstdio>\n";
   oss << "\n";
 
   oss << "// Stdacris Includes:\n";
@@ -560,6 +562,33 @@ auto CppBackend::visit(StructDecl* t_sdecl) -> Any
 {
   const auto struct_id{t_sdecl->identifier()};
 
+  const auto attrs{t_sdecl->get_attributes()};
+  for(const auto& attr : attrs) {
+    switch(attr.m_type) {
+      case AttributeType::NO_CODEGEN:
+        // No generation means no code for statement.
+        return std::string{};
+
+      case AttributeType::OVERRIDE_CODEGEN: {
+				// TODO: Fix this shitty hack.
+        if(attr.m_args.size() != 2) {
+          // TODO: Throw.
+        }
+        const auto& target_backend{attr.m_args.front()};
+        if(target_backend == "cpp") {
+          const auto& override_code{attr.m_args[1]};
+
+          // Replace regular generated code.
+          return override_code;
+        }
+      }
+
+      default:
+        // TODO: error.
+        break;
+    }
+  }
+
   // Need to have attributes affect StructDecl, and skip forward declaration.
   // On MacOS X as it breaks for forward declaring FILE in extern C context.
   // See libc.ac.
@@ -1021,7 +1050,9 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       // Fallthrough all the way to default.
     case InteropBackend::LUA_INTEROP_BACKEND: {
       ptr = std::make_shared<lua_interop::LuaBackend>();
-      m_inv.add_flags("-shared -fPIC -llua");
+
+      const auto lua_flags{shell_getline("pkg-config --cflags --libs lua5.4")};
+      m_inv.add_flags(lua_flags);
 
       m_inv.set_out(std::format("{}.so", module_name));
       break;

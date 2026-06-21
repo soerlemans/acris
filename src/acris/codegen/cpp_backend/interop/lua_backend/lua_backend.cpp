@@ -50,7 +50,7 @@ auto LuaBackend::epilogue() -> std::string
   std::stringstream ss;
 
   // TODO: Inject module name.
-  ss << R"(extern "C" {\n)";
+  ss << R"(extern "C" {)" << '\n';
   ss << "int luaopen_mylib(lua_State *L) {\n";
   ss << "\treturn 1;\n";
   ss << "}\n";

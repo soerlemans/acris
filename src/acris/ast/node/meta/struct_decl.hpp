@@ -9,10 +9,11 @@
 
 namespace ast::node::meta {
 // Using Statements:
+using node_traits::AttributeData;
 using node_traits::Identifier;
 
 // Classes:
-class StructDecl : public Identifier {
+class StructDecl : public Identifier, public AttributeData {
   public:
   StructDecl(std::string_view t_identifier);
 
