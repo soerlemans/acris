@@ -17,8 +17,8 @@ namespace codegen::cpp_backend {
 namespace node = ast::node;
 namespace fs = std::filesystem;
 
-using ast::node::NodePtr;
 using ast::node::NodeListPtr;
+using ast::node::NodePtr;
 using ast::visitor::NodeVisitor;
 using interop::CppInteropBackendPtr;
 using visitor::Any;
@@ -97,7 +97,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto resolve(NodePtr t_ptr, bool t_terminate = false) -> std::string;
 
   [[nodiscard("Pure method must use results.")]]
-  auto resolve_list(NodeListPtr t_list, bool t_terminate = false) -> std::string;
+  auto resolve_list(NodeListPtr t_list, bool t_terminate = false)
+    -> std::string;
+
+  auto handle_attribute_export() -> void;
 
   public:
   CppBackend();

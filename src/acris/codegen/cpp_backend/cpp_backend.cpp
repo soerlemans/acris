@@ -132,6 +132,9 @@ auto CppBackend::resolve_list(NodeListPtr t_list, const bool t_terminate)
   return oss.str();
 }
 
+auto CppBackend::handle_attribute_export() -> void
+{}
+
 // Public:
 CppBackend::CppBackend()
   : m_inv{},
@@ -327,9 +330,9 @@ auto CppBackend::visit(Function* t_fn) -> Any
             // FIXME: We should do this by looping through the toplevel.
             // Of the SymbolTable instead.
             // As the symboltable should also have attribute data.
+            // And this is expensive and shitty.
 
-            // We only expect a single target language for now so we should
-            // quite.
+            // We only expect a single target language for now so lazy is good.
             iback->register_function(identifier);
             break;
           }
@@ -570,7 +573,7 @@ auto CppBackend::visit(StructDecl* t_sdecl) -> Any
         return std::string{};
 
       case AttributeType::OVERRIDE_CODEGEN: {
-				// TODO: Fix this shitty hack.
+        // TODO: Fix this shitty hack.
         if(attr.m_args.size() != 2) {
           // TODO: Throw.
         }
@@ -1015,6 +1018,7 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
   CppInteropBackendPtr ptr{};
 
   const auto module_name{m_ctx.m_output_path.stem().native()};
+  DBG_INFO("Module name: ", module_name);
 
   switch(t_type) {
     case InteropBackend::PYTHON_INTEROP_BACKEND: {
@@ -1052,7 +1056,7 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       ptr = std::make_shared<lua_interop::LuaBackend>();
 
       const auto lua_flags{shell_getline("pkg-config --cflags --libs lua5.4")};
-      m_inv.add_flags(lua_flags);
+      m_inv.add_flags(std::format("-shared -fPIC {}", lua_flags));
 
       m_inv.set_out(std::format("{}.so", module_name));
       break;
