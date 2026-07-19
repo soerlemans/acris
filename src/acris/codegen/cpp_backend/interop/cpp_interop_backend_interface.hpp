@@ -8,6 +8,7 @@
 // Absolute Includes:
 #include "acris/ast/node/fdecl.hpp"
 #include "acris/codegen/interop_backend_interface.hpp"
+#include "acris/types/core/core.hpp"
 #include "lib/stdtypes.hpp"
 
 namespace codegen::cpp_backend::interop {
@@ -18,6 +19,9 @@ class CppInteropBackendInterface;
 using namespace ast;
 
 using node::NodePtr;
+using types::core::FnTypePtr;
+using types::core::TypeVariant;
+using types::core::VarTypePtr;
 
 using CppInteropBackendPtr = std::shared_ptr<CppInteropBackendInterface>;
 
@@ -38,9 +42,13 @@ class CppInteropBackendInterface : public InteropBackendInterface {
   // And this should then be generic enough.
   // But for now the source based interop can just use the name.
   virtual auto register_module(std::string_view t_module) -> void = 0;
-  virtual auto register_constant(std::string_view t_id) -> void = 0;
-  virtual auto register_variable(std::string_view t_id) -> void = 0;
-  virtual auto register_function(std::string_view t_id) -> void = 0;
+
+  virtual auto register_constant(std::string_view t_id, VarTypePtr t_var)
+    -> void = 0;
+  virtual auto register_variable(std::string_view t_id, VarTypePtr t_var)
+    -> void = 0;
+  virtual auto register_function(std::string_view t_id, FnTypePtr t_fn)
+    -> void = 0;
 
   virtual auto epilogue() -> std::string = 0;
 

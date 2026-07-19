@@ -333,7 +333,7 @@ auto CppBackend::visit(Function* t_fn) -> Any
             // And this is expensive and shitty.
 
             // We only expect a single target language for now so lazy is good.
-            iback->register_function(identifier);
+            iback->register_function(identifier, fn_type);
             break;
           }
         }
@@ -1080,6 +1080,9 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       break;
     }
   }
+
+  // Backends have their own set of constraints for module names.
+  ptr->register_module(module_name);
 
   // Add the backend at the end.
   m_interop_backends.emplace_back(ptr);

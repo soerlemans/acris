@@ -2,6 +2,7 @@
 #define ACRIS_ACRIS_DIAGNOSTIC_DIAGNOSTIC_ERROR_HPP
 
 // STL Includes:
+#include <format>
 #include <sstream>
 #include <string>
 
@@ -31,12 +32,27 @@ class DiagnosticError {
 // Functions:
 template<typename T = DiagnosticError, typename... Args>
   requires std::is_base_of<DiagnosticError, T>::value
-inline auto throw_diagnostic_error(Args&&... t_args) -> void
+inline auto throw_diagnostic(Args&&... t_args) -> void
 {
   std::stringstream ss;
 
   // Add all arguments to the string stream.
   (ss << ... << t_args);
+
+  throw T{ss.view()};
+}
+
+template<typename T = DiagnosticError, typename... Args>
+  requires std::is_base_of<DiagnosticError, T>::value
+inline auto throwf_diagnostic(std::format_string<Args...> fmt, Args&&... t_args)
+  -> void
+{
+  std::stringstream ss;
+
+  // Add all arguments to the string stream.
+  (ss << ... << t_args);
+
+  ss << std::format(fmt, std::forward<Args>(t_args)...);
 
   throw T{ss.view()};
 }

@@ -29,17 +29,20 @@ auto PythonBackend::register_module(std::string_view t_module) -> void
   m_module = t_module;
 }
 
-auto PythonBackend::register_constant(const std::string_view t_id) -> void
+auto PythonBackend::register_constant(const std::string_view t_id,
+                                      VarTypePtr t_var) -> void
 {
   m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::CONSTANT);
 }
 
-auto PythonBackend::register_variable(const std::string_view t_id) -> void
+auto PythonBackend::register_variable(const std::string_view t_id,
+                                      VarTypePtr t_var) -> void
 {
   m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::VARIABLE);
 }
 
-auto PythonBackend::register_function(const std::string_view t_id) -> void
+auto PythonBackend::register_function(const std::string_view t_id,
+                                      FnTypePtr t_fn) -> void
 {
   m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::FUNCTION);
 }

@@ -3,8 +3,8 @@
 
 // STL Includes:
 #include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 // Absolute Includes:
 #include "acris/codegen/cpp_backend/interop/cpp_interop_backend_interface.hpp"
@@ -57,9 +57,13 @@ class PythonBackend : public CppInteropBackendInterface {
   auto prologue() -> std::string override;
 
   auto register_module(std::string_view t_module) -> void override;
-  auto register_constant(std::string_view t_id) -> void override;
-  auto register_variable(std::string_view t_id) -> void override;
-  auto register_function(std::string_view t_id) -> void override;
+
+  auto register_constant(std::string_view t_id, VarTypePtr t_var)
+    -> void override;
+  auto register_variable(std::string_view t_id, VarTypePtr t_var)
+    -> void override;
+  auto register_function(std::string_view t_id, FnTypePtr t_fn)
+    -> void override;
 
   auto epilogue() -> std::string override;
 

@@ -19,7 +19,7 @@ auto TypePromoter::get_priority(const TypeLadder& t_ladder,
                                 const NativeType t_type) const
   -> TypeLadder::mapped_type
 {
-  using diagnostic::throw_diagnostic_error;
+  using diagnostic::throw_diagnostic;
 
   TypeLadder::mapped_type priority{0};
 
@@ -32,7 +32,7 @@ auto TypePromoter::get_priority(const TypeLadder& t_ladder,
     ss << "NativeType does not exist in floating point TypeLadder.\n";
     ss << "Did not find " << t_type << '\n';
 
-    throw_diagnostic_error(ss.str());
+    throw_diagnostic(ss.str());
   }
 
   return priority;

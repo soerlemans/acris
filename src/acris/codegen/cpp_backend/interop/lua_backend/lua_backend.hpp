@@ -7,12 +7,17 @@
 
 // Absolute Includes:
 #include "acris/codegen/cpp_backend/interop/cpp_interop_backend_interface.hpp"
+#include "acris/types/core/core.hpp"
 
 namespace codegen::cpp_backend::interop::lua_backend {
 // Forward Declarations:
 struct ExportSymbol;
 
 // Aliases:
+using types::core::FnTypePtr;
+using types::core::TypeVariant;
+using types::core::VarTypePtr;
+
 //! Symbols that should be exported.
 using ExportSymbols = std::vector<ExportSymbol>;
 
@@ -34,6 +39,7 @@ enum class ExportSymbolType {
 struct ExportSymbol {
   std::string m_id;
   ExportSymbolType m_type;
+  TypeVariant m_type_ctx;
 };
 
 // Classes:
@@ -56,9 +62,13 @@ class LuaBackend : public CppInteropBackendInterface {
   auto prologue() -> std::string override;
 
   auto register_module(std::string_view t_module) -> void override;
-  auto register_constant(std::string_view t_id) -> void override;
-  auto register_variable(std::string_view t_id) -> void override;
-  auto register_function(std::string_view t_id) -> void override;
+
+  auto register_constant(std::string_view t_id, VarTypePtr t_var)
+    -> void override;
+  auto register_variable(std::string_view t_id, VarTypePtr t_var)
+    -> void override;
+  auto register_function(std::string_view t_id, FnTypePtr t_fn)
+    -> void override;
 
   auto epilogue() -> std::string override;
 

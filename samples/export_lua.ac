@@ -8,3 +8,8 @@ func print(t_msg: *ro char) -> void {
   write_str("Hello from Acris: ")
   writeln_str(t_msg)
 }
+
+[[export("lua")]]
+func print_hello() -> void {
+  writeln_str("Hello world from Acris!")
+}
