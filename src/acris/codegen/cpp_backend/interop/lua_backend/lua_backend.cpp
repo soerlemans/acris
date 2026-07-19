@@ -95,14 +95,17 @@ auto LuaBackend::epilogue() -> std::string
 
       // TODO: Generate proper bindings, instead of this lazy stuff.
       ss << std::format("int lbind_{}", sym.m_id) << '(';
-
-      ss << "LuaState* t_state"; // Mandatory.
+      ss << "lua_State* t_lstate"; // Mandatory.
 
       // for() {
       // ss << ", " << <param>;
       //}
 
       ss << ")\n" << "{\n";
+			// Body:
+
+			/// TODO: Make scaleable.
+			ss  << '\t'<< sym.m_id << "();\n";
 
       // TODO: Fix shitty prototype coding.
       ss << '\t' << "return 0;\n";
