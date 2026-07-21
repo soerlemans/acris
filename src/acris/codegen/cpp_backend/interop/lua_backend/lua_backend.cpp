@@ -18,6 +18,7 @@ auto LuaBackend::generate_binding_function(const std::string_view t_id,
                                            const FnTypePtr& t_ptr)
   -> std::string
 {
+  using diagnostic::throw_diagnostic;
   using diagnostic::throwf_diagnostic;
 
   std::stringstream ss{};
@@ -35,18 +36,50 @@ auto LuaBackend::generate_binding_function(const std::string_view t_id,
     if(!result.has_value()) {
       DBG_ERROR("Type to Lua conversion query error:", result.error().m_msg);
 
-      throwf_diagnostic("Failed to extract Acris type to Lua equivalent for "
-                        "argument conversion!");
+      throw_diagnostic("Failed to extract Acris type to Lua equivalent for "
+                       "argument conversion!");
     }
 
-    ss << std::format("auto p{} = {};\n", index, result.value());
+    ss << std::format("auto p{} = {}(t_lstate, {});\n", index, result.value(),
+                      index + 1);
   }
 
-  /// TODO: Make scaleable.
-  ss << '\t' << t_id << "();\n";
+  ss << '\t';
+
+  // Extract return value.
+  // TODO: Check unexpected value, and make a difference between UNSUPPORTED.
+  // And NO OP or something.
+  QuerySpec spec{LuaQueryOp::PUSH};
+  auto result{type_lua_conv(t_ptr->m_return_type, spec)};
+  if(result.has_value()) {
+
+    ss << "auto result = ";
+  }
+
+  // Function name.
+  ss << t_id << "(";
+
+  index = 0;
+  std::string_view sep{};
+  for(auto&& _ : t_ptr->m_params) {
+    ss << std::format("{}p{}", sep, index);
+
+    index++;
+    sep = ", ";
+  }
+  ss << ");\n";
+
+  // Return value:
+  std::size_t ret_val_count = 0;
+
+  if(result.has_value()) {
+    ret_val_count++;
+
+    ss << std::format("{}(t_lstate, result);\n", result.value());
+  }
 
   // TODO: Fix shitty prototype coding.
-  ss << '\t' << "return 0;\n";
+  ss << '\t' << std::format("return {};\n", ret_val_count);
 
   // TODO:
   ss << "}\n";

@@ -38,9 +38,15 @@ auto CppBackend::prologue() -> std::string
   // Acris's native types often translate.
   // To C++ fixed width integers and floats.
   oss << "// STL Includes:\n";
-  // oss << "#include <stdfloat>\n"; // TODO: Uncommnet when supported by clang.
+
+	// TODO: Uncommnet when supported by clang.
+  // oss << "#include <stdfloat>\n";
+
   // We include cstdio for FILE struct as we cant forward declare it.
-  // oss << "#include <cstdio>\n";
+  oss << "#include <cstdio>\n";
+
+	// We need fixed width integer definitions.
+  oss << "#include <cstdint>\n";
   oss << "\n";
 
   oss << "// Stdacris Includes:\n";

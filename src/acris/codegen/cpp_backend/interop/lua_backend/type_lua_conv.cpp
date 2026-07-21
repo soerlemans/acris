@@ -54,7 +54,7 @@ inline auto native_type_lua_conv_check(const NativeType t_type,
       break;
 
     case NativeType::U64:
-      str = "luaL_checkunsigned";
+      str = "(uint64_t)luaL_checkinteger";
       break;
 
     case NativeType::CSTR:
@@ -67,6 +67,7 @@ inline auto native_type_lua_conv_check(const NativeType t_type,
       break;
 
       // TODO: Convert to string equivalent for error message.
+    case NativeType::VOID:
     case NativeType::F32:
 
     case NativeType::CHAR:
@@ -99,6 +100,72 @@ inline auto native_type_lua_conv_check(const NativeType t_type,
   return str;
 }
 
+inline auto native_type_lua_conv_push(const NativeType t_type,
+                                      const QuerySpec& t_spec) -> LuaQueryResult
+{
+  std::string str{};
+
+  // FIXME: Currently the C++ fixed width floating point types.
+  // Are not yet supported by clang libc++.
+  // So for now just error out, on these.
+  // Possibly print currently unsupported?
+  switch(t_type) {
+    case NativeType::F64:
+      str = "luaL_pushnumber";
+      break;
+
+    case NativeType::I64:
+      str = "lua_pushinteger";
+      break;
+
+    case NativeType::U64:
+      str = "lua_pushinteger";
+      break;
+
+    case NativeType::CSTR:
+      str = "luaL_pushstring";
+      break;
+
+    case NativeType::BOOL:
+      // Warning: Lua interop backend generated function.
+      str = "luaL_pushboolean";
+      break;
+
+    case NativeType::VOID:
+
+      // TODO: Convert to string equivalent for error message.
+    case NativeType::F32:
+
+    case NativeType::CHAR:
+      // We dont do char functions they are too inefficient.
+
+    case NativeType::INT:
+    case NativeType::I8:
+    case NativeType::I16:
+    case NativeType::I32:
+    case NativeType::ISIZE:
+
+    case NativeType::UINT:
+    case NativeType::U8:
+    case NativeType::U16:
+    case NativeType::U32:
+    case NativeType::USIZE:
+      // TODO: Cleanup to be non shit error message.
+      return std::unexpected{
+        LuaQueryError{LuaQueryErrorType::UNSUPPORTED,
+                      "Native type cant be converted to Lua for reasons!"}
+      };
+      break;
+
+    default:
+      throwf<InvalidArgument>("NativeType could not be converted to Lua: ",
+                              nativetype2str(t_type));
+      break;
+  }
+
+  return str;
+}
+
 /*!
  * @warning Make sure that <cstdint> is included for the fixed width integers.
  */
@@ -110,7 +177,9 @@ inline auto native_type_lua_conv(const NativeType t_type,
   switch(t_spec.m_op) {
     case LuaQueryOp::CHECK:
       return native_type_lua_conv_check(t_type, t_spec);
-      break;
+
+    case LuaQueryOp::PUSH:
+      return native_type_lua_conv_push(t_type, t_spec);
 
     default:
       throwf<InvalidArgument>("Invalid query option.");

@@ -69,6 +69,10 @@ decl struct FILE
   decl func write(fd: int, buf: *ro void, count: usz) -> isz
   decl func close(fd: int) -> int
 
+  // Random:
+  decl func rand() -> i32
+  decl func srand(seed: u32) -> void
+
   // Platform dependent size, todo figure this out.
   // decl func getauxval(type: ulong) -> ulong
   decl func getauxval(aux_type: u64) -> u64
