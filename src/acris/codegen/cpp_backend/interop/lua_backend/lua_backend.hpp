@@ -4,6 +4,7 @@
 // STL Includes:
 #include <sstream>
 #include <vector>
+#include <string_view>
 
 // Absolute Includes:
 #include "acris/codegen/cpp_backend/interop/cpp_interop_backend_interface.hpp"
@@ -53,6 +54,10 @@ class LuaBackend : public CppInteropBackendInterface {
 
   std::string m_module;
   ExportSymbols m_symbols;
+
+  protected:
+  auto generate_binding_function(const std::string_view t_id,
+                                 const FnTypePtr& t_ptr) -> std::string;
 
   public:
   LuaBackend();

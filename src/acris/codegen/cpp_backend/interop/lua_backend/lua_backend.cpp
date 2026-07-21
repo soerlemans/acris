@@ -4,6 +4,7 @@
 #include <format>
 
 // Project Includes:
+#include "acris/codegen/cpp_backend/interop/lua_backend/type_lua_conv.hpp"
 #include "acris/debug/log.hpp"
 #include "acris/diagnostic/diagnostic.hpp"
 
@@ -11,6 +12,46 @@ namespace codegen::cpp_backend::interop::lua_backend {
 LuaBackend::LuaBackend(): m_ss{}, m_module{}, m_symbols{}
 {
   // m_symbols.reserve();
+}
+
+auto LuaBackend::generate_binding_function(const std::string_view t_id,
+                                           const FnTypePtr& t_ptr)
+  -> std::string
+{
+  using diagnostic::throwf_diagnostic;
+
+  std::stringstream ss{};
+
+  // TODO: Generate proper bindings, instead of this lazy stuff.
+  ss << std::format("int lbind_{}", t_id);
+  ss << "(lua_State* t_lstate) {\n"; // Mandatory, required param.
+
+  // extract params:
+  std::size_t index{0};
+  for(const auto& param : t_ptr->m_params) {
+    QuerySpec spec{LuaQueryOp::CHECK}; // Extract paramter value.
+
+    auto result{type_lua_conv(param, spec)};
+    if(!result.has_value()) {
+      DBG_ERROR("Type to Lua conversion query error:", result.error().m_msg);
+
+      throwf_diagnostic("Failed to extract Acris type to Lua equivalent for "
+                        "argument conversion!");
+    }
+
+    ss << std::format("auto p{} = {};\n", index, result.value());
+  }
+
+  /// TODO: Make scaleable.
+  ss << '\t' << t_id << "();\n";
+
+  // TODO: Fix shitty prototype coding.
+  ss << '\t' << "return 0;\n";
+
+  // TODO:
+  ss << "}\n";
+
+  return ss.str();
 }
 
 auto LuaBackend::backend_id() const -> std::string_view
@@ -24,6 +65,12 @@ auto LuaBackend::prologue() -> std::string
 
   ss << "// Lua binding Includes:\n";
   ss << "#include <lua.hpp>\n";
+
+  // They dont provide a luaL_checkboolean so generate it.
+  ss << "inline bool luaL_checkboolean(lua_State* L, int index) {\n";
+  ss << "luaL_checktype(L, index, LUA_TBOOLEAN);\n";
+  ss << "return lua_toboolean(L, index) != 0;\n";
+  ss << "}\n";
 
   return ss.str();
 }
@@ -93,25 +140,7 @@ auto LuaBackend::epilogue() -> std::string
     if(sym.m_type == ExportSymbolType::FUNCTION) {
       FnTypePtr ptr{sym.m_type_ctx.as_function()};
 
-      // TODO: Generate proper bindings, instead of this lazy stuff.
-      ss << std::format("int lbind_{}", sym.m_id) << '(';
-      ss << "lua_State* t_lstate"; // Mandatory.
-
-      // for() {
-      // ss << ", " << <param>;
-      //}
-
-      ss << ")\n" << "{\n";
-			// Body:
-
-			/// TODO: Make scaleable.
-			ss  << '\t'<< sym.m_id << "();\n";
-
-      // TODO: Fix shitty prototype coding.
-      ss << '\t' << "return 0;\n";
-
-      // TODO:
-      ss << "}\n";
+      ss << generate_binding_function(sym.m_id, ptr);
     }
   }
 
