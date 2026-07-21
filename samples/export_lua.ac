@@ -1,0 +1,34 @@
+module export_lua_sample
+
+#<include_once <core/core.ac>
+
+// Export an Acris function to Python.
+// [[export("lua")]]
+func print(t_msg: *ro char) -> void {
+  write_str("Hello from Acris: ")
+  writeln_str(t_msg)
+}
+
+[[export("lua")]]
+func print_number(t_num: u64) -> void {
+  write_str("Hello from Acris: ")
+
+  loop var index = 0; index < t_num; index++ {
+    writeln_str("Count down...")
+  }
+}
+
+[[export("lua")]]
+func l_rand() -> u64 {
+  return rand() to<u32>
+}
+
+[[export("lua")]]
+func l_srand(t_seed: u64) -> void {
+  srand(t_seed to<u32>)
+}
+
+[[export("lua")]]
+func print_hello() -> void {
+  writeln_str("Hello world from Acris!")
+}

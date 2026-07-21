@@ -1,0 +1,203 @@
+#include "lua_backend.hpp"
+
+// STL Includes:
+#include <format>
+
+// Project Includes:
+#include "acris/codegen/cpp_backend/interop/lua_backend/type_lua_conv.hpp"
+#include "acris/debug/log.hpp"
+#include "acris/diagnostic/diagnostic.hpp"
+
+namespace codegen::cpp_backend::interop::lua_backend {
+LuaBackend::LuaBackend(): m_ss{}, m_module{}, m_symbols{}
+{
+  // m_symbols.reserve();
+}
+
+auto LuaBackend::generate_binding_function(const std::string_view t_id,
+                                           const FnTypePtr& t_ptr)
+  -> std::string
+{
+  using diagnostic::throw_diagnostic;
+  using diagnostic::throwf_diagnostic;
+
+  std::stringstream ss{};
+
+  // TODO: Generate proper bindings, instead of this lazy stuff.
+  ss << std::format("int lbind_{}", t_id);
+  ss << "(lua_State* t_lstate) {\n"; // Mandatory, required param.
+
+  // extract params:
+  std::size_t index{0};
+  for(const auto& param : t_ptr->m_params) {
+    QuerySpec spec{LuaQueryOp::CHECK}; // Extract paramter value.
+
+    auto result{type_lua_conv(param, spec)};
+    if(!result.has_value()) {
+      DBG_ERROR("Type to Lua conversion query error:", result.error().m_msg);
+
+      throw_diagnostic("Failed to extract Acris type to Lua equivalent for "
+                       "argument conversion!");
+    }
+
+    ss << std::format("auto p{} = {}(t_lstate, {});\n", index, result.value(),
+                      index + 1);
+  }
+
+  ss << '\t';
+
+  // Extract return value.
+  // TODO: Check unexpected value, and make a difference between UNSUPPORTED.
+  // And NO OP or something.
+  QuerySpec spec{LuaQueryOp::PUSH};
+  auto result{type_lua_conv(t_ptr->m_return_type, spec)};
+  if(result.has_value()) {
+
+    ss << "auto result = ";
+  }
+
+  // Function name.
+  ss << t_id << "(";
+
+  index = 0;
+  std::string_view sep{};
+  for(auto&& _ : t_ptr->m_params) {
+    ss << std::format("{}p{}", sep, index);
+
+    index++;
+    sep = ", ";
+  }
+  ss << ");\n";
+
+  // Return value:
+  std::size_t ret_val_count = 0;
+
+  if(result.has_value()) {
+    ret_val_count++;
+
+    ss << std::format("{}(t_lstate, result);\n", result.value());
+  }
+
+  // TODO: Fix shitty prototype coding.
+  ss << '\t' << std::format("return {};\n", ret_val_count);
+
+  // TODO:
+  ss << "}\n";
+
+  return ss.str();
+}
+
+auto LuaBackend::backend_id() const -> std::string_view
+{
+  return {"lua"};
+}
+
+auto LuaBackend::prologue() -> std::string
+{
+  std::stringstream ss;
+
+  ss << "// Lua binding Includes:\n";
+  ss << "#include <lua.hpp>\n";
+
+  // They dont provide a luaL_checkboolean so generate it.
+  ss << "inline bool luaL_checkboolean(lua_State* L, int index) {\n";
+  ss << "luaL_checktype(L, index, LUA_TBOOLEAN);\n";
+  ss << "return lua_toboolean(L, index) != 0;\n";
+  ss << "}\n";
+
+  return ss.str();
+}
+
+auto LuaBackend::register_module(const std::string_view t_module) -> void
+{
+  using diagnostic::throw_diagnostic;
+  using diagnostic::throwf_diagnostic;
+
+  if(t_module.empty()) {
+    throw_diagnostic(
+      "Empty module name was passed to Lua interopability backend!");
+  }
+
+  // Check first char.
+  if(!std::isalpha((uchar)t_module.front())) {
+    throwf_diagnostic("First character for Lua module name, must be "
+                      "alphabetic (module name {})!",
+                      t_module);
+  }
+
+  // Skip first char.
+  for(const auto ch : t_module.substr(1)) {
+    // if(isalum() && isspace())
+    if(!std::isalnum((uchar)ch) && ch != '_') {
+      throwf_diagnostic(
+        "Lua module name may only contain alphabetics, numerals and "
+        "underscores {} (violating character {})!",
+        t_module, ch);
+    }
+  }
+
+  DBG_INFO("Lua module registered: ", t_module);
+
+  m_module = t_module;
+}
+
+auto LuaBackend::register_constant(const std::string_view t_id,
+                                   VarTypePtr t_var) -> void
+{
+  DBG_INFO("Lua function registered: ", t_id);
+
+  m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::CONSTANT, t_var);
+}
+
+auto LuaBackend::register_variable(const std::string_view t_id,
+                                   VarTypePtr t_var) -> void
+{
+  DBG_INFO("Lua function registered: ", t_id);
+
+  m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::VARIABLE, t_var);
+}
+
+auto LuaBackend::register_function(const std::string_view t_id, FnTypePtr t_fn)
+  -> void
+{
+  DBG_INFO("Lua function registered: ", t_id);
+
+  m_symbols.emplace_back(std::string{t_id}, ExportSymbolType::FUNCTION, t_fn);
+}
+
+auto LuaBackend::epilogue() -> std::string
+{
+  std::stringstream ss;
+
+  for(const auto& sym : m_symbols) {
+    if(sym.m_type == ExportSymbolType::FUNCTION) {
+      FnTypePtr ptr{sym.m_type_ctx.as_function()};
+
+      ss << generate_binding_function(sym.m_id, ptr);
+    }
+  }
+
+  ss << "static const struct luaL_Reg exported_lua_funcs[] = {\n";
+  for(const auto& sym : m_symbols) {
+    if(sym.m_type == ExportSymbolType::FUNCTION) {
+      FnTypePtr ptr{sym.m_type_ctx.as_function()};
+
+      // TODO: Generate proper bindings, instead of this lazy stuff.
+      ss << std::format(R"({{"{}", &lbind_{} }},)", sym.m_id, sym.m_id) << '\n';
+    }
+  }
+
+  ss << "{NULL, NULL}\n";
+  ss << "};\n";
+
+  // TODO: Inject module name.
+  ss << R"(extern "C" {)" << '\n';
+  ss << std::format("int luaopen_{}(lua_State *L) {{\n", m_module);
+  ss << '\t' << "luaL_newlib(L, exported_lua_funcs);\n";
+  ss << '\t' << "return 1;\n";
+  ss << "}\n";
+  ss << "}\n";
+
+  return ss.str();
+}
+} // namespace codegen::cpp_backend::interop::lua_backend

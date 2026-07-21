@@ -20,6 +20,12 @@ namespace {
 using settings::Settings;
 
 // Functions:
+auto add_output_flag(CLI::App& t_app, Settings& t_settings)
+  -> void
+{
+  t_app.add_option("-o,--out", t_settings.m_output_path, "Output path can be a directory or a full name.");
+}
+
 auto add_loglevel_flag([[maybe_unused]] CLI::App& t_app, Settings& t_settings)
   -> void
 {
@@ -170,6 +176,8 @@ auto read_cli_settings(CliParams& t_params, Settings& t_settings) -> void
   // Set the formatter.
   auto fmt{std::make_shared<BannerFormatter>()};
   app.formatter(fmt);
+
+  add_output_flag(app, t_settings);
 
   // Log specific flags:
   add_loglevel_flag(app, t_settings);

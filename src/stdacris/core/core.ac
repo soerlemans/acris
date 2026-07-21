@@ -39,14 +39,14 @@ func panic(t_msg: *ro char) -> void {
   abort()
 }
 
-// TODO: Should be macros later.
-func assert(t_expr: bool) -> void {
+// TODO: Should be macros later, so the passed condition can be listed.
+func acris_assert(t_expr: bool) -> void {
   if(t_expr == false) {
     panic("(Assertion failed)")
   }
 }
 
-func assert_msg(t_expr: bool, t_msg: *ro char) -> void {
+func acris_assert_msg(t_expr: bool, t_msg: *ro char) -> void {
   if(t_expr == false) {
     // TODO: Signify an assertion failed explicitly.
     panic(t_msg)

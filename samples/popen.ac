@@ -1,0 +1,29 @@
+module popen_sample
+
+#<include_once <core/core.ac>
+
+func main() -> int {
+  var buffer: [char; 128]
+
+  var pipe = popen("ls -l", "r")
+
+  // TODO: Still need to implement null comparison.
+  if pipe {
+  } else {
+    return 1
+  }
+
+  loop {
+    let result = fgets(&buffer, 128, pipe)
+    if result {
+      let ro_buf = (&buffer) to<*ro char>
+
+      write_str("Output: ")
+      write_str(ro_buf)
+    }else {
+      break
+    }
+  }
+
+  pclose(pipe)
+}

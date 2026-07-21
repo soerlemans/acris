@@ -13,6 +13,10 @@ auto interopbackend2str(InteropBackend t_type) -> std::string_view
     case InteropBackend::LUA_INTEROP_BACKEND:
       return "lua";
 
+      // OCaml has a C FFI.
+    case InteropBackend::OCAML_INTEROP_BACKEND:
+      return "ocaml";
+
     case InteropBackend::JS_INTEROP_BACKEND:
       return "javascript";
 

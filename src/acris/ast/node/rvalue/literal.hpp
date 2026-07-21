@@ -1,16 +1,19 @@
 #ifndef ACRIS_ACRIS_AST_NODE_RVALUE_LITERAL_HPP
 #define ACRIS_ACRIS_AST_NODE_RVALUE_LITERAL_HPP
 
-// Includes:
-#include "../node_interface.hpp"
+// Relative Includes:
+#include "../node_traits/include.hpp"
 
 // Local Includes:
 #include "fdecl.hpp"
 
 namespace ast::node::rvalue {
+// Using:
+using node_traits::TypeData;
+
 // Classes:
 template<typename T>
-class Literal : public NodeInterface {
+class Literal : public TypeData {
   private:
   T m_value;
 
@@ -19,7 +22,7 @@ class Literal : public NodeInterface {
   Literal(const T t_value): m_value{t_value}
   {}
 
-  auto get() -> T
+  auto get() const -> T
   {
     return m_value;
   }

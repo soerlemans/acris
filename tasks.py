@@ -54,15 +54,15 @@ def run(t_context, t_cmd: str, **kwargs):
     return t_context.run(t_cmd, pty=True)
 
 
-def cmake_parallel_arg(t_parallel: bool) -> str:
+def cmake_parallel_arg(t_jobs: int) -> str:
     "Get the cmake arguments for building with multiple threads."
     arg = ""
-    if t_parallel:
+    if t_jobs == -1:
         # TODO: Fix halts my computer.
-        # max_jobs = multiprocessing.cpu_count() // 3
-        # arg = f'--parallel {max_jobs}'
-
-        arg = f"--parallel 4 "
+        max_jobs = multiprocessing.cpu_count() // 8
+        arg = f'--parallel {max_jobs}'
+    else:
+        arg = f'--parallel {t_jobs}'
         pass
 
     return arg
@@ -108,14 +108,14 @@ def cmake(
     t_ctx,
     t_mode: str,
     t_static=False,
-    t_parallel=False,
+    t_jobs=1,
     t_platform="",
     t_arch="",
     t_lint=False,
     t_ci_build=False,
 ):
     "TODO: Document."
-    parallel_arg = cmake_parallel_arg(t_parallel)
+    parallel_arg = cmake_parallel_arg(t_jobs)
     build_args = cmake_mode_args(t_mode)
 
     # Compile project statically.
@@ -140,7 +140,11 @@ def cmake(
 
     # Always print version info.
     run(t_ctx, "cmake --version")
+
+    print(f"@cmake -S . -B {t_mode}/ {build_args}")
     run(t_ctx, f"cmake -S . -B {t_mode}/ {build_args}")
+
+    print(f"@cmake --build {t_mode}/ {parallel_arg}")
     run(t_ctx, f"cmake --build {t_mode}/ {parallel_arg}")
     pass
 
@@ -155,25 +159,25 @@ def help(ctx):
 
 
 @task
-def all(ctx, parallel=True, lint=False):
+def all(ctx, jobs=1, lint=False):
     log("Building all.")
-    log_args(parallel=parallel, lint=lint)
+    log_args(jobs=jobs, lint=lint)
 
     for mode in BuildProfile:
         print(f"@Invoke: Building '{mode}'")
-        build(ctx, mode, parallel)
+        build(ctx, mode, jobs)
         pass
     pass
 
 
 @task
-def install(ctx, mode="", static=False, parallel=True, lint=False):
+def install(ctx, mode="", static=False, jobs=1, lint=False):
     log("Building project.")
-    log_args(mode=mode, parallel=parallel, lint=lint)
+    log_args(mode=mode, jobs=jobs, lint=lint)
 
     enum_values = [item.value for item in BuildProfile]
     mode = mode if mode in enum_values else "build"
-    cmake(ctx, mode, t_static=static, t_parallel=parallel, t_lint=lint)
+    cmake(ctx, mode, t_static=static, t_jobs=jobs, t_lint=lint)
 
     # TODO: Check if the build made it or not.
     # TODO: Copy transpiler from Mode install location to /usr/local/bin/
@@ -210,7 +214,7 @@ def uninstall(ctx):
 @task(
     help={
         "mode": "",
-        "parallel": "Flag indicating concurrent builds.",
+        "jobs": "Flag indicating how many max concurrent build jobs to schedule.",
         "lint": "Perform static analysis on source code using clang-tidy",
     }
 )
@@ -218,7 +222,7 @@ def build(
     ctx,
     mode="build",
     static=False,
-    parallel=True,
+    jobs=1,
     platform="",
     arch="",
     lint=False,
@@ -233,21 +237,21 @@ def build(
     log_args(
         mode=mode,
         static=static,
-        parallel=parallel,
+        jobs=jobs,
         platform=platform,
         arch=arch,
         lint=lint,
         ci_build=ci_build,
     )
 
-    cmake(ctx, mode, static, parallel, platform, arch, lint, ci_build)
+    cmake(ctx, mode, static, jobs, platform, arch, lint, ci_build)
     pass
 
 
 def release(
     ctx,
     static=False,
-    parallel=True,
+    jobs=1,
     platform="",
     arch="",
     ci_build=False,
@@ -261,13 +265,13 @@ def release(
     log_args(
         mode="build",
         static=static,
-        parallel=parallel,
+        jobs=jobs,
         platform=platform,
         arch=arch,
         ci_build=ci_build,
     )
 
-    cmake(ctx, "build", static, parallel, platform, arch, False, ci_build)
+    cmake(ctx, "build", static, jobs, platform, arch, False, ci_build)
     pass
 
 

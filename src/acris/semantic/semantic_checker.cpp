@@ -105,7 +105,13 @@ auto SemanticChecker::add_symbol_declaration(const std::string_view t_key,
     std::stringstream ss{};
     switch(symbol.m_status) {
       case SymbolStatus::DECLARED:
+        if(t_data.is_struct()) {
+          DBG_INFO("Opaque struct ", std::quoted(t_key),
+                   " skip check for conflicting types.");
+          break;
+        }
         [[fallthrough]];
+
       case SymbolStatus::DEFINED: {
         // Check for conflicting.
         if(t_data != symbol.m_data) {
@@ -323,15 +329,22 @@ auto SemanticChecker::visit(If* t_if) -> Any
 
 auto SemanticChecker::visit(Loop* t_loop) -> Any
 {
-  // Init expression must be evaluated before condition.
-  traverse(t_loop->init_expr());
+  const auto init_expr{t_loop->init_expr()};
+  const auto post_expr{t_loop->expr()};
+  const auto cond{t_loop->condition()};
+
+  // Init expression is optional.
+  if(init_expr) {
+    traverse(init_expr);
+  }
+
 
   // A loops condition maybe empty, which is an endless loop.
-  if(t_loop->condition()) {
-    const auto cond{get_symbol_data(t_loop->condition())};
-    DBG_INFO("Condition: ", cond);
+  if(cond) {
+    const auto cond_data{get_symbol_data(cond)};
+    DBG_INFO("Condition: ", cond_data);
 
-    const auto cond_res{cond.resolve_result_type()};
+    const auto cond_res{cond_data.resolve_result_type()};
     DBG_INFO("Condition resolved: ", cond_res);
 
     const auto pos{t_loop->position()};
@@ -340,7 +353,9 @@ auto SemanticChecker::visit(Loop* t_loop) -> Any
 
   push_env();
   traverse(t_loop->body());
-  traverse(t_loop->expr());
+  if(post_expr) {
+    traverse(post_expr);
+  }
   pop_env();
 
   return {};
@@ -350,7 +365,7 @@ auto SemanticChecker::visit(Switch* t_sw) -> Any
 {
   // TODO: Check if this type can be used in switch.
   // E.g enum, pointer, integer, bool, etc.
-  const auto cond{get_symbol_data(t_sw->condition())};
+  const auto cond_data{get_symbol_data(t_sw->condition())};
   traverse(t_sw->body());
 
   return {};
@@ -374,13 +389,12 @@ auto SemanticChecker::visit(SwitchElse* t_else) -> Any
   return {};
 }
 
-auto SemanticChecker::visit(Fallthrough* t_ft) -> Any
+auto SemanticChecker::visit([[maybe_unused]] Fallthrough* t_ft) -> Any
 {
-  // TODO:.
+  // TODO: Maybe check for duplicate fallthroug's?
 
   return {};
 }
-
 
 AST_VISITOR_STUB(SemanticChecker, Continue)
 AST_VISITOR_STUB(SemanticChecker, Break)
@@ -466,9 +480,11 @@ auto SemanticChecker::visit(FunctionCall* t_fn_call) -> Any
   const auto params{fn->m_params};
   const auto return_type{fn->m_return_type};
 
-  if(args != params) {
-    std::stringstream ss;
+  const auto args_size{args.size()};
+  const auto params_size{params.size()};
 
+  std::ostringstream ss{};
+  const auto error_out{[&]() {
     ss << "Arguments passed to " << std::quoted(id)
        << " do not match parameters.\n";
 
@@ -478,6 +494,35 @@ auto SemanticChecker::visit(FunctionCall* t_fn_call) -> Any
     ss << "FunctionCall signature: " << id << "(" << args << ")";
 
     throw_type_error(ss.str());
+  }};
+
+  // TODO: Bloat.
+  if(args_size > params_size) {
+    const auto excess{args_size - params_size};
+    ss << std::format("Passed {} more arguments then expected to function.\n\n",
+                      excess);
+
+    error_out();
+  }
+
+  if(params_size > args_size) {
+    const auto lack{params_size - params_size};
+    ss << std::format("Function expects {} more arguments then given.\n\n",
+                      lack);
+
+    error_out();
+  }
+
+  // We have already guarenteed equal count at this point.
+  auto iter{args.begin()};
+  for(auto& param : params) {
+    const auto& arg{*iter};
+
+    if(arg != param) {
+      error_out();
+    }
+
+    iter++;
   }
 
   return fn->m_return_type;
@@ -587,6 +632,11 @@ auto SemanticChecker::visit(Subscript* t_subscript) -> Any
 
   // TODO: Move to type validator.
   // TODO: Check index data if numeric.
+  // TODO: Currently this breaks as when we return a native type in this case.
+  // We lose all info about if this is a lvalue or rvalue so assigning to a
+  // array subscript is currently broken.
+  // We need to fix this and likely expand SymbolData to keep track of the
+  // LValue in the specific context.
   DBG_INFO("Subscript of type ", var_data);
 
   auto result_data{var_data.resolve_result_type()};
@@ -667,8 +717,22 @@ auto SemanticChecker::visit(Attribute* t_attr) -> Any
   const auto params{t_attr->params()};
   const auto body{t_attr->body()};
 
-  // TODO: Resolve parameters, and get them as strings.
+  DBG_INFO("Attribute: ", id);
+
   AttributeArgs args{};
+  for(const auto& param : *params) {
+    const auto* str{dynamic_cast<String*>(param.get())};
+    if(!str) {
+      // TODO: Support a scala of stuff, maybe even later move this into.
+      // The compile time resolution phase of the compiler.
+      // (Currently non existant as of writing).
+      throw_type_error(
+        "Attributes only support String arguments as of writing.");
+    }
+
+    args.emplace_back(str->get());
+  }
+
   AttributeMetadata attr{id, std::move(args)};
 
   // Annotate attribute.
@@ -742,6 +806,25 @@ auto SemanticChecker::visit(FunctionDecl* t_fdecl) -> Any
   // Annotate AST.
   m_annot_queue.push({t_fdecl, data});
   annotate_attr(t_fdecl);
+
+  return {};
+}
+
+auto SemanticChecker::visit(StructDecl* t_sdecl) -> Any
+{
+  using types::symbol::make_struct;
+
+  const std::string id{t_sdecl->identifier()};
+
+  // Register opaque struct.
+  const SymbolData struct_data{make_struct(id)};
+
+  add_symbol_declaration(id, struct_data);
+  DBG_INFO("StructDecl: ", id);
+
+  // TODO: Figure this stuff out, attributes should be allowed.
+  // But maybe no TypeData annotation for opaque structs?
+  annotate_attr(t_sdecl);
 
   return {};
 }
@@ -1024,13 +1107,16 @@ auto SemanticChecker::visit([[maybe_unused]] ArrayExpr* t_arr) -> Any
 
   const auto size{list->size()};
 
-  auto symbol_data{make_array(type, size)};
+  auto array_data{make_array(type, size)};
 
-  return symbol_data;
+  // Annotate AST.
+  m_annot_queue.push({t_arr, array_data});
+
+  return array_data;
 }
 
 // User Types:
-auto SemanticChecker::visit(EnumField* t_field) -> Any
+auto SemanticChecker::visit([[maybe_unused]] EnumField* t_field) -> Any
 {
   // TODO: When we have assignment of values check.
 

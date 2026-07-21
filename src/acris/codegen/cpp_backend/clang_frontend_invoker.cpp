@@ -1,6 +1,7 @@
 #include "clang_frontend_invoker.hpp"
 
 // STL Includes:
+#include <cstdio>
 #include <cstdlib>
 #include <format>
 #include <iomanip>
@@ -10,6 +11,7 @@
 
 // Local Includes:
 #include "acris/debug/log.hpp"
+#include "lib/stdexcept/stdexcept.hpp"
 #include "lib/stdtypes.hpp"
 #include "lib/string_util.hpp"
 
@@ -48,7 +50,7 @@ auto ClangFrontendInvoker::set_out(const std::string_view t_out) -> void
 }
 
 // Public Methods:
-auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
+auto ClangFrontendInvoker::compile(const fs::path& t_source) -> void
 {
   fs::path source{t_source};
   source.make_preferred();
@@ -75,9 +77,15 @@ auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
 #ifndef NDEBUG
   DBG_PRINTLN("# C++ codegeneration:");
 
-  const auto cmd_cat{
-    std::format("clang-format --style=Google < {}", t_source.c_str())};
-  std::system(cmd_cat.c_str());
+	// Do inplace.
+  const auto cmd_format{
+    std::format("clang-format -i --style=Google {}", t_source.c_str())};
+  std::system(cmd_format.c_str());
+
+	// We use bat cause I am a lazy solo dev and want color.
+  const auto cmd_bat{
+    std::format("bat --color=always {} | cat", t_source.c_str())};
+  std::system(cmd_bat.c_str());
 
   DBG_PRINTLN();
 #endif // NDEBUG
@@ -91,7 +99,7 @@ auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
 
   // List version of compiler used.
   // We use G++ at the moment as it supports more of C++23.
-  const auto cpp_compiler{R"("${CXX:-g++}")"sv};
+  const auto cpp_compiler{shell_getline(R"(echo "${CXX:-g++}")")};
 
   const auto flags{m_compiler_flags.view()};
   const auto cmd{std::format("export SRC_STEM=\"{}\"; {} {} {} -o {}",
@@ -108,5 +116,68 @@ auto ClangFrontendInvoker::compile(const fs::path &t_source) -> void
 
     // TODO: Throw an exception. Or maybe not?
   }
+}
+
+// TODO: Test/fully implement.
+auto shell_exec(std::string t_cmd) -> ProcessResult
+{
+  using lib::stdexcept::RuntimeError;
+  using lib::stdexcept::throwf;
+
+  ProcessResult result{};
+  std::array<char, 512> buf{};
+
+  // Do an estimate for now.
+  result.m_stdout.reserve(10);
+
+#if defined(_WIN32)
+  auto* pipe = _popen(t_cmd.c_str(), "r");
+#else
+  auto* pipe = popen(t_cmd.c_str(), "r");
+#endif
+
+  if(!pipe) {
+    throwf<RuntimeError>("Failed to run command: {}", t_cmd);
+  }
+
+  std::string line{};
+  while(std::fgets(buf.data(), buf.size(), pipe) != nullptr) {
+    std::string line{buf.data()};
+
+    if(!line.empty() && line.back() == '\n') {
+      line.pop_back();
+
+      // We have a full line push back.
+      result.m_stdout.push_back(line);
+      line.clear();
+    }
+  }
+
+#if defined(_WIN32)
+  result.m_exit_code = _pclose(pipe);
+#else
+  int rc = pclose(pipe);
+  result.m_exit_code = WEXITSTATUS(rc);
+#endif
+
+  return result;
+}
+
+auto shell_getline(std::string t_cmd) -> std::string
+{
+  using lib::stdexcept::RuntimeError;
+  using lib::stdexcept::throwf;
+
+  auto [err, stdout] = shell_exec(t_cmd);
+  if(err != 0) {
+    throwf<RuntimeError>(
+      "Failed to run command: \"{}\", returned error code ({}).", t_cmd, err);
+  }
+
+  if(stdout.empty()) {
+    throwf<RuntimeError>("Command: \"{}\" didnt return any output.", t_cmd);
+  }
+
+  return stdout.front();
 }
 } // namespace codegen::cpp_backend

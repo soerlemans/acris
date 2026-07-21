@@ -23,14 +23,21 @@ using AttributeSeq = std::vector<AttributeMetadata>;
 
 // Enums:
 enum class AttributeType {
+  // clang-format off
   NO_ATTRIBUTE, //!< If no attribute is given.
 
   // Common builtin
-  INLINE,
-  DEPRECATED,
-  EXTERN,
+  INLINE,     //!< Enforce inling of function.
+  DEPRECATED, //!< Warn when using a deprecated function, or error.
+  EXPORT,     //!< Export a function to somewhere external.
+  EXTERN,     //!< Define a symbol as being linked externally.
+
+	// Meta code insertion (hacky compiler dev only).
+  NO_CODEGEN,       //!< Purely semantic AST node, skips node during code generation.
+  OVERRIDE_CODEGEN, //!< Generate code for a specific backend.
 
   UNKNOWN //!< Reserved for third party attributes.
+	// clang-format off
 };
 
 // Structs:

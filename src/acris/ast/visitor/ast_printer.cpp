@@ -173,6 +173,8 @@ auto AstPrinter::visit(FunctionDecl* t_fdecl) -> Any
   return {};
 }
 
+DEFINE_PRINTER_METHOD(StructDecl)
+
 // Operators:
 auto AstPrinter::visit(Arithmetic* t_arith) -> Any
 {

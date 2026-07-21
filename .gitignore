@@ -1,5 +1,5 @@
-# Do not include crow.toml files.
-crow.toml
+# Do not include acris.toml files.
+acris.toml
 
 # Do not include emacs temp files.
 .#*
@@ -44,7 +44,7 @@ crow.toml
 .gdb_history
 
 # Generated version header:
-src/crow/definitions.hpp
+src/acris/definitions.hpp
 
 # Ignore any MacOS specific debug folders. 
 *.dSYM/*
@@ -62,3 +62,12 @@ doxygen/*
 # Ignore Python environment:
 __pycache__/
 .venv/
+
+# Ignore when compile_commands.json is copied or linked in project dir root.
+**/compile_commands.json
+
+# Also ignore clangd cache.
+.cache
+
+# Also ignore .vscode cache.
+.vscode

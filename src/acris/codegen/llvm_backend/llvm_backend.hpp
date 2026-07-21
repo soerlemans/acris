@@ -70,6 +70,8 @@ using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
 // Classes:
 class LlvmBackend : public MirPass, public BackendInterface {
   private:
+  BackendContext m_ctx;
+
   LlvmContextPtr m_context;
   LlvmIrBuilderPtr m_builder;
   LlvmModulePtr m_module;
@@ -131,6 +133,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
   // Util:
   auto initialize_target() -> void;
   auto dump_ir(std::ostream& t_os) -> void;
+
+  auto set_context(BackendContext t_ctx) -> void override;
 
   //! LLVM backend as of writing supports no interop.
   auto register_interop_backend([[maybe_unused]] InteropBackend t_type)

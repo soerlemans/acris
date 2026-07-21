@@ -35,6 +35,7 @@ enum class InteropBackend {
   C_INTEROP_BACKEND,
   PYTHON_INTEROP_BACKEND,
   LUA_INTEROP_BACKEND,
+  OCAML_INTEROP_BACKEND,
   JS_INTEROP_BACKEND,
 };
 
@@ -45,6 +46,8 @@ enum class InteropBackend {
 class InteropBackendInterface {
   public:
   InteropBackendInterface() = default;
+
+  virtual auto backend_id() const -> std::string_view = 0;
 
   virtual ~InteropBackendInterface() = default;
 };

@@ -70,6 +70,7 @@ STUB(Attribute)
 STUB(LetDecl)
 STUB(VarDecl)
 STUB(FunctionDecl)
+STUB(StructDecl)
 
 // BinaryOperator:
 STUB(Arithmetic)

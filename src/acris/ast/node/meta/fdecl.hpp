@@ -3,6 +3,7 @@
 
 namespace ast::node::meta {
 // Forward Declarations:
+class StructDecl;
 class FunctionDecl;
 class LetDecl;
 class VarDecl;

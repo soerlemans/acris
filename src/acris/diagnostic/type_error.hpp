@@ -20,7 +20,7 @@ class TypeError : public DiagnosticError {
 template<typename... Args>
 inline auto throw_type_error(Args&&... t_args) -> void
 {
-  throw_diagnostic_error<TypeError>(std::forward<Args>(t_args)...);
+  throw_diagnostic<TypeError>(std::forward<Args>(t_args)...);
 }
 } // namespace diagnostic
 

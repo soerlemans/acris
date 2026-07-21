@@ -1,6 +1,7 @@
 #include "cpp_backend.hpp"
 
 // STL Includes:
+#include <algorithm>
 #include <format>
 #include <fstream>
 #include <sstream>
@@ -11,6 +12,7 @@
 
 // Absolute Includes:
 #include "acris/ast/node/include_nodes.hpp"
+#include "acris/codegen/cpp_backend/interop/lua_backend/lua_backend.hpp"
 #include "acris/codegen/cpp_backend/interop/python_backend/python_backend.hpp"
 #include "acris/debug/log.hpp"
 #include "lib/stdexcept/stdexcept.hpp"
@@ -36,7 +38,15 @@ auto CppBackend::prologue() -> std::string
   // Acris's native types often translate.
   // To C++ fixed width integers and floats.
   oss << "// STL Includes:\n";
-  // oss << "#include <stdfloat>\n"; // TODO: Uncommnet when supported by clang.
+
+	// TODO: Uncommnet when supported by clang.
+  // oss << "#include <stdfloat>\n";
+
+  // We include cstdio for FILE struct as we cant forward declare it.
+  oss << "#include <cstdio>\n";
+
+	// We need fixed width integer definitions.
+  oss << "#include <cstdint>\n";
   oss << "\n";
 
   oss << "// Stdacris Includes:\n";
@@ -128,9 +138,13 @@ auto CppBackend::resolve_list(NodeListPtr t_list, const bool t_terminate)
   return oss.str();
 }
 
+auto CppBackend::handle_attribute_export() -> void
+{}
+
 // Public:
 CppBackend::CppBackend()
   : m_inv{},
+    m_ctx{},
     m_session{},
     m_interop_backends{},
     m_terminate{},
@@ -285,12 +299,59 @@ auto CppBackend::visit(Parameter* t_param) -> Any
 
 auto CppBackend::visit(Function* t_fn) -> Any
 {
+  using lib::stdexcept::InvalidArgument;
+  using lib::stdexcept::throwf;
   using node::node_traits::AttributeType;
 
   const auto identifier{t_fn->identifier()};
+  const auto attributes{t_fn->get_attributes()};
 
   const auto fn_type{t_fn->get_type().as_function()};
   const auto ret_type{type_spec2cpp({fn_type->m_return_type})};
+
+  std::ostringstream oss{};
+
+  // Attribute insertion:
+  // TODO: Move to a  generic function implementation (Method will need to use
+  // this as well).
+  for(const auto& attr : attributes) {
+    switch(attr.m_type) {
+      case AttributeType::INLINE:
+        oss << "inline\n";
+        break;
+
+      case AttributeType::EXPORT: {
+        auto& args{attr.m_args};
+        if(args.size() != 1) {
+          throwf<InvalidArgument>(
+            "Attribute: Export expects exactly one parameter "
+            "denoting the language to export to.");
+        }
+
+        const auto& target_lang{args.front()};
+        for(auto& iback : m_interop_backends) {
+          const auto iback_id{iback->backend_id()};
+
+          if(target_lang == iback_id) {
+            // FIXME: We should do this by looping through the toplevel.
+            // Of the SymbolTable instead.
+            // As the symboltable should also have attribute data.
+            // And this is expensive and shitty.
+
+            // We only expect a single target language for now so lazy is good.
+            iback->register_function(identifier, fn_type);
+            break;
+          }
+        }
+
+        break;
+      }
+
+      default:
+        // Unhandled ignore.
+        break;
+    }
+  }
 
   std::ostringstream param_ss{};
 
@@ -302,16 +363,6 @@ auto CppBackend::visit(Function* t_fn) -> Any
     sep = ", ";
   }
 
-  std::ostringstream oss{};
-
-  // Attribute insertion:
-  const auto attrs{t_fn->get_attributes()};
-  for(const auto& attr : attrs) {
-    if(attr.m_type == AttributeType::INLINE) {
-      oss << "inline\n";
-    }
-  }
-
   // clang-format off
 	// We use regular function syntax instead trailing return type.
 	// Cause trailing return
@@ -320,13 +371,6 @@ auto CppBackend::visit(Function* t_fn) -> Any
 		 << resolve_list(t_fn->body(), true)
      << "}\n";
   // clang-format on
-
-  // FIXME: We should do this by looping through the toplevel.
-  // Of the SymbolTable instead.
-  // Register function to interop backend.
-  for(auto& ptr : m_interop_backends) {
-    ptr->register_function(identifier);
-  }
 
   return oss.str();
 }
@@ -461,7 +505,7 @@ auto CppBackend::visit(Attribute* t_attr) -> Any
 
   // TODO: This should probably be somewhere else.
   // Also we should not allow the extern attribute, inside of function
-  // bodies.
+  // bodies, for example attributes for variables.
   const auto attrs{t_attr->get_attributes()};
   for(const auto& attr : attrs) {
     switch(attr.m_type) {
@@ -521,6 +565,43 @@ auto CppBackend::visit(FunctionDecl* t_fdecl) -> Any
   }
 
   return std::format("{} {}({});\n", ret_type, identifier, param_ss.str());
+}
+
+auto CppBackend::visit(StructDecl* t_sdecl) -> Any
+{
+  const auto struct_id{t_sdecl->identifier()};
+
+  const auto attrs{t_sdecl->get_attributes()};
+  for(const auto& attr : attrs) {
+    switch(attr.m_type) {
+      case AttributeType::NO_CODEGEN:
+        // No generation means no code for statement.
+        return std::string{};
+
+      case AttributeType::OVERRIDE_CODEGEN: {
+        // TODO: Fix this shitty hack.
+        if(attr.m_args.size() != 2) {
+          // TODO: Throw.
+        }
+        const auto& target_backend{attr.m_args.front()};
+        if(target_backend == "cpp") {
+          const auto& override_code{attr.m_args[1]};
+
+          // Replace regular generated code.
+          return override_code;
+        }
+      }
+
+      default:
+        // TODO: error.
+        break;
+    }
+  }
+
+  // Need to have attributes affect StructDecl, and skip forward declaration.
+  // On MacOS X as it breaks for forward declaring FILE in extern C context.
+  // See libc.ac.
+  return std::format("struct {}{}", struct_id, terminate());
 }
 
 // Operators:
@@ -700,7 +781,10 @@ auto CppBackend::visit(ArrayExpr* t_arr) -> Any
 
   const auto list{t_arr->get()};
 
-  oss << '{';
+  const auto type_variant{t_arr->get_type()};
+  const auto elem_type{type_spec2cpp({type_variant})};
+
+  oss << "stdlibacris::internal::InitList((" << elem_type << "[]){";
 
   std::string_view sep{};
   for(NodePtr& elem : *list) {
@@ -709,7 +793,7 @@ auto CppBackend::visit(ArrayExpr* t_arr) -> Any
     sep = ", ";
   }
 
-  oss << '}' << terminate();
+  oss << "}, " << list->size() << ")" << terminate();
 
   return oss.str();
 }
@@ -927,39 +1011,64 @@ auto CppBackend::visit([[maybe_unused]] NodeInterface* t_node) -> Any
 }
 
 // Util:
+auto CppBackend::set_context(BackendContext t_ctx) -> void
+{
+  m_ctx = std::move(t_ctx);
+}
+
 auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
 {
   namespace py_interop = cpp_backend::interop::python_backend;
+  namespace lua_interop = cpp_backend::interop::lua_backend;
 
   CppInteropBackendPtr ptr{};
 
+  const auto module_name{m_ctx.m_output_path.stem().native()};
+  DBG_INFO("Module name: ", module_name);
+
   switch(t_type) {
-    case InteropBackend::PYTHON_INTEROP_BACKEND:
+    case InteropBackend::PYTHON_INTEROP_BACKEND: {
       ptr = std::make_shared<py_interop::PythonBackend>();
 
       // Add compiler flags for compiling python3 support.
-      m_inv.add_flags("-shared -fPIC $(python3 -m pybind11 --includes)");
+      const auto includes{shell_getline("python3 -m pybind11 --includes")};
+      m_inv.add_flags(std::format("-shared -fPIC {}", includes));
 
-      // TODO: Find a cleaner way to utilize environment
-      // variables. Maybe register environment variables for
-      // later usage.
+      const auto python_ldflags{shell_getline("python3-config --ldflags")};
+      m_inv.add_flags(python_ldflags);
 
-      // Set the out file (SRC_STEM is set in
-      // ClangFrontendInvoker).
-      // clang-format off
-      // m_inv.set_out("acris_${SRC_STEM:-cpython}_export$(python3-config --extension-suffix)");
-      // clang-format on
-      m_inv.set_out("acris_export$(python3-config "
-                    "--extension-suffix)");
+      // TODO: Use this for MACOS.
+      auto framework_prefix{shell_getline(
+        "python3 -c \"import sysconfig; "
+        "print(sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX'))\"")};
+      auto framework_name{
+        shell_getline("python3 -c \"import sysconfig; "
+                      "print(sysconfig.get_config_var('PYTHONFRAMEWORK'))\"")};
+
+      // Need to gete actual outpath to properly generate this and not depend on
+      // SRC_STEM or similar.
+      const auto pybind11_extension_suffix{
+        shell_getline("python3 -m pybind11 --extension-suffix")};
+      m_inv.set_out(
+        std::format("{}{}", module_name, pybind11_extension_suffix));
       break;
+    }
 
       // case InteropBackend::LUA_INTEROP_BACKEND:
       //   break;
 
       // Fallthrough all the way to default.
+    case InteropBackend::LUA_INTEROP_BACKEND: {
+      ptr = std::make_shared<lua_interop::LuaBackend>();
+
+      const auto lua_flags{shell_getline("pkg-config --cflags --libs lua5.4")};
+      m_inv.add_flags(std::format("-shared -fPIC {}", lua_flags));
+
+      m_inv.set_out(std::format("{}.so", module_name));
+      break;
+    }
+
     case InteropBackend::C_INTEROP_BACKEND:
-      [[fallthrough]];
-    case InteropBackend::LUA_INTEROP_BACKEND:
       [[fallthrough]];
     case InteropBackend::JS_INTEROP_BACKEND: {
       const auto err_msg{std::format("Unsupported interopability backend "
@@ -977,6 +1086,9 @@ auto CppBackend::register_interop_backend(const InteropBackend t_type) -> void
       break;
     }
   }
+
+  // Backends have their own set of constraints for module names.
+  ptr->register_module(module_name);
 
   // Add the backend at the end.
   m_interop_backends.emplace_back(ptr);
@@ -1049,12 +1161,14 @@ auto CppBackend::requires_mir() -> bool
 
 auto CppBackend::compile(CompileParams& t_params) -> void
 {
-  const auto& [session, ast, mir, build_dir, source_path] = t_params;
+  const auto& [session, ast, mir, source_path] = t_params;
 
   // TODO: Check for nullptr?
   m_session = session;
 
   fs::path stem{source_path.stem()};
+
+  const fs::path build_dir{m_ctx.m_build_dir};
   const fs::path tmp_src{build_dir / stem.concat(".cpp")};
 
   // Log filepath's:

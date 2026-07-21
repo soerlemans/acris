@@ -43,8 +43,14 @@ static auto run(const settings::Settings& t_settings) -> void
   auto session{make_session_unit(t_settings.m_mdefs, t_settings.m_no_libc)};
 
   // Init build unit.
-  BuildUnitParams params{
-    t_settings.m_backend, t_settings.m_ibackends, t_settings.m_olevel, {}};
+  BuildUnitParams params{};
+
+  params.m_backend_selector = t_settings.m_backend;
+  params.m_interop_selectors = t_settings.m_ibackends;
+  params.m_olevel = t_settings.m_olevel;
+  params.m_output_path = t_settings.m_output_path;
+  params.m_build_dir = std::nullopt;
+
   auto build_unit{make_build_unit(params)};
 
   // For now just compile all translation units, sequentially.
@@ -55,10 +61,10 @@ static auto run(const settings::Settings& t_settings) -> void
   }
 }
 
-/*
+/*!
  *
  */
-inline auto report_issue() -> void
+inline static auto report_issue() -> void
 {
   using rang::fg;
   using rang::style;

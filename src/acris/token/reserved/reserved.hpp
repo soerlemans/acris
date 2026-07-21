@@ -37,7 +37,7 @@ namespace keywords {
   // Package:
   DEFINE_TERMINAL(g_module, "module", MODULE);
   DEFINE_TERMINAL(g_import, "import", IMPORT);
-  DEFINE_TERMINAL(g_export, "export", EXPORT);
+  // DEFINE_TERMINAL(g_export, "export", EXPORT); // Used for attribute now.
 
 	// Meta:
 	// TODO: Consider renaming to just decl.
@@ -53,7 +53,8 @@ namespace keywords {
   DEFINE_TERMINAL(g_comp,  "comp",  COMP); // Compile time constants.
 
   // User Types:
-  DEFINE_TERMINAL(g_alias,  "alias",  ALIAS);
+  DEFINE_TERMINAL(g_use,    "use",    USE);
+  DEFINE_TERMINAL(g_type,   "type",   TYPE);
   DEFINE_TERMINAL(g_enum,   "enum",   ENUM);
   DEFINE_TERMINAL(g_iota,   "iota",   IOTA);
   DEFINE_TERMINAL(g_union,  "union",  UNION);
@@ -143,11 +144,12 @@ namespace keywords {
 
   const std::map g_keywords {
     g_let.pair(), g_var.pair(), g_readonly.pair(),
-    g_module.pair(), g_import.pair(), g_export.pair(),
+    g_module.pair(), g_import.pair(),
+    // g_export.pair(),
     g_declare.pair(), g_macro.pair(), g_const.pair(),
-    g_alias.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
-		g_proto.pair(),
-		g_to.pair(),
+    g_use.pair(), g_type.pair(), g_enum.pair(), g_union.pair(), g_struct.pair(), g_self.pair(),
+    g_proto.pair(),
+    g_to.pair(),
     g_func.pair(),
     g_switch.pair(), g_case.pair(), g_fallthrough.pair(),
     g_match.pair(),

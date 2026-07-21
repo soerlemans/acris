@@ -18,3 +18,6 @@ include(cmake/dependencies/cli11.cmake)
 include(cmake/dependencies/llvm.cmake)
 # include(cmake/dependencies/lld.cmake)
 include(cmake/dependencies/clang.cmake)
+
+# We will use Lua for build system.
+include(cmake/dependencies/lua.cmake)

@@ -17,8 +17,8 @@ namespace codegen::cpp_backend {
 namespace node = ast::node;
 namespace fs = std::filesystem;
 
-using ast::node::NodePtr;
 using ast::node::NodeListPtr;
+using ast::node::NodePtr;
 using ast::visitor::NodeVisitor;
 using interop::CppInteropBackendPtr;
 using visitor::Any;
@@ -43,6 +43,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   private:
   // CXX compiler front end.
   ClangFrontendInvoker m_inv;
+  BackendContext m_ctx;
   SessionUnitPtr m_session;
 
   // Global symbol table used for quick symbol lookup.
@@ -58,7 +59,8 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   // Is incremented after each usage to prevent collision.
   u64 m_id_defer_count;
 
-  Optimize m_optimize;
+  // Unused.
+  // Optimize m_optimize;
 
   protected:
   /*!
@@ -95,7 +97,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto resolve(NodePtr t_ptr, bool t_terminate = false) -> std::string;
 
   [[nodiscard("Pure method must use results.")]]
-  auto resolve_list(NodeListPtr t_list, bool t_terminate = false) -> std::string;
+  auto resolve_list(NodeListPtr t_list, bool t_terminate = false)
+    -> std::string;
+
+  auto handle_attribute_export() -> void;
 
   public:
   CppBackend();
@@ -131,6 +136,7 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto visit(node::meta::LetDecl* t_ldecl) -> Any override;
   auto visit(node::meta::VarDecl* t_vdecl) -> Any override;
   auto visit(node::meta::FunctionDecl* t_fdecl) -> Any override;
+  auto visit(node::meta::StructDecl* t_struct) -> Any override;
 
   // Operators:
   auto visit(node::operators::Arithmetic* t_arith) -> Any override;
@@ -181,7 +187,10 @@ class CppBackend : public NodeVisitor, public BackendInterface {
   auto visit(node::NodeInterface* t_node) -> Any override;
 
   // Util:
+  auto set_context(BackendContext t_ctx) -> void override;
+
   //! CPP backend as of writing needs to refactor interop.
+  // TODO: Add library targetname to this?
   auto register_interop_backend(InteropBackend t_type) -> void override;
 
   //! Set the optimization level.

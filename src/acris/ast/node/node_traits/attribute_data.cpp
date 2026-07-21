@@ -62,6 +62,11 @@ auto attribute_type2str(AttributeType t_type) -> std::string_view
     MATCH(INLINE, "inline");
     MATCH(DEPRECATED, "deprecated");
     MATCH(EXTERN, "extern");
+    MATCH(EXPORT, "export");
+
+    MATCH(NO_CODEGEN,       "no_codegen");
+    MATCH(OVERRIDE_CODEGEN, "override_codegen");
+
     MATCH(UNKNOWN, "unknown");
 
     default: {
@@ -90,8 +95,17 @@ auto str2attribute_type(std::string_view t_str) -> AttributeType
     type = AttributeType::INLINE;
   } else if(t_str == "deprecated") {
     type = AttributeType::DEPRECATED;
+  } else if(t_str == "export") {
+    type = AttributeType::EXPORT;
   } else if(t_str == "extern") {
     type = AttributeType::EXTERN;
+
+    // Do not generate code and generate instead.
+  } else if(t_str == "no_codegen") {
+    type = AttributeType::NO_CODEGEN;
+  } else if(t_str == "override_codegen") {
+    type = AttributeType::OVERRIDE_CODEGEN;
+
   } else {
     // If we dont recognize, any of the builtin types
     type = AttributeType::UNKNOWN;

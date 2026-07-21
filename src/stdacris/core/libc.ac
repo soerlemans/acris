@@ -5,9 +5,16 @@ let STDIN = 0
 let STDOUT = 1
 let STDERR = 2
 
+// TODO: Forward declare FILE structure for popen and similar.
+
+// Forward declare the struct but do
+[[no_codegen]]
+decl struct FILE
+
 // TODO: Later create more clean interfaces.
 // Stuff like memset not int but always byte.
 [[extern("C")]] {
+
   // Heap:
   decl func malloc(size: usz) -> *void
   decl func free(p: *void) -> void
@@ -20,6 +27,13 @@ let STDERR = 2
   decl func memcpy(dest: *void, src: *ro void, n: usz) -> *void
   decl func memmove(dest: *void, src: *ro void, n: usz) -> *void
   decl func memset(dest: *void, c: int, n: usz) -> *void
+
+  // IO:
+  decl func fgetc(stream: *FILE) -> int
+  decl func getchar()->int
+
+  decl func fgets(s: *char, size: int, stream: *FILE) -> *char
+  decl func ungetc(c: int, stream: *FILE) -> int
 
   // String:
   decl func strlen(s: *ro char) -> usz
@@ -55,9 +69,13 @@ let STDERR = 2
   decl func write(fd: int, buf: *ro void, count: usz) -> isz
   decl func close(fd: int) -> int
 
+  // Random:
+  decl func rand() -> i32
+  decl func srand(seed: u32) -> void
+
   // Platform dependent size, todo figure this out.
   // decl func getauxval(type: ulong) -> ulong
-  decl func getauxval(type: u64) -> u64
+  decl func getauxval(aux_type: u64) -> u64
 
   // Error:
   decl func perror(s: *ro char) -> void
@@ -71,6 +89,16 @@ let STDERR = 2
 
   void *bsearch(size_t n, size_t size; const void key[size], const void base[size * n], size_t n, size_t size, typeof(int (const void [size], const void [size])) *compar);
   */
+
+  // File management.
+  decl func fopen(path: *ro char, mode: *ro char) -> *FILE
+  decl func fdopen(fd: int, mode: *ro char) -> *FILE
+  decl func freopen(path: *ro char, mode: *ro char, stream: *FILE) -> *FILE
+  decl func fclose(stream: *FILE) -> int
+
+  // Process management:
+  decl func popen(command: *ro char, io_type: *ro char) -> *FILE
+  decl func pclose(stream: *FILE) -> int
 
   // System:
   decl func system(cmd: *ro char) -> int
