@@ -52,7 +52,6 @@ auto LuaBackend::generate_binding_function(const std::string_view t_id,
   QuerySpec spec{LuaQueryOp::PUSH};
   auto result{type_lua_conv(t_ptr->m_return_type, spec)};
   if(result.has_value()) {
-
     ss << "auto result = ";
   }
 

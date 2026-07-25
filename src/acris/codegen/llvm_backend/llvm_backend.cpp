@@ -34,7 +34,7 @@
 #include "lib/stdtypes.hpp"
 
 // Local Includes:
-#include "type2llvm.hpp"
+#include "type_llvm_conv.hpp"
 
 // Make sure the ELF driver exists.
 LLD_HAS_DRIVER(elf);
