@@ -1,7 +1,7 @@
 # Add source files
 target_sources(${TARGET_ACRIS_LIB} PRIVATE
 	cpp_backend.cpp
-	type2cpp.cpp
+	type_cpp_conv.cpp
 	clang_frontend_invoker.cpp
 )
 

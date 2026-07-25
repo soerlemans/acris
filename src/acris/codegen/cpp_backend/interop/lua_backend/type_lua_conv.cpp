@@ -40,10 +40,8 @@ inline auto native_type_lua_conv_check(const NativeType t_type,
 {
   std::string str{};
 
-  // FIXME: Currently the C++ fixed width floating point types.
-  // Are not yet supported by clang libc++.
-  // So for now just error out, on these.
-  // Possibly print currently unsupported?
+  // When checking we are extracting a value and we just flat out error.
+  // On any narrowing cast.
   switch(t_type) {
     case NativeType::F64:
       str = "luaL_checknumber";
@@ -68,31 +66,45 @@ inline auto native_type_lua_conv_check(const NativeType t_type,
 
       // TODO: Convert to string equivalent for error message.
     case NativeType::VOID:
+      [[fallthrough]];
+
     case NativeType::F32:
+      [[fallthrough]];
 
     case NativeType::CHAR:
+      [[fallthrough]];
       // We dont do char functions they are too inefficient.
 
     case NativeType::INT:
+      [[fallthrough]];
     case NativeType::I8:
+      [[fallthrough]];
     case NativeType::I16:
+      [[fallthrough]];
     case NativeType::I32:
+      [[fallthrough]];
     case NativeType::ISIZE:
+      [[fallthrough]];
 
     case NativeType::UINT:
+      [[fallthrough]];
     case NativeType::U8:
+      [[fallthrough]];
     case NativeType::U16:
+      [[fallthrough]];
     case NativeType::U32:
+      [[fallthrough]];
     case NativeType::USIZE:
       // TODO: Cleanup to be non shit error message.
       return std::unexpected{
-        LuaQueryError{LuaQueryErrorType::UNSUPPORTED,
-                      "Native type cant be converted to Lua for reasons!"}
+        LuaQueryError{
+                      LuaQueryErrorType::UNSUPPORTED,
+                      std::format(
+            "Native type cant be converted to Lua check function! ({})", nativetype2str(t_type))}
       };
-      break;
 
     default:
-      throwf<InvalidArgument>("NativeType could not be converted to C++ type: ",
+      throwf<InvalidArgument>("NativeType unhandled ({}).",
                               nativetype2str(t_type));
       break;
   }
@@ -110,15 +122,38 @@ inline auto native_type_lua_conv_push(const NativeType t_type,
   // So for now just error out, on these.
   // Possibly print currently unsupported?
   switch(t_type) {
+    case NativeType::F32:
+      [[fallthrough]];
     case NativeType::F64:
       str = "luaL_pushnumber";
       break;
 
+      // We can push smaller values to larger containers but not vice versa.
+    case NativeType::INT:
+      [[fallthrough]];
+    case NativeType::I8:
+      [[fallthrough]];
+    case NativeType::I16:
+      [[fallthrough]];
+    case NativeType::I32:
+      [[fallthrough]];
     case NativeType::I64:
+      [[fallthrough]];
+    case NativeType::ISIZE:
       str = "lua_pushinteger";
       break;
 
+    case NativeType::UINT:
+      [[fallthrough]];
+    case NativeType::U8:
+      [[fallthrough]];
+    case NativeType::U16:
+      [[fallthrough]];
+    case NativeType::U32:
+      [[fallthrough]];
     case NativeType::U64:
+      [[fallthrough]];
+    case NativeType::USIZE:
       str = "lua_pushinteger";
       break;
 
@@ -133,23 +168,9 @@ inline auto native_type_lua_conv_push(const NativeType t_type,
 
     case NativeType::VOID:
 
-      // TODO: Convert to string equivalent for error message.
-    case NativeType::F32:
-
     case NativeType::CHAR:
-      // We dont do char functions they are too inefficient.
+      [[fallthrough]];
 
-    case NativeType::INT:
-    case NativeType::I8:
-    case NativeType::I16:
-    case NativeType::I32:
-    case NativeType::ISIZE:
-
-    case NativeType::UINT:
-    case NativeType::U8:
-    case NativeType::U16:
-    case NativeType::U32:
-    case NativeType::USIZE:
       // TODO: Cleanup to be non shit error message.
       return std::unexpected{
         LuaQueryError{LuaQueryErrorType::UNSUPPORTED,
