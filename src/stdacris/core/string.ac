@@ -78,7 +78,7 @@ func (String) set(t_str: *ro char) -> void {
   let new_size = size
 
   // Reserve more space if needed.
-  // self.reserve(new_size)
+  self.reserve(new_size)
   if(new_size > self.m_capacity) {
     // self.m_capacity *= 2
     self.m_capacity = new_size * 2

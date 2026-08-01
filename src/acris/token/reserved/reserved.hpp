@@ -87,6 +87,9 @@ namespace keywords {
   // DEFINE_TERMINAL(g_else_unreachable,   "else_unreachable",   ELSE_UNREACHABLE);
   // DEFINE_TERMINAL(g_else_panic,         "else_panic",   ELSE_PANIC);
 
+  DEFINE_TERMINAL(g_unreachable, "unreachable", UNREACHABLE);
+  DEFINE_TERMINAL(g_panic,       "panic",       PANIC);
+
   // Jump:
   DEFINE_TERMINAL(g_break,    "break",    BREAK);
   DEFINE_TERMINAL(g_continue, "continue", CONTINUE);
@@ -155,6 +158,7 @@ namespace keywords {
     g_match.pair(),
     g_if.pair(), g_else.pair(), g_elif.pair(),
     g_loop.pair(),
+		g_unreachable.pair(), g_panic.pair(),
     g_break.pair(), g_continue.pair(), g_defer.pair(), g_return.pair(),
     g_true.pair(), g_false.pair(),
 

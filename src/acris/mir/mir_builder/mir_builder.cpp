@@ -107,7 +107,7 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
   // Currently we expect everything to be there.
 
   // Make
-  traverse(init_expr);
+  const auto init_expr_env{traverse_in_new_env(init_expr)};
   auto& cond_jump{m_factory->add_instruction(Opcode::JUMP)};
   // TODO: Jump to conditional block.
 
@@ -115,10 +115,10 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
 	// Everything needs to be merged using phi statements.
 
   // TODO: Put in own basic block for looping.
-  auto& cond_block{m_factory->add_block("loop_cond")};
+  auto& cond_block{m_factory->add_block("loop_header")};
   cond_jump.add_operand({&cond_block});
 
-  traverse(cond);
+	traverse(cond);
   const auto last_var{m_factory->require_last_var()};
 
   auto& cond_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
@@ -129,22 +129,25 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
   // TODO: Check condition and quit, if condition fails, else to go to merge
   // blcok.
 
-  // TODO: Put in own basic block for looping.
-  auto& expr_block{m_factory->add_block("loop_expr")};
-  traverse(expr);
-
-  const auto expr_jump{m_factory->create_instruction(Opcode::JUMP)};
-  m_factory->insert_jump(expr_jump, expr_block, cond_block);
   // TODO: Jump to start of body block.
 
   // TODO: Put in own basic block for looping.
   auto& body_block{m_factory->add_block("loop_body")};
-  traverse_in_new_env(body);
+	traverse(body);
 
   const auto end_jump{m_factory->create_instruction(Opcode::JUMP)};
-  m_factory->insert_jump(end_jump, body_block, expr_block);
+
+	// Loop Latch.
+  auto& latch_block{m_factory->add_block("loop_latch")};
+	traverse(expr);
+
+  const auto expr_jump{m_factory->create_instruction(Opcode::JUMP)};
+  m_factory->insert_jump(expr_jump, latch_block, cond_block);
 
   auto& merge_block{m_factory->add_block("loop_merge")};
+
+	// Body block to expression block jump.
+  m_factory->insert_jump(end_jump, body_block, latch_block);
 
   cond_instr.add_operand({&body_block});
   cond_instr.add_operand({&merge_block});

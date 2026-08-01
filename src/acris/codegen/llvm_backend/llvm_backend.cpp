@@ -835,27 +835,6 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
                                   fn_name, m_module.get())};
 
-  auto* entry_bb{llvm::BasicBlock::Create(*m_context, "entry", fn)};
-	m_builder->SetInsertPoint(entry_bb);
-
-  for(const auto& param : params) {
-    auto arg = fn->args().begin();
-
-    arg->setName(
-      std::to_string(param->m_id)); // Give the LLVM IR register a readable name
-
-		dump_ir(std::cout);
-
-    llvm::AllocaInst* alloca =
-      m_builder->CreateAlloca(arg->getType(), nullptr, param->m_id + ".addr");
-
-    m_builder->CreateStore(arg, alloca);
-
-    m_locals.emplace(param->m_id, alloca);
-
-    arg++;
-  }
-
   // Codegen for the body
   for(BasicBlock& block : t_fn->m_blocks) {
     auto block_label{block.m_label};
@@ -888,6 +867,23 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
       new llvm::AllocaInst(type, 0, var_id, m_entry_bblock)};
 
     m_locals.emplace(local_id, (llvm::Value*)alloc);
+  }
+
+  m_builder->SetInsertPoint(m_entry_bblock);
+
+  for(const auto& param : params) {
+    auto arg{fn->args().begin()};
+    arg->setName(std::to_string(param->m_id));
+
+    auto label{std::format("{}.addr", param->m_id)};
+    llvm::AllocaInst* alloca{
+      m_builder->CreateAlloca(arg->getType(), nullptr, label)};
+
+    m_builder->CreateStore(arg, alloca);
+
+    m_locals.emplace(param->m_id, alloca);
+
+    arg++;
   }
 
   // Walk through body.
