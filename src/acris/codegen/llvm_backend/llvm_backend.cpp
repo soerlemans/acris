@@ -806,11 +806,12 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   for(const auto& param : params) {
     const auto opt{param->m_type.native_type()};
     if(!opt) {
-      DBG_ERROR("Cancelling function LLVM IR generation, cause return type is "
-                "note resolvalbe to native type.");
+      DBG_ERROR(
+        "Cancelling function LLVM IR generation, cause parameter type is "
+        "note resolvalbe to native type.");
       return;
     }
-    const auto native_type{opt.value()};
+    const NativeType native_type{opt.value()};
     auto* llvm_type{native_type2llvm(native_type)};
 
     llvm_params.push_back(llvm_type);
@@ -833,6 +834,27 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
 
   auto* fn{llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
                                   fn_name, m_module.get())};
+
+  auto* entry_bb{llvm::BasicBlock::Create(*m_context, "entry", fn)};
+	m_builder->SetInsertPoint(entry_bb);
+
+  for(const auto& param : params) {
+    auto arg = fn->args().begin();
+
+    arg->setName(
+      std::to_string(param->m_id)); // Give the LLVM IR register a readable name
+
+		dump_ir(std::cout);
+
+    llvm::AllocaInst* alloca =
+      m_builder->CreateAlloca(arg->getType(), nullptr, param->m_id + ".addr");
+
+    m_builder->CreateStore(arg, alloca);
+
+    m_locals.emplace(param->m_id, alloca);
+
+    arg++;
+  }
 
   // Codegen for the body
   for(BasicBlock& block : t_fn->m_blocks) {

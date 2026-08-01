@@ -111,6 +111,9 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
   auto& cond_jump{m_factory->add_instruction(Opcode::JUMP)};
   // TODO: Jump to conditional block.
 
+	// TODO :Treat every block as its own scope where in the header.
+	// Everything needs to be merged using phi statements.
+
   // TODO: Put in own basic block for looping.
   auto& cond_block{m_factory->add_block("loop_cond")};
   cond_jump.add_operand({&cond_block});
