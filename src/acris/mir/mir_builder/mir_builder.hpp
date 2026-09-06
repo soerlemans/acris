@@ -5,6 +5,12 @@
 #include "acris/ast/visitor/node_visitor.hpp"
 #include "acris/mir/mir_builder/mir_module_factory.hpp"
 
+// TODO: Move from an SSA to a stackslot based approach so that I wont want to
+// end my life.
+// And then use mem2reg pass to have LLVM backend sort out the phi node.
+// Dominance frontier stuff, cause I need to have free time and compilers are
+// hard.
+
 namespace mir::mir_builder {
 // Aliases:
 namespace node = ast::node;

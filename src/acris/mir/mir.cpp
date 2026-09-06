@@ -201,6 +201,24 @@ auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
   return t_os;
 }
 
+auto operator<<(std::ostream& t_os, const mir::StackVar& t_var) -> std::ostream&
+{
+  // TODO: Think about conditional printing of the type as well?
+
+  t_os << std::format("&{}", t_var.m_id);
+
+  return t_os;
+}
+
+auto operator<<(std::ostream& t_os, const mir::StackVarPtr& t_ptr)
+  -> std::ostream&
+{
+  using lib::stdprint::detail::print_smart_ptr;
+
+  return print_smart_ptr(t_os, t_ptr);
+}
+
+
 auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
@@ -323,8 +341,9 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 {
   using mir::BasicBlock;
   using mir::LocalVarPtr;
+  using mir::StackVarPtr;
 
-  const auto& [name, params, return_type, locals, blocks] = t_fn;
+  const auto& [name, params, return_type, stack_locals, blocks] = t_fn;
 
   t_os << std::format("function {}", name);
 
@@ -338,9 +357,10 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   t_os << ") -> " << return_type << "{\n";
 
   // Local vars, for forward declare:
-  t_os << "locals {\n";
-  for(const LocalVarPtr& local : locals) {
-    t_os << '\t' << local << " : " << local->m_type << '\n';
+	std::size_t stack_idx{0};
+  t_os << "stack_locals {\n";
+  for(const StackVarPtr& stack_var : stack_locals) {
+    t_os << '\t' << stack_var << " : " << stack_var->m_type << '\n';
   }
   t_os << "}\n\n";
 

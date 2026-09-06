@@ -118,8 +118,9 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto on_icmp_gt(Instruction& t_instr) -> void;
   auto on_icmp_gte(Instruction& t_instr) -> void;
 
-  auto on_bind(Instruction& t_instr) -> void;
-  auto on_update(Instruction& t_instr) -> void;
+  auto on_store(Instruction& t_instr) -> void;
+  auto on_load(Instruction& t_instr) -> void;
+
   auto on_cond_jmp(Instruction& t_instr) -> void;
   auto on_jmp(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
@@ -142,6 +143,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   auto set_optimize(Optimize t_olevel) -> void override;
   auto set_passess() -> void;
+
+	auto run_mem2reg() -> void;
 
   auto requires_mir() -> bool override;
 

@@ -81,12 +81,12 @@ namespace keywords {
 
   DEFINE_TERMINAL(g_switch, "switch", SWITCH);
   DEFINE_TERMINAL(g_case,   "case",   CASE);
-  DEFINE_TERMINAL(g_fallthrough, "fallthrough",   FALLTHROUGH);
 
 	// TODO: Implement for switch later.
   // DEFINE_TERMINAL(g_else_unreachable,   "else_unreachable",   ELSE_UNREACHABLE);
   // DEFINE_TERMINAL(g_else_panic,         "else_panic",   ELSE_PANIC);
 
+  DEFINE_TERMINAL(g_fallthrough, "fallthrough",   FALLTHROUGH);
   DEFINE_TERMINAL(g_unreachable, "unreachable", UNREACHABLE);
   DEFINE_TERMINAL(g_panic,       "panic",       PANIC);
 

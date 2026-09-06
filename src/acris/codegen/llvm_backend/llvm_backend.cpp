@@ -25,6 +25,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
+#include <llvm/Passes/PassBuilder.h>
 
 // Absolute Includes:
 #include "acris/debug/log.hpp"
@@ -529,7 +530,7 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
   m_locals.emplace(result_id, cond);
 }
 
-auto LlvmBackend::on_bind(Instruction& t_instr) -> void
+auto LlvmBackend::on_load(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
@@ -554,7 +555,7 @@ auto LlvmBackend::on_bind(Instruction& t_instr) -> void
   m_locals.emplace(result_id, alloca);
 }
 
-auto LlvmBackend::on_update(Instruction& t_instr) -> void
+auto LlvmBackend::on_store(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
@@ -739,19 +740,14 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
     case Opcode::FCMP_GTE:
       break;
 
-    case Opcode::BIND:
-      on_bind(t_instr);
-      break;
 
-    case Opcode::UPDATE:
-      on_update(t_instr);
+    case Opcode::ALLOC:
       break;
-
     case Opcode::LOAD:
+      on_load(t_instr);
       break;
     case Opcode::STORE:
-      break;
-    case Opcode::ALLOC:
+      on_store(t_instr);
       break;
     case Opcode::LEA:
       break;
@@ -973,6 +969,32 @@ auto LlvmBackend::set_passess() -> void
       throwf<InvalidArgument>("Unhandled optimization level.");
       break;
   }
+}
+
+auto LlvmBackend::run_mem2reg() -> void
+{
+  /* Slop that I need to figure out for how to get mem2reg to work.
+  llvm::FunctionAnalysisManager func_analyser{};
+  llvm::CGSCCAnalysisManager cgscc_analyser{};
+  llvm::ModuleAnalysisManager module_analyser{};
+
+  // Register standard analyses (this automatically provides DominatorTree).
+  llvm::PassBuilder pass_builder{};
+  pass_builder.registerModuleAnalyses(module_analyser);
+  pass_builder.registerCGSCCAnalyses(cgscc_analyser);
+  pass_builder.registerFunctionAnalyses(func_analyser);
+  pass_builder.registerCrossUnitAnalyses(module_analyser);
+
+  llvm::FunctionPassManager func_pass_manager{};
+  func_pass_manager.addPass(llvm::Mem2RegPass());
+
+  // Run across all functions in module and run mem2reg.
+  for(auto& func : *m_module) {
+    if(!func.isDeclaration()) {
+      func_pass_manager.run(func, func_analyser);
+    }
+  }
+	*/
 }
 
 auto LlvmBackend::requires_mir() -> bool

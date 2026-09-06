@@ -228,28 +228,71 @@ auto MirModuleFactory::insert_jump(BasicBlock& t_block, BasicBlock& t_target)
   return insert_jump(jmp_instr, t_block, t_target);
 }
 
-auto MirModuleFactory::var_bind(std::string_view t_name, LocalVarPtr t_var)
+auto MirModuleFactory::create_local(std::string_view t_name, TypeVariant t_type)
   -> void
 {
   // TODO: Check for errors.
   auto& block{last_block()};
 
-  auto& instr{add_instruction(Opcode::BIND)};
-  add_result_var(t_var->m_type);
+	// Create stack var entry.
+  auto stack_var{std::make_shared<StackVar>(m_stack_id, t_type)};
+  m_stack_id++;
 
-  instr.add_operand(t_var);
+	// Construct load instruction.
+  auto& instr{add_instruction(Opcode::LOAD)};
+  add_result_var(t_type);
+  instr.add_operand(stack_var);
 
-  auto& local{instr.m_result};
+  add_local(stack_var);
 
-  add_local(local);
-  LocalVarSite site{&block, local};
-
-  const auto [iter, inserted] = m_var_env.insert({std::string{t_name}, site});
+  const auto [iter, inserted] =
+    m_stack_map.emplace(std::string{t_name}, std::move(stack_var));
   if(!inserted) {
     using lib::stdexcept::throw_runtime_error;
 
     throw_runtime_error("Could not insert ", std::quoted(t_name), ".");
   }
+}
+
+auto MirModuleFactory::local_load(std::string_view t_name) -> void
+{
+  // TODO: Check for errors.
+  auto& block{last_block()};
+
+	// Get stack entry to load.
+  const auto iter = m_stack_map.find(std::string{t_name});
+  if(iter != m_stack_map.end()) {
+    using lib::stdexcept::throw_runtime_error;
+
+    throw_runtime_error("Could not insert ", std::quoted(t_name), ".");
+  }
+
+	// Add instruction.
+  auto& instr{add_instruction(Opcode::LOAD)};
+
+  add_result_var(iter->second->m_type);
+  instr.add_operand(iter->second);
+}
+
+auto MirModuleFactory::local_store(std::string_view t_name,
+                                   LocalVarPtr t_prev_var) -> Instruction&
+{
+  auto& update_instr{add_instruction(Opcode::STORE)};
+
+  // Add the last usage of the ssa variable associated with
+  // the name.
+  update_instr.add_operand(t_prev_var);
+
+  const auto type{t_prev_var->m_type};
+  auto result_var{add_result_var(type)};
+
+  // Update with the new result var.
+  // For the next variable reference.
+  auto& block{last_block()};
+  LocalVarSite site{&block, result_var};
+  m_var_env.update(t_name, site);
+
+  return update_instr;
 }
 
 auto MirModuleFactory::create_global(std::string_view t_name,
@@ -304,29 +347,8 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
     // name.
     auto prev_var{m_var_env.get_value(t_name).m_var};
 
-    return add_update(t_name, prev_var);
+    return local_store(t_name, prev_var);
   }
-}
-
-auto MirModuleFactory::add_update(std::string_view t_name,
-                                  LocalVarPtr t_prev_var) -> Instruction&
-{
-  auto& update_instr{add_instruction(Opcode::UPDATE)};
-
-  // Add the last usage of the ssa variable associated with
-  // the name.
-  update_instr.add_operand(t_prev_var);
-
-  const auto type{t_prev_var->m_type};
-  auto result_var{add_result_var(type)};
-
-  // Update with the new result var.
-  // For the next variable reference.
-  auto& block{last_block()};
-  LocalVarSite site{&block, result_var};
-  m_var_env.update(t_name, site);
-
-  return update_instr;
 }
 
 auto MirModuleFactory::add_call(const std::string_view t_name,
@@ -434,11 +456,11 @@ auto MirModuleFactory::last_block() -> BasicBlock&
   return fn->m_blocks.back();
 }
 
-auto MirModuleFactory::add_local(LocalVarPtr& t_var) -> void
+auto MirModuleFactory::add_local(StackVarPtr& t_var) -> void
 {
   auto& fn{last_function()};
 
-  fn->m_locals.emplace_back(t_var);
+  fn->m_locals.emplace_back(std::move(t_var));
 }
 
 auto MirModuleFactory::add_function_declaration(FunctionPtr t_fn) -> void

@@ -24,6 +24,7 @@ namespace mir {
 // Forward Declarations:
 struct Literal;
 struct GlobalVar;
+struct StackVar;
 struct LocalVar;
 struct PhiArg;
 struct Label;
@@ -38,12 +39,14 @@ using types::core::NativeType;
 using types::core::TypeVariant;
 
 using VarHandle = u64;
+using StackVarHandle = VarHandle;
 using LocalVarHandle = VarHandle;
 using GlobalVarHandle = VarHandle;
 using InstructionHandle = u64;
 using BasicBlockHandle = std::string;
 using FunctionHandle = std::string;
 
+using StackVarPtr = std::shared_ptr<StackVar>;
 using LocalVarPtr = std::shared_ptr<LocalVar>;
 using GlobalVarPtr = std::shared_ptr<GlobalVar>;
 // using BasicBlockPtr = std::shared_ptr<BasicBlock>;
@@ -57,6 +60,7 @@ using ModulePtr = std::shared_ptr<Module>;
 // During the building of the IR.
 // Or the modifying of it afterwards.
 using LocalVarVec = std::vector<LocalVarPtr>;
+using StackVarVec = std::vector<StackVarPtr>;
 using GlobalVarVec = std::vector<GlobalVarPtr>;
 using InstructionSeq = std::list<Instruction>;
 using BasicBlockSeq = std::list<BasicBlock>;
@@ -73,12 +77,13 @@ using PhiArgValue = std::variant<GlobalVarPtr, LocalVarPtr, Literal>;
 
 /*!
  * The @ref FunctionPtr is needed for resolving function calls.
+ * The @ref StackVarPtr is needed to refer to .
  * The @ref LocalVarPtr is needed for obtaining references to SSA variables.
  * The @ref Literal is needed for obtaining references to literals.
  * The @ref Label is needed for obtaining references to basic blocks.
  */
-using Operand = std::variant<GlobalVarPtr, LocalVarPtr, Literal, Label,
-                             FunctionLabel, PhiArg>;
+using Operand = std::variant<GlobalVarPtr, StackVarPtr, LocalVarPtr, Literal,
+                             Label, FunctionLabel, PhiArg>;
 using OperandSeq = std::vector<Operand>;
 
 using BasicBlockIter = BasicBlockSeq::iterator;
@@ -109,7 +114,7 @@ enum class Opcode : u32 {
   ICMP_LT,  // %<dest> = icmp_lt <lhs> <rhs>
   ICMP_LTE, // %<dest> = icmp_lte <lhs> <rhs>
   ICMP_EQ,  // %<dest> = icmp_eq <lhs> <rhs>
-	ICMP_NE,  // %<dest> = icmp_ne <lhs> <rhs>
+  ICMP_NE,  // %<dest> = icmp_ne <lhs> <rhs>
   ICMP_GT,  // %<dest> = icmp_gt <lhs> <rhs>
   ICMP_GTE, // %<dest> = icmp_gte <lhs> <rhs>
 
@@ -135,8 +140,8 @@ enum class Opcode : u32 {
   BIND,      // %<dest> = bind <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
   UPDATE,    // %<dest> = update <src> ; dest = src. Adds a comment of the in source variable referenced.
 
-  LOAD,      // %<dest> = load <src> ; dest = *src.
-  STORE,     // %<dest> = store <src> ; *dest = src.
+  LOAD,      // %<dest> = load <src mem> ; dest = *src.
+  STORE,     // %<dest> = store <src mem> ; *dest = src.
   ALLOC,    // %<dest> = alloca <count>; Allocate memory on the heap.
   LEA,       // %<dest> = lea <src> ; dest = &src Load a calculated address, like load effective address.
   // clang-format on
@@ -196,7 +201,17 @@ struct GlobalVar {
   virtual ~GlobalVar() = default;
 };
 
-// Rename to LocalVar.
+struct StackVar {
+  StackVarHandle m_id;
+  TypeVariant m_type;
+
+  StackVar(StackVarHandle t_id, TypeVariant t_type)
+    : m_id{t_id}, m_type{std::move(t_type)}
+  {}
+
+  virtual ~StackVar() = default;
+};
+
 struct LocalVar {
   LocalVarHandle m_id;
   TypeVariant m_type;
@@ -277,7 +292,7 @@ struct Function {
   std::string m_name;
   LocalVarVec m_params;
   TypeVariant m_return_type;
-  LocalVarVec m_locals;
+  StackVarVec m_locals;
   BasicBlockSeq m_blocks;
 
   Function() = default;
@@ -313,6 +328,8 @@ auto operator<<(std::ostream& t_os, const mir::Literal& t_lit) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::StackVar& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::StackVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Label& t_label) -> std::ostream&;
@@ -331,6 +348,20 @@ auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod) -> std::ostream
 // clang-format on
 
 // Format specializations:
+template<>
+struct std::formatter<mir::StackVar> : std::formatter<std::string_view> {
+  template<typename FormatContext>
+  auto format(const mir::StackVar& t_var, FormatContext& ctx)
+    -> std::formatter<std::string_view>
+  {
+    // Reuse operator<<()
+    std::ostringstream oss{};
+    oss << t_var.m_id;
+
+    return std::formatter<std::string_view>::format(oss.view(), ctx);
+  }
+};
+
 // struct std::formatter<mir::LocalVar> { // Doesnt work for MacOS.
 template<>
 struct std::formatter<mir::LocalVar> : std::formatter<std::string_view> {

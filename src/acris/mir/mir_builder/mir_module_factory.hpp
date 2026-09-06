@@ -27,6 +27,7 @@ using GlobalMirEntity = MirEntity<GlobalVarPtr>;
 
 //! Globals can be forward declared, regular variables not.
 using GlobalVarMap = std::unordered_map<std::string, GlobalMirEntity>;
+using StackVarMap = std::unordered_map<std::string, StackVarPtr>;
 using LocalVarEnvState = MirEnvState<LocalVarSite>;
 using FunctionEnvState = MirEnvState<FunctionMirEntity>;
 
@@ -82,6 +83,7 @@ class MirModuleFactory {
 
   // Environment for referencing globals.
   GlobalVarMap m_global_map;
+  StackVarMap m_stack_map;
 
   // Semantic pass should prevent any variables and functions from conflicting.
   FunctionEnvState m_fn_env;
@@ -91,6 +93,7 @@ class MirModuleFactory {
   u64 m_block_id;
   u64 m_instr_id;
   u64 m_global_id;
+  u64 m_stack_id;
   u64 m_var_id;
 
   public:
@@ -144,11 +147,21 @@ class MirModuleFactory {
                    BasicBlock& t_target) -> Instruction&;
   auto insert_jump(BasicBlock& t_block, BasicBlock& t_target) -> Instruction&;
 
+  auto create_local(std::string_view t_name, TypeVariant t_type) -> void;
+
   /*!
    * Bind a source variable name to an IR var.
    * For later reference/usage.
    */
-  auto var_bind(std::string_view t_name, LocalVarPtr t_var) -> void;
+  auto local_load(std::string_view t_name) -> void;
+
+  /*!
+   * Adds an instruction, which returns a result to reference the variable by.
+   * This instruction is always an update instruction.
+   * So we can reference the last SSA var.
+   */
+  auto local_store(std::string_view t_name, LocalVarPtr t_prev_var)
+    -> Instruction&;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -173,8 +186,8 @@ class MirModuleFactory {
    * Bind a variable name to a result var for later reference.
    * By its corrseponding variable name.
    */
-  auto add_variable_bind(std::string_view t_name, Instruction& t_instr)
-    -> Instruction&;
+  // auto add_variable_bind(std::string_view t_name, Instruction& t_instr)
+  //   -> Instruction&;
 
   /*!
    * Adds an instruction, which returns a result to reference the variable by.
@@ -182,14 +195,6 @@ class MirModuleFactory {
    * This method can load either a global or insert an update statement.
    */
   auto add_variable_ref(std::string_view t_name) -> Instruction&;
-
-  /*!
-   * Adds an instruction, which returns a result to reference the variable by.
-   * This instruction is always an update instruction.
-   * So we can reference the last SSA var.
-   */
-  auto add_update(std::string_view t_name, LocalVarPtr t_prev_var)
-    -> Instruction&;
 
   /*!
    * Create a call instruction.
@@ -214,7 +219,7 @@ class MirModuleFactory {
   auto last_block() -> BasicBlock&;
 
   // Function operations:
-  auto add_local(LocalVarPtr& t_var) -> void;
+  auto add_local(StackVarPtr& t_var) -> void;
   auto add_function_declaration(FunctionPtr t_fn) -> void;
   auto add_function_definition(FunctionPtr t_fn) -> void;
 
