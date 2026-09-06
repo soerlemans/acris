@@ -12,6 +12,7 @@ func branch(t_cond: int) -> bool {
 
   return someVar
 }
+*/
 
 func branch2() -> bool {
   var someVar: int = -1
@@ -23,16 +24,17 @@ func branch2() -> bool {
 
   return someVar
 }
-*/
 
-
+/*
 func identity(t_var: bool) -> bool {
   return t_var
 }
+*/
 
 func main() -> int {
   // branch(0)
-  identity(true)
+	branch2()
+  // identity(true)
 
   return 0
 }

@@ -250,7 +250,7 @@ auto MirModuleFactory::create_local(std::string_view t_name, TypeVariant t_type)
   if(!inserted) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error("Could not insert ", std::quoted(t_name), ".");
+    throw_runtime_error("Could not insert stack variable ", std::quoted(t_name), ".");
   }
 }
 
@@ -261,10 +261,10 @@ auto MirModuleFactory::local_load(std::string_view t_name) -> void
 
 	// Get stack entry to load.
   const auto iter = m_stack_map.find(std::string{t_name});
-  if(iter != m_stack_map.end()) {
+  if(iter == m_stack_map.end()) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error("Could not insert ", std::quoted(t_name), ".");
+    throw_runtime_error("Could not find stack variable ", std::quoted(t_name), ".");
   }
 
 	// Add instruction.
