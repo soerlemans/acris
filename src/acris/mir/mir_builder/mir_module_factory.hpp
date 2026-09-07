@@ -104,9 +104,6 @@ class MirModuleFactory {
   auto pop_env() -> void;
   auto clear_env() -> void;
 
-  auto set_var_env(const LocalVarEnvState& t_env) -> void;
-  auto get_var_env() const -> const LocalVarEnvState&;
-
   // LocalVar operations:
   [[nodiscard("Must use created ssa var.")]]
   auto create_var(TypeVariant t_type) -> LocalVarPtr;
@@ -153,7 +150,7 @@ class MirModuleFactory {
    * Bind a source variable name to an IR var.
    * For later reference/usage.
    */
-  auto local_load(std::string_view t_name) -> void;
+  auto local_load(std::string_view t_name) -> Instruction&;
 
   /*!
    * Adds an instruction, which returns a result to reference the variable by.
@@ -219,7 +216,7 @@ class MirModuleFactory {
   auto last_block() -> BasicBlock&;
 
   // Function operations:
-  auto add_local(StackVarPtr& t_var) -> void;
+  // auto add_local(StackVarPtr& t_var) -> void;
   auto add_function_declaration(FunctionPtr t_fn) -> void;
   auto add_function_definition(FunctionPtr t_fn) -> void;
 
@@ -232,13 +229,6 @@ class MirModuleFactory {
   // auto get_function(std::string_view t_key) -> Function&;
 
   auto last_function() -> FunctionPtr&;
-
-  /*!
-   * Insert phi nodes where necessary.
-   * Merge two @ref LocalVarEnvState's into a single one.
-   */
-  auto merge_envs(const LocalVarEnvState& t_env1,
-                  const LocalVarEnvState& t_env2) -> LocalVarEnvState;
 
   // Module operations:
   auto set_module_name(std::string_view t_name) -> void;

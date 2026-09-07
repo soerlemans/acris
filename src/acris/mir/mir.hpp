@@ -292,7 +292,7 @@ struct Function {
   std::string m_name;
   LocalVarVec m_params;
   TypeVariant m_return_type;
-  StackVarVec m_locals;
+  StackVarVec m_stack;
   BasicBlockSeq m_blocks;
 
   Function() = default;

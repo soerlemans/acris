@@ -218,7 +218,6 @@ auto operator<<(std::ostream& t_os, const mir::StackVarPtr& t_ptr)
   return print_smart_ptr(t_os, t_ptr);
 }
 
-
 auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
@@ -343,7 +342,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   using mir::LocalVarPtr;
   using mir::StackVarPtr;
 
-  const auto& [name, params, return_type, stack_locals, blocks] = t_fn;
+  const auto& [name, params, return_type, stack, blocks] = t_fn;
 
   t_os << std::format("function {}", name);
 
@@ -357,9 +356,9 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   t_os << ") -> " << return_type << "{\n";
 
   // Local vars, for forward declare:
-	std::size_t stack_idx{0};
-  t_os << "stack_locals {\n";
-  for(const StackVarPtr& stack_var : stack_locals) {
+  std::size_t stack_idx{0};
+  t_os << "stack {\n";
+  for(const StackVarPtr& stack_var : stack) {
     t_os << '\t' << stack_var << " : " << stack_var->m_type << '\n';
   }
   t_os << "}\n\n";

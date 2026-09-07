@@ -843,8 +843,8 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     m_bblocks.emplace(block_label, bblock);
   }
 
-  const auto locals{t_fn->m_locals};
-  for(const auto& local : locals) {
+  const auto stack{t_fn->m_stack};
+  for(const auto& local : stack) {
     // TODO: Make work with TypeVariant.
     const auto opt{local->m_type.native_type()};
     if(!opt) {

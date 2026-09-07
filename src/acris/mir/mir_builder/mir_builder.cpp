@@ -19,16 +19,6 @@ namespace mir::mir_builder {
 NODE_USING_ALL_NAMESPACES()
 
 // Methods:
-auto MirBuilder::traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState
-{
-  m_factory->push_env();
-  traverse(t_node);
-  const auto new_env{m_factory->get_var_env()};
-  m_factory->pop_env();
-
-  return new_env;
-}
-
 // Public:
 MirBuilder::MirBuilder(): m_factory{nullptr}
 {}
@@ -53,18 +43,12 @@ auto MirBuilder::visit(If* t_if) -> Any
   cond_instr.add_operand({last_var});
   const auto cond_result{cond_instr.m_result};
 
-  const auto main_env{m_factory->get_var_env()};
-
   // Then block:
   auto& then_block{m_factory->add_block("if_then")};
   cond_instr.add_operand({&then_block});
 
   // TODO: Save environment before, traversal for phi node insertion.
-  const auto then_env{traverse_in_new_env(then)};
   const auto then_jump{m_factory->create_instruction(Opcode::JUMP)};
-
-  // Restore to main env.
-  m_factory->set_var_env(main_env);
 
   // TODO: Potentially cleanup?
   if(alt) {
@@ -72,25 +56,16 @@ auto MirBuilder::visit(If* t_if) -> Any
     auto& alt_block{m_factory->add_block("if_alt")};
     cond_instr.add_operand({&alt_block});
 
-    const auto alt_env{traverse_in_new_env(alt)};
     const auto alt_jump{m_factory->create_instruction(Opcode::JUMP)};
 
     // Final block after the if statement.
     auto& merge_block{m_factory->add_block("if_merge")};
     m_factory->insert_jump(then_jump, then_block, merge_block);
     m_factory->insert_jump(alt_jump, alt_block, merge_block);
-
-    // Insert phi nodes.
-    const auto merged_env{m_factory->merge_envs(then_env, alt_env)};
-    m_factory->set_var_env(merged_env);
   } else {
     // Final block after the if statement.
     auto& merge_block{m_factory->add_block("if_merge")};
     m_factory->insert_jump(then_jump, then_block, merge_block);
-
-    // Insert phi nodes.
-    const auto merged_env{m_factory->merge_envs(main_env, then_env)};
-    m_factory->set_var_env(main_env);
   }
 
   return {};
@@ -107,18 +82,17 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
   // Currently we expect everything to be there.
 
   // Make
-  const auto init_expr_env{traverse_in_new_env(init_expr)};
   auto& cond_jump{m_factory->add_instruction(Opcode::JUMP)};
   // TODO: Jump to conditional block.
 
-	// TODO :Treat every block as its own scope where in the header.
-	// Everything needs to be merged using phi statements.
+  // TODO :Treat every block as its own scope where in the header.
+  // Everything needs to be merged using phi statements.
 
   // TODO: Put in own basic block for looping.
   auto& cond_block{m_factory->add_block("loop_header")};
   cond_jump.add_operand({&cond_block});
 
-	traverse(cond);
+  traverse(cond);
   const auto last_var{m_factory->require_last_var()};
 
   auto& cond_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
@@ -133,31 +107,25 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
 
   // TODO: Put in own basic block for looping.
   auto& body_block{m_factory->add_block("loop_body")};
-	traverse(body);
+  traverse(body);
 
   const auto end_jump{m_factory->create_instruction(Opcode::JUMP)};
 
-	// Loop Latch.
+  // Loop Latch.
   auto& latch_block{m_factory->add_block("loop_latch")};
-	traverse(expr);
+  traverse(expr);
 
   const auto expr_jump{m_factory->create_instruction(Opcode::JUMP)};
   m_factory->insert_jump(expr_jump, latch_block, cond_block);
 
   auto& merge_block{m_factory->add_block("loop_merge")};
 
-	// Body block to expression block jump.
+  // Body block to expression block jump.
   m_factory->insert_jump(end_jump, body_block, latch_block);
 
   cond_instr.add_operand({&body_block});
   cond_instr.add_operand({&merge_block});
 
-  // Insert phi nodes.
-  // const auto merged_env{
-  //   m_factory->merge_envs(cond_result, then_env, alt_env)};
-  // m_factory->set_var_env(merged_env);
-
-  // Add phi instructions.
 
   return {};
 }
@@ -215,7 +183,7 @@ auto MirBuilder::visit(Return* t_ret) -> Any
 // Functions:
 auto MirBuilder::visit(Parameter* t_param) -> Any
 {
-	// TODO: Fix fucking parameters.
+  // TODO: Fix fucking parameters.
   // const auto name{t_param->identifier()};
   // const auto type{t_param->get_type()};
 
@@ -297,8 +265,8 @@ auto MirBuilder::visit(Let* t_let) -> Any
 
   m_factory->add_comment(source_line);
 
-	// Create and load local for usage.
-  m_factory->create_local(name, last_var->m_type);
+  // Create and load local for usage.
+  m_factory->create_local(name, type);
   m_factory->local_load(name);
 
   return {};
@@ -322,8 +290,8 @@ auto MirBuilder::visit(Var* t_var) -> Any
 
   m_factory->add_comment(source_line);
 
-	// Create and load local for usage.
-  m_factory->create_local(name, last_var->m_type);
+  // Create and load local for usage.
+  m_factory->create_local(name, type);
   m_factory->local_load(name);
 
   return {};
@@ -647,7 +615,6 @@ auto MirBuilder::visit(Comparison* t_comp) -> Any
 auto MirBuilder::visit(Increment* t_inc) -> Any
 {
   // FIXME: Currently the addition does not update the bindings in
-  // m_ssa_var_env.
   const auto left{t_inc->left()};
 
   traverse(left);

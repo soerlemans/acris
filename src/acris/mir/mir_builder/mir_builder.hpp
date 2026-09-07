@@ -37,11 +37,6 @@ class MirBuilder : public NodeVisitor {
   private:
   MirModuleFactoryPtr m_factory;
 
-  /*!
-   * Traverse a node in a new environemnt
-   */
-  auto traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState;
-
   public:
   MirBuilder();
 
