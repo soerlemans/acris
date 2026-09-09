@@ -105,7 +105,7 @@ class MirBuilder : public NodeVisitor {
 
   // Implementation:
   //! Return all the SSA vars that are needed for a call.
-  auto get_call_args(node::NodeListPtr t_list) -> LocalVarVec;
+  auto get_call_args(node::NodeListPtr t_list) -> ValueVec;
 
   //! Translate the AST to a CLIR module.
   auto translate(NodePtr t_ast) -> ModulePtr;

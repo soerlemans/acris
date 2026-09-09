@@ -47,20 +47,20 @@ auto Label::label() const -> std::string_view
 
 // TODO: Move somewhere else.
 
-auto FunctionLabel::handle() -> FunctionPtr
-{
-  const FunctionPtr target{m_target.lock()};
-  CHECK_NULLPTR(target);
-
-  return target;
-}
-
 auto FunctionLabel::label() const -> std::string_view
 {
   const FunctionPtr target{m_target.lock()};
   CHECK_NULLPTR(target);
 
   return target->m_name;
+}
+
+auto FunctionLabel::handle() const -> FunctionPtr
+{
+  const FunctionPtr target{m_target.lock()};
+  CHECK_NULLPTR(target);
+
+  return target;
 }
 
 // Functions:
@@ -121,8 +121,6 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(COND_JUMP, "cond_jmp");
     MATCH(JUMP, "jmp");
     MATCH(RETURN, "ret");
-
-    MATCH(PHI, "phi");
 
     // High level control flow:
     MATCH(LOOP, "loop");
@@ -201,16 +199,16 @@ auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec)
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::StackVar& t_var) -> std::ostream&
+auto operator<<(std::ostream& t_os, const mir::StackSlot& t_slot) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
 
-  t_os << std::format("&{}", t_var.m_id);
+  t_os << std::format("&{}", t_slot.m_id);
 
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::StackVarPtr& t_ptr)
+auto operator<<(std::ostream& t_os, const mir::StackSlotPtr& t_ptr)
   -> std::ostream&
 {
   using lib::stdprint::detail::print_smart_ptr;
@@ -218,16 +216,16 @@ auto operator<<(std::ostream& t_os, const mir::StackVarPtr& t_ptr)
   return print_smart_ptr(t_os, t_ptr);
 }
 
-auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&
+auto operator<<(std::ostream& t_os, const mir::Value& t_val) -> std::ostream&
 {
   // TODO: Think about conditional printing of the type as well?
 
-  t_os << std::format("%{}", t_var.m_id);
+  t_os << std::format("%{}", t_val.m_id);
 
   return t_os;
 }
 
-auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr)
+auto operator<<(std::ostream& t_os, const mir::ValuePtr& t_ptr)
   -> std::ostream&
 {
   using lib::stdprint::detail::print_smart_ptr;
@@ -246,25 +244,6 @@ auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label)
   -> std::ostream&
 {
   t_os << std::format("<f:{}>", t_label.label());
-
-  return t_os;
-}
-
-auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val)
-  -> std::ostream&
-{
-  auto print{[&](auto&& t_elem) {
-    t_os << t_elem;
-  }};
-
-  std::visit(print, t_val);
-
-  return t_os;
-}
-
-auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&
-{
-  t_os << '[' << t_arg.m_label << ", " << t_arg.m_value << ']';
 
   return t_os;
 }
@@ -339,8 +318,8 @@ auto operator<<(std::ostream& t_os, const mir::BasicBlock& t_bblock)
 auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 {
   using mir::BasicBlock;
-  using mir::LocalVarPtr;
-  using mir::StackVarPtr;
+  using mir::ValuePtr;
+  using mir::StackSlotPtr;
 
   const auto& [name, params, return_type, stack, blocks] = t_fn;
 
@@ -348,7 +327,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 
   t_os << '(';
   std::string_view sep{};
-  for(const LocalVarPtr& ptr : params) {
+  for(const ValuePtr& ptr : params) {
     t_os << sep << ptr;
 
     sep = ", ";
@@ -357,7 +336,7 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
 
   // Local vars, for forward declare:
   t_os << "stack {\n";
-  for(const StackVarPtr& stack_var : stack) {
+  for(const StackSlotPtr& stack_var : stack) {
     t_os << '\t' << stack_var << " : " << stack_var->m_type << '\n';
   }
   t_os << "}\n\n";

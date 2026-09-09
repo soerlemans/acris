@@ -36,11 +36,11 @@ auto MirBuilder::visit(If* t_if) -> Any
 
   // Conditional jump:
   traverse(cond);
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   auto& cond_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
-  m_factory->add_result_var({NativeType::BOOL});
-  cond_instr.add_operand({last_var});
+  m_factory->add_result({NativeType::BOOL});
+  cond_instr.add_operand({last_val});
   const auto cond_result{cond_instr.m_result};
 
   // Then block:
@@ -65,6 +65,8 @@ auto MirBuilder::visit(If* t_if) -> Any
   } else {
     // Final block after the if statement.
     auto& merge_block{m_factory->add_block("if_merge")};
+    cond_instr.add_operand({&merge_block});
+
     m_factory->insert_jump(then_jump, then_block, merge_block);
   }
 
@@ -93,11 +95,11 @@ auto MirBuilder::visit(Loop* t_loop) -> Any
   cond_jump.add_operand({&cond_block});
 
   traverse(cond);
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   auto& cond_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
-  m_factory->add_result_var({NativeType::BOOL});
-  cond_instr.add_operand({last_var});
+  m_factory->add_result({NativeType::BOOL});
+  cond_instr.add_operand({last_val});
   const auto cond_result{cond_instr.m_result};
 
   // TODO: Check condition and quit, if condition fails, else to go to merge
@@ -168,10 +170,10 @@ auto MirBuilder::visit(Return* t_ret) -> Any
   auto expr{t_ret->expr()};
   if(expr) {
     traverse(expr);
-    const auto last_var{m_factory->require_last_var()};
+    const auto last_val{m_factory->require_last_value()};
 
     auto& ret{m_factory->add_instruction(Opcode::RETURN)};
-    ret.add_operand({last_var});
+    ret.add_operand({last_val});
   } else {
     // Add the return with no operand.
     m_factory->add_instruction(Opcode::RETURN);
@@ -260,13 +262,13 @@ auto MirBuilder::visit(Let* t_let) -> Any
   const auto source_line{t_let->position().m_line};
 
   traverse(init_expr);
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   m_factory->add_comment(source_line);
 
   // Allocate and create a local
   m_factory->stack_alloca(name, type);
-  m_factory->store(name, last_var);
+  m_factory->store(name, last_val);
 
   return {};
 }
@@ -285,7 +287,7 @@ auto MirBuilder::visit(Var* t_var) -> Any
 
   traverse(init_expr);
   auto& bind_instr{m_factory->last_instruction()};
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   m_factory->add_comment(source_line);
 
@@ -373,10 +375,10 @@ auto MirBuilder::visit(Arithmetic* t_arith) -> Any
   const auto source_line{t_arith->position().m_line};
 
   traverse(left);
-  const auto left_var{m_factory->require_last_var()};
+  const auto left_var{m_factory->require_last_value()};
 
   traverse(right);
-  const auto right_var{m_factory->require_last_var()};
+  const auto right_var{m_factory->require_last_value()};
 
   const auto add_instr{[&](const Opcode t_opcode) {
     auto& instr{m_factory->add_instruction(t_opcode)};
@@ -385,7 +387,7 @@ auto MirBuilder::visit(Arithmetic* t_arith) -> Any
     instr.add_operand({left_var});
     instr.add_operand({right_var});
 
-    m_factory->add_result_var(type);
+    m_factory->add_result(type);
   }};
 
   const auto add_arithmetic_instr{[&](const Opcode t_iop, const Opcode t_fiop) {
@@ -467,17 +469,17 @@ auto MirBuilder::visit(Assignment* t_assign) -> Any
 
   // TODO: Distinguish between globals and ssa var's.
   const auto name{lhs->identifier()};
-  const auto result_var{m_factory->create_var(type)};
+  const auto result_var{m_factory->create_value(type)};
 
   // TODO: Unify with arithmetic, assignment and comparison implementation.
   const auto add_instr{[&](const Opcode t_opcode) {
     // We traverse right side first.
     // This is significant for IR generation of assignment operator.
     traverse(right);
-    const auto right_var{m_factory->require_last_var()};
+    const auto right_var{m_factory->require_last_value()};
 
     traverse(left);
-    const auto left_var{m_factory->require_last_var()};
+    const auto left_var{m_factory->require_last_value()};
 
     auto& instr{m_factory->add_instruction(t_opcode)};
     instr.add_operand({left_var});
@@ -523,7 +525,7 @@ auto MirBuilder::visit(Assignment* t_assign) -> Any
 
     case AssignmentOp::REGULAR: {
       traverse(right);
-      const auto right_var{m_factory->require_last_var()};
+      const auto right_var{m_factory->require_last_value()};
 
       // For a regular assignment just update the ssa env state.
       m_factory->store(name, right_var);
@@ -551,10 +553,10 @@ auto MirBuilder::visit(Comparison* t_comp) -> Any
   const auto source_line{t_comp->position().m_line};
 
   traverse(left);
-  const auto left_var{m_factory->require_last_var()};
+  const auto left_var{m_factory->require_last_value()};
 
   traverse(right);
-  const auto right_var{m_factory->require_last_var()};
+  const auto right_var{m_factory->require_last_value()};
 
   // TODO: Unify with arithmetic, assignment and comparison implementation.
   const auto add_instr{[&](const Opcode t_opcode) {
@@ -565,7 +567,7 @@ auto MirBuilder::visit(Comparison* t_comp) -> Any
     instr.add_operand({right_var});
 
     // A comparison always returns the boolean type.
-    m_factory->add_result_var({NativeType::BOOL});
+    m_factory->add_result({NativeType::BOOL});
   }};
 
   const auto add_comparison_instr{[&](const Opcode t_iop, const Opcode t_fiop) {
@@ -617,11 +619,11 @@ auto MirBuilder::visit(Increment* t_inc) -> Any
   const auto left{t_inc->left()};
 
   traverse(left);
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   // TODO: Deduce type, of left.
   auto& inc_instr{m_factory->add_instruction(Opcode::IADD)};
-  inc_instr.add_operand({last_var});
+  inc_instr.add_operand({last_val});
 
   // TODO: Deduce native type.
   Literal lit{NativeType::INT, 1};
@@ -637,12 +639,12 @@ auto MirBuilder::visit(Decrement* t_dec) -> Any
   const auto left{t_dec->left()};
 
   traverse(left);
-  const auto last_var{m_factory->require_last_var()};
+  const auto last_val{m_factory->require_last_value()};
 
   // TODO: Deduce type, of left.
   auto& dec_instr{m_factory->add_instruction(Opcode::ISUB)};
 
-  dec_instr.add_operand({last_var});
+  dec_instr.add_operand({last_val});
 
   // TODO: Deduce type, of left.
   Literal lit{NativeType::INT, 1};
@@ -659,8 +661,8 @@ auto MirBuilder::visit(UnaryPrefix* t_up) -> Any
   const auto left{t_up->left()};
 
   traverse(left);
-  const auto last_var{m_factory->require_last_var()};
-  const auto type{last_var->m_type};
+  const auto last_val{m_factory->require_last_value()};
+  const auto type{last_val->m_type};
 
   switch(op) {
     case UnaryPrefixOp::PLUS: {
@@ -675,9 +677,9 @@ auto MirBuilder::visit(UnaryPrefix* t_up) -> Any
 
       Literal lit{NativeType::INT, 0};
       sub_instr.add_operand(lit);
-      sub_instr.add_operand(last_var);
+      sub_instr.add_operand(last_val);
 
-      m_factory->add_result_var(type);
+      m_factory->add_result(type);
 
       // TODO: Traverse left.
       break;
@@ -720,11 +722,11 @@ auto MirBuilder::visit(And* t_and) -> Any
   main_jump.add_operand(Label{&left_block});
 
   traverse(left);
-  const auto left_var{m_factory->require_last_var()};
+  const auto left_var{m_factory->require_last_value()};
 
   // Add a conditional jump skipping if left term is false.
   auto& cjmp_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
-  auto cjmp_var{m_factory->create_var(NativeType::BOOL)};
+  auto cjmp_var{m_factory->create_value(NativeType::BOOL)};
   cjmp_instr.m_result = cjmp_var;
   m_factory->add_comment(source_line);
 
@@ -734,7 +736,7 @@ auto MirBuilder::visit(And* t_and) -> Any
   auto& right_block{m_factory->add_block("and_right_term")};
 
   traverse(right);
-  const auto right_var{m_factory->require_last_var()};
+  const auto right_var{m_factory->require_last_value()};
   const auto right_jump{m_factory->create_instruction(Opcode::JUMP)};
 
   // Right block:
@@ -747,16 +749,16 @@ auto MirBuilder::visit(And* t_and) -> Any
   cjmp_instr.add_operand(Label{&merge_block});
 
   m_factory->add_literal(NativeType::BOOL, {false});
-  auto false_var{m_factory->require_last_var()};
+  auto false_var{m_factory->require_last_value()};
 
-  auto& phi_instr{m_factory->add_instruction(Opcode::PHI)};
-  m_factory->add_result_var({NativeType::BOOL});
+  // auto& phi_instr{m_factory->add_instruction(Opcode::PHI)};
+  // m_factory->add_result({NativeType::BOOL});
 
-  // If we short circuit and go directly to the merge block.
-  // Then the result is false.
-  phi_instr.add_operand({cjmp_var});
-  phi_instr.add_operand({right_var});
-  phi_instr.add_operand({false_var}); // Short-circuit false.
+  // // If we short circuit and go directly to the merge block.
+  // // Then the result is false.
+  // phi_instr.add_operand({cjmp_var});
+  // phi_instr.add_operand({right_var});
+  // phi_instr.add_operand({false_var}); // Short-circuit false.
 
   // Insert jumps to merge into the block.
   m_factory->insert_jump(left_jump, left_block, merge_block);
@@ -783,11 +785,11 @@ auto MirBuilder::visit(Or* t_or) -> Any
   main_jump.add_operand(Label{&left_block});
 
   traverse(left);
-  const auto left_var{m_factory->require_last_var()};
+  const auto left_var{m_factory->require_last_value()};
 
   // Add a conditional jump skipping if left term is false.
   auto& cjmp_instr{m_factory->add_instruction(Opcode::COND_JUMP)};
-  auto cjmp_var{m_factory->create_var(NativeType::BOOL)};
+  auto cjmp_var{m_factory->create_value(NativeType::BOOL)};
   cjmp_instr.m_result = cjmp_var;
   m_factory->add_comment(source_line);
 
@@ -797,7 +799,7 @@ auto MirBuilder::visit(Or* t_or) -> Any
   auto& right_block{m_factory->add_block("or_right_term")};
 
   traverse(right);
-  const auto right_var{m_factory->require_last_var()};
+  const auto right_var{m_factory->require_last_value()};
   const auto right_jump{m_factory->create_instruction(Opcode::JUMP)};
 
   // Right block:
@@ -810,16 +812,16 @@ auto MirBuilder::visit(Or* t_or) -> Any
   cjmp_instr.add_operand(Label{&right_block});
 
   m_factory->add_literal(NativeType::BOOL, {true});
-  auto true_var{m_factory->require_last_var()};
+  auto true_var{m_factory->require_last_value()};
 
-  auto& phi_instr{m_factory->add_instruction(Opcode::PHI)};
-  m_factory->add_result_var({NativeType::BOOL});
+  // auto& phi_instr{m_factory->add_instruction(Opcode::PHI)};
+  // m_factory->add_result({NativeType::BOOL});
 
-  // If we short circuit and go directly to the merge block.
-  // Then the result is false.
-  phi_instr.add_operand({cjmp_var});
-  phi_instr.add_operand({true_var}); // Short-circuit true.
-  phi_instr.add_operand({right_var});
+  // // If we short circuit and go directly to the merge block.
+  // // Then the result is false.
+  // phi_instr.add_operand({cjmp_var});
+  // phi_instr.add_operand({true_var}); // Short-circuit true.
+  // phi_instr.add_operand({right_var});
 
   // Insert jumps to merge into the block.
   m_factory->insert_jump(left_jump, left_block, merge_block);
@@ -913,19 +915,19 @@ auto MirBuilder::visit(List* t_list) -> Any
 }
 
 // Implementation:
-auto MirBuilder::get_call_args(NodeListPtr t_list) -> LocalVarVec
+auto MirBuilder::get_call_args(NodeListPtr t_list) -> ValueVec
 {
   // TODO: Check nullptr?
 
-  LocalVarVec vec{t_list->size()};
+  ValueVec vec{t_list->size()};
 
   for(const auto& ptr : *t_list) {
     // Traverse to generate a last var that we can get.
     traverse(ptr);
 
     // Get the refs.
-    const auto& last_var{m_factory->require_last_var()};
-    vec.push_back(last_var);
+    const auto& last_val{m_factory->require_last_value()};
+    vec.push_back(last_val);
   }
 
   return vec;

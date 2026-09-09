@@ -23,19 +23,19 @@ MirModuleFactory::MirModuleFactory()
     m_global_map{},
     m_stack_map{},
     m_fn_env{},
-    m_var_env{},
+    m_value_env{},
 
     // IDs:
     m_block_id{0},
     m_instr_id{0},
     m_global_id{0},
-    m_var_id{0},
-    m_stack_id{0}
+    m_stack_id{0},
+    m_value_id{0}
 {}
 
 auto MirModuleFactory::push_env() -> void
 {
-  m_var_env.push_env();
+  m_value_env.push_env();
 
   // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.push_env();
@@ -43,54 +43,53 @@ auto MirModuleFactory::push_env() -> void
 
 auto MirModuleFactory::pop_env() -> void
 {
-  m_var_env.pop_env();
+  m_value_env.pop_env();
 
   // FIXME: Why did I do this you cant nest functions in IR?
   m_fn_env.pop_env();
 
   // TODO: LLVM IR backend should also reset this for every function.
   m_instr_id = 0;
-  m_var_id = 0;
+  m_value_id = 0;
   m_stack_id = 0;
 }
 
 auto MirModuleFactory::clear_env() -> void
 {
   m_global_map.clear();
-  m_var_env.clear();
+  m_value_env.clear();
   m_fn_env.clear();
 }
 
-auto MirModuleFactory::create_var(TypeVariant t_type) -> LocalVarPtr
+auto MirModuleFactory::create_value(TypeVariant t_type) -> ValuePtr
 {
-  auto ptr{std::make_shared<LocalVar>(m_var_id, t_type)};
-
-  m_var_id++;
+  auto ptr{std::make_shared<Value>(m_value_id, t_type)};
+  m_value_id++;
 
   return ptr;
 }
 
-auto MirModuleFactory::add_result_var(TypeVariant t_type) -> LocalVarPtr
+auto MirModuleFactory::add_result(TypeVariant t_type) -> ValuePtr
 {
-  auto ssa_var{create_var(t_type)};
+  auto val{create_value(t_type)};
   auto& instr{last_instruction()};
 
   // Add the variable to the last instruction.
-  instr.m_result = ssa_var;
+  instr.m_result = val;
 
-  return ssa_var;
+  return val;
 }
 
-auto MirModuleFactory::last_var() -> LocalVarPtr
+auto MirModuleFactory::last_value() -> ValuePtr
 {
   auto& instr{last_instruction()};
 
   return instr.m_result;
 }
 
-auto MirModuleFactory::require_last_var() -> LocalVarPtr
+auto MirModuleFactory::require_last_value() -> ValuePtr
 {
-  auto var{last_var()};
+  auto var{last_value()};
   if(!var) {
     lib::stdexcept::throw_runtime_error(
       "Expected last IR instruction to produce an SSA var.");
@@ -188,13 +187,11 @@ auto MirModuleFactory::add_literal(NativeType t_type, LiteralValue t_value)
 
   auto& fn{last_function()};
   auto& instr{add_instruction(to_opcode(t_type))};
+  add_result({t_type});
 
   // Add the literal as an operand.
   Literal lit{t_type, t_value};
   instr.add_operand(lit);
-
-  auto LocalVar{create_var({t_type})};
-  instr.m_result = std::move(LocalVar);
 
   return instr;
 }
@@ -231,19 +228,15 @@ auto MirModuleFactory::stack_alloca(std::string_view t_name, TypeVariant t_type)
   auto& fn{last_function()};
 
   // Create stack var entry.
-  auto stack_var{std::make_shared<StackVar>(m_stack_id, t_type)};
+  auto stack_var{std::make_shared<StackSlot>(m_stack_id, t_type)};
   m_stack_id++;
-
-  // Construct load instruction.
-  auto& instr{add_instruction(Opcode::ALLOCA)};
-  instr.add_operand(stack_var);
 
   const auto [iter, inserted] =
     m_stack_map.emplace(std::string{t_name}, stack_var);
   if(!inserted) {
     using lib::stdexcept::throw_runtime_error;
 
-    throw_runtime_error("Could not insert stack variable ", std::quoted(t_name),
+    throw_runtime_error("Could not insert stack slot ", std::quoted(t_name),
                         ".");
   }
 
@@ -270,13 +263,13 @@ auto MirModuleFactory::load(std::string_view t_name) -> Instruction&
 
   const auto idx{iter->second->m_id};
 
-  add_result_var(iter->second->m_type);
+  add_result(iter->second->m_type);
   instr.add_operand(fn->m_stack.at(idx));
 
   return instr;
 }
 
-auto MirModuleFactory::store(std::string_view t_name, LocalVarPtr t_prev_var)
+auto MirModuleFactory::store(std::string_view t_name, ValuePtr t_prev_var)
   -> Instruction&
 {
   auto& fn{last_function()};
@@ -299,7 +292,7 @@ auto MirModuleFactory::store(std::string_view t_name, LocalVarPtr t_prev_var)
   instr.add_operand(fn->m_stack.at(idx));
   instr.add_operand(t_prev_var);
 
-  add_result_var(type);
+  add_result(type);
 
   return instr;
 }
@@ -348,7 +341,7 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
     // Construct load instruction.
     auto& load_instr{add_instruction(Opcode::LOAD)};
     load_instr.add_operand(global_var);
-    add_result_var(type);
+    add_result(type);
 
     return load_instr;
   } else {
@@ -357,12 +350,16 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
 }
 
 auto MirModuleFactory::add_call(const std::string_view t_name,
-                                const LocalVarVec& t_args) -> Instruction&
+                                const ValueVec& t_args) -> Instruction&
 {
   auto& call_instr{add_instruction(Opcode::CALL)};
 
   // Get a handle to the function.
   const FunctionMirEntity& entity{m_fn_env.get_value(t_name)};
+
+	// TODO: We have to resolve the function type now.
+  auto resolved_fn{entity.m_entity};
+	add_result(resolved_fn->m_return_type);
 
   // Insert a weak reference to the function as operand.
   // FIXME: But this fails when we only have a declaration
@@ -372,7 +369,7 @@ auto MirModuleFactory::add_call(const std::string_view t_name,
   call_instr.add_operand({label});
 
   // The rest of the args.
-  for(const LocalVarPtr& var : t_args) {
+  for(const ValuePtr& var : t_args) {
     call_instr.add_operand({var});
   }
 

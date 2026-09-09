@@ -159,8 +159,8 @@ auto LlvmBackend::operand2llvm(const Operand& t_operand,
     auto lit(std::get<Literal>(t_operand));
 
     val = literal2llvm(lit);
-    // } else if(std::holds_alternative<StackVarPtr>(t_operand)) {
-    // auto var(std::get<StackVarPtr>(t_operand));
+    // } else if(std::holds_alternative<StackSlotPtr>(t_operand)) {
+    // auto var(std::get<StackSlotPtr>(t_operand));
     // auto* stored_val = m_stack.at(var->m_id);
 
     // if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
@@ -173,9 +173,9 @@ auto LlvmBackend::operand2llvm(const Operand& t_operand,
     //   val = stored_val;
     // }
 
-  } else if(std::holds_alternative<LocalVarPtr>(t_operand)) {
-    auto var(std::get<LocalVarPtr>(t_operand));
-    auto* stored_val = m_locals.at(var->m_id);
+  } else if(std::holds_alternative<ValuePtr>(t_operand)) {
+    auto mir_val(std::get<ValuePtr>(t_operand));
+    auto* stored_val = m_locals.at(mir_val->m_id);
 
     if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
       auto load_str{std::format("{}_load", t_id)};
@@ -195,18 +195,6 @@ auto LlvmBackend::operand2llvm(const Operand& t_operand,
   }
 
   return val;
-}
-
-auto LlvmBackend::phi_arg_val2llvm(const PhiArgValue& t_phi_arg,
-                                   std::string_view t_id) -> llvm::Value*
-{
-  return std::visit(
-    [&](auto&& t_val) {
-      Operand operand{t_val};
-
-      return operand2llvm(operand);
-    },
-    t_phi_arg);
 }
 
 auto LlvmBackend::literal2llvm(const Literal& t_literal) -> llvm::Value*
@@ -511,8 +499,8 @@ auto LlvmBackend::on_icmp_gt(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  // auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
-  // auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
+  // auto first{std::get<ValuePtr>(operands.at(0))->m_id};
+  // auto second{std::get<ValuePtr>(operands.at(1))->m_id};
 
   auto first{operands.at(0)};
   auto second{operands.at(1)};
@@ -533,8 +521,8 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
-  auto first{std::get<LocalVarPtr>(operands.at(0))->m_id};
-  auto second{std::get<LocalVarPtr>(operands.at(1))->m_id};
+  auto first{std::get<ValuePtr>(operands.at(0))->m_id};
+  auto second{std::get<ValuePtr>(operands.at(1))->m_id};
 
   auto* lhs{m_locals.at(first)};
   auto* rhs{m_locals.at(second)};
@@ -545,22 +533,7 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
 }
 
 auto LlvmBackend::on_alloca(Instruction& t_instr) -> void
-{
-  /*
-  const auto& [id, opcode, operands, result, comment] = t_instr;
-
-  auto first{std::get<StackVarPtr>(operands.at(0))};
-
-  const auto stack_id{first->m_id};
-  llvm::Value* val{type2llvm(first->m_type)};
-
-  auto label{std::format("{}.addr", stack_id)};
-  llvm::AllocaInst* alloca{
-    m_builder->CreateAlloca(val->getType(), nullptr, label)};
-
-  m_stack.emplace(stack_id, alloca);
-  */
-}
+{}
 
 auto LlvmBackend::on_load(Instruction& t_instr) -> void
 {
@@ -569,7 +542,7 @@ auto LlvmBackend::on_load(Instruction& t_instr) -> void
   auto& first{operands.at(0)};
 
   const auto result_id{result->m_id};
-  const auto stack_id{std::get<StackVarPtr>(operands.at(0))->m_id};
+  const auto stack_id{std::get<StackSlotPtr>(operands.at(0))->m_id};
 
   // Retrieve.
   llvm::AllocaInst* alloca{m_stack.at(stack_id)};
@@ -586,12 +559,12 @@ auto LlvmBackend::on_store(Instruction& t_instr) -> void
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
   const auto result_id{result->m_id};
-  const auto stack_id{std::get<StackVarPtr>(operands.at(0))->m_id};
+  const auto stack_id{std::get<StackSlotPtr>(operands.at(0))->m_id};
   const auto second{operands.at(1)};
 
   llvm::Value* val{nullptr};
-  if(std::holds_alternative<LocalVarPtr>(second)) {
-    auto local_var(std::get<LocalVarPtr>(second));
+  if(std::holds_alternative<ValuePtr>(second)) {
+    auto local_var(std::get<ValuePtr>(second));
 
     val = m_locals.at(local_var->m_id);
   }
@@ -603,13 +576,42 @@ auto LlvmBackend::on_store(Instruction& t_instr) -> void
   llvm::Value* stored{m_builder->CreateStore(val, alloca)};
 }
 
+auto LlvmBackend::on_call(Instruction& t_instr) -> void
+{
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+  const auto result_id{result->m_id};
+
+	// Get function entry from first arg.
+  const auto fn_name{std::get<FunctionLabel>(operands.at(0)).handle()->m_name};
+  const auto iter{m_functions.find(fn_name)};
+  if(iter == m_functions.end()) {
+    throwf<InvalidArgument>("Cant find function id ({})!", fn_name);
+  }
+
+  llvm::Function* callee{iter->second};
+  llvm::FunctionType* callee_type = callee->getFunctionType();
+
+	// Get args.
+  std::vector<llvm::Value*> call_args{};
+  for(std::size_t idx = 1; idx < operands.size(); idx++) {
+    const auto arg{std::get<ValuePtr>(operands.at(idx))};
+
+    auto* val{m_locals.at(arg->m_id)};
+    call_args.push_back(val);
+  }
+
+	// Insert LLVM call instructions.
+  auto* call_result{m_builder->CreateCall(callee_type, callee, call_args, "call_result")};
+  m_locals.emplace(result_id, call_result);
+}
+
 auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
   const auto result_id{result->m_id};
 
   auto& first{operands.at(0)};
-  auto var_ptr(std::get<LocalVarPtr>(first));
+  auto var_ptr(std::get<ValuePtr>(first));
   auto* val = m_locals.at(var_ptr->m_id);
 
   auto second_label{std::get<mir::Label>(operands.at(1)).m_target->m_label};
@@ -642,27 +644,6 @@ auto LlvmBackend::on_return(Instruction& t_instr) -> void
   llvm::Value* val{operand2llvm(first)};
 
   m_builder->CreateRet(val);
-}
-
-auto LlvmBackend::on_phi(Instruction& t_instr) -> void
-{
-  const auto& [id, opcode, operands, result, comment] = t_instr;
-  auto result_id{result->m_id};
-
-  llvm::PHINode* phi = m_builder->CreatePHI(m_builder->getInt32Ty(), 2, "phi");
-
-  for(const Operand& operand : operands) {
-    auto arg{std::get<PhiArg>(operand)};
-    auto& [label, value] = arg;
-
-    auto target_block{label.m_target};
-    auto* bblock{m_bblocks.at(target_block->m_label)};
-
-    llvm::Value* val{phi_arg_val2llvm(value)};
-    phi->addIncoming(val, bblock);
-  }
-
-  m_locals.emplace(result_id, phi);
 }
 
 auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
@@ -771,7 +752,6 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
     case Opcode::FCMP_GTE:
       break;
 
-
     case Opcode::ALLOCA:
       on_alloca(t_instr);
       break;
@@ -782,6 +762,10 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       on_store(t_instr);
       break;
     case Opcode::LEA:
+      break;
+
+    case Opcode::CALL:
+      on_call(t_instr);
       break;
 
     case Opcode::COND_JUMP:
@@ -800,13 +784,7 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       on_return(t_instr);
       break;
 
-    case Opcode::PHI:
-      on_phi(t_instr);
-      break;
-
     case Opcode::LOOP:
-      break;
-    case Opcode::CALL:
       break;
     case Opcode::NOP:
       break;
@@ -883,9 +861,9 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     // TODO: Make work with TypeVariant.
     const auto opt{stack_entry->m_type.native_type()};
     if(!opt) {
-      DBG_ERROR(
-        "Cancelling function LLVM IR generation, cause  type of stack_entry is "
-        "not resolvalbe to native type.");
+      DBG_ERROR("Cancelling function LLVM IR generation, cause  type of "
+                "stack_entry is "
+                "not resolvalbe to native type.");
       return;
     }
 
@@ -929,6 +907,9 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
   }
 
   llvm::verifyFunction(*fn);
+
+	// Insert the function LLVM value for later call generation.
+  m_functions.emplace(fn_name, fn);
 
   // Cleanup resources.
   m_locals.clear();

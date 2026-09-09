@@ -14,7 +14,8 @@ namespace mir::mir_builder {
 using types::core::TypeVariant;
 
 // Forward Declarations:
-struct LocalVarSite;
+struct ValueSite;
+
 template<typename T>
 struct MirEntity;
 class MirModuleFactory;
@@ -27,8 +28,8 @@ using GlobalMirEntity = MirEntity<GlobalVarPtr>;
 
 //! Globals can be forward declared, regular variables not.
 using GlobalVarMap = std::unordered_map<std::string, GlobalMirEntity>;
-using StackVarMap = std::unordered_map<std::string, StackVarPtr>;
-using LocalVarEnvState = MirEnvState<LocalVarSite>;
+using StackMap = std::unordered_map<std::string, StackSlotPtr>;
+using ValueEnvState = MirEnvState<ValueSite>;
 using FunctionEnvState = MirEnvState<FunctionMirEntity>;
 
 // Enums:
@@ -44,9 +45,9 @@ enum class EntityStatus {
  * We need to keep track of the blocks ssa var's are in for phi merging.
  * Which is also relevant for LLVM IR.
  */
-struct LocalVarSite {
+struct ValueSite {
   BasicBlock* m_block;
-  LocalVarPtr m_var;
+  ValuePtr m_val;
 };
 
 /*!
@@ -83,18 +84,19 @@ class MirModuleFactory {
 
   // Environment for referencing globals.
   GlobalVarMap m_global_map;
-  StackVarMap m_stack_map;
+  StackMap m_stack_map;
 
   // Semantic pass should prevent any variables and functions from conflicting.
   FunctionEnvState m_fn_env;
-  LocalVarEnvState m_var_env;
+  ValueEnvState m_value_env;
 
   // We need to increment these to prevent collisions.
   u64 m_block_id;
   u64 m_instr_id;
+
   u64 m_global_id;
   u64 m_stack_id;
-  u64 m_var_id;
+  u64 m_value_id;
 
   public:
   MirModuleFactory();
@@ -104,24 +106,13 @@ class MirModuleFactory {
   auto pop_env() -> void;
   auto clear_env() -> void;
 
-  // LocalVar operations:
+  // Value operations:
   [[nodiscard("Must use created ssa var.")]]
-  auto create_var(TypeVariant t_type) -> LocalVarPtr;
-  auto add_result_var(TypeVariant t_type) -> LocalVarPtr;
+  auto create_value(TypeVariant t_type) -> ValuePtr;
+  auto add_result(TypeVariant t_type) -> ValuePtr;
 
-  /*!
-   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
-   *
-   * @remark Can be a nullptr if last instruction has no result variable.
-   */
-  auto last_var() -> LocalVarPtr;
-
-  /*!
-   * Returns the result @ref LocalVarPtr from the last @ref Instruction.
-   *
-   * @remark Throws if the last instruction has no result variable.
-   */
-  auto require_last_var() -> LocalVarPtr;
+  auto last_value() -> ValuePtr;
+  auto require_last_value() -> ValuePtr;
 
   // Instruction operations:
   [[nodiscard("Must use created instruction.")]]
@@ -157,7 +148,7 @@ class MirModuleFactory {
    * This instruction is always an update instruction.
    * So we can reference the last SSA var.
    */
-  auto store(std::string_view t_name, LocalVarPtr t_prev_var) -> Instruction&;
+  auto store(std::string_view t_name, ValuePtr t_prev_var) -> Instruction&;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -192,12 +183,7 @@ class MirModuleFactory {
    */
   auto add_variable_ref(std::string_view t_name) -> Instruction&;
 
-  /*!
-   * Create a call instruction.
-   * @param t_name Name of the function to call.
-   * @param t_args Arguments to pass to the function.
-   */
-  auto add_call(std::string_view t_name, const LocalVarVec& t_args)
+  auto add_call(std::string_view t_name, const ValueVec& t_args)
     -> Instruction&;
 
   auto last_instruction() -> Instruction&;
