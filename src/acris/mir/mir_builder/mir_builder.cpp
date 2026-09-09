@@ -194,7 +194,7 @@ auto MirBuilder::visit(Parameter* t_param) -> Any
   // current_fn->m_params.push_back(param_var);
 
   // // Insert an update statement for debugging.
-  // m_factory->local_load(name, param_var);
+  // m_factory->load(name, param_var);
 
   return {};
 }
@@ -260,14 +260,13 @@ auto MirBuilder::visit(Let* t_let) -> Any
   const auto source_line{t_let->position().m_line};
 
   traverse(init_expr);
-  auto& bind_instr{m_factory->last_instruction()};
   const auto last_var{m_factory->require_last_var()};
 
   m_factory->add_comment(source_line);
 
-  // Create and load local for usage.
-  m_factory->create_local(name, type);
-  m_factory->local_load(name);
+  // Allocate and create a local
+  m_factory->stack_alloca(name, type);
+  m_factory->store(name, last_var);
 
   return {};
 }
@@ -291,8 +290,8 @@ auto MirBuilder::visit(Var* t_var) -> Any
   m_factory->add_comment(source_line);
 
   // Create and load local for usage.
-  m_factory->create_local(name, type);
-  m_factory->local_load(name);
+  m_factory->stack_alloca(name, type);
+  m_factory->load(name);
 
   return {};
 }
@@ -495,7 +494,7 @@ auto MirBuilder::visit(Assignment* t_assign) -> Any
     add_instr(t_iop);
 
     // Add the final update, for the variable name and comment.
-    m_factory->local_store(name, result_var);
+    m_factory->store(name, result_var);
     m_factory->add_comment(source_line);
   }};
 
@@ -527,7 +526,7 @@ auto MirBuilder::visit(Assignment* t_assign) -> Any
       const auto right_var{m_factory->require_last_var()};
 
       // For a regular assignment just update the ssa env state.
-      m_factory->local_store(name, right_var);
+      m_factory->store(name, right_var);
       m_factory->add_comment(source_line);
       break;
     }

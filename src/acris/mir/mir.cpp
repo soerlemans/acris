@@ -112,9 +112,9 @@ auto opcode2str(const Opcode t_opcode) -> std::string_view
     MATCH(BIND, "bind");
     MATCH(UPDATE, "update");
 
+    MATCH(ALLOCA, "alloca");
     MATCH(LOAD, "load");
     MATCH(STORE, "store");
-    MATCH(ALLOC, "alloc");
     MATCH(LEA, "lea");
 
     // Control Flow:
@@ -356,7 +356,6 @@ auto operator<<(std::ostream& t_os, const mir::Function& t_fn) -> std::ostream&
   t_os << ") -> " << return_type << "{\n";
 
   // Local vars, for forward declare:
-  std::size_t stack_idx{0};
   t_os << "stack {\n";
   for(const StackVarPtr& stack_var : stack) {
     t_os << '\t' << stack_var << " : " << stack_var->m_type << '\n';

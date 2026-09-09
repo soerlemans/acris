@@ -19,13 +19,13 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
-#include <llvm/Passes/PassBuilder.h>
 
 // Absolute Includes:
 #include "acris/debug/log.hpp"
@@ -159,6 +159,20 @@ auto LlvmBackend::operand2llvm(const Operand& t_operand,
     auto lit(std::get<Literal>(t_operand));
 
     val = literal2llvm(lit);
+    // } else if(std::holds_alternative<StackVarPtr>(t_operand)) {
+    // auto var(std::get<StackVarPtr>(t_operand));
+    // auto* stored_val = m_stack.at(var->m_id);
+
+    // if(auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(stored_val); alloca) {
+    //   auto load_str{std::format("{}_load", t_id)};
+
+    //   // Dereference stack address if its the case.
+    //   // val = m_builder->CreateLoad(alloca->getAllocatedType(), alloca,
+    //   load_str);
+    // } else {
+    //   val = stored_val;
+    // }
+
   } else if(std::holds_alternative<LocalVarPtr>(t_operand)) {
     auto var(std::get<LocalVarPtr>(t_operand));
     auto* stored_val = m_locals.at(var->m_id);
@@ -530,46 +544,63 @@ auto LlvmBackend::on_icmp_gte(Instruction& t_instr) -> void
   m_locals.emplace(result_id, cond);
 }
 
+auto LlvmBackend::on_alloca(Instruction& t_instr) -> void
+{
+  /*
+  const auto& [id, opcode, operands, result, comment] = t_instr;
+
+  auto first{std::get<StackVarPtr>(operands.at(0))};
+
+  const auto stack_id{first->m_id};
+  llvm::Value* val{type2llvm(first->m_type)};
+
+  auto label{std::format("{}.addr", stack_id)};
+  llvm::AllocaInst* alloca{
+    m_builder->CreateAlloca(val->getType(), nullptr, label)};
+
+  m_stack.emplace(stack_id, alloca);
+  */
+}
+
 auto LlvmBackend::on_load(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
   auto& first{operands.at(0)};
 
-  llvm::Value* val{operand2llvm(first)};
-
   const auto result_id{result->m_id};
-  const auto var_id{std::format("v{}", result_id)};
+  const auto stack_id{std::get<StackVarPtr>(operands.at(0))->m_id};
 
-  // Preallocated at start of function.
-  llvm::Value* alloca{m_locals.at(result_id)};
+  // Retrieve.
+  llvm::AllocaInst* alloca{m_stack.at(stack_id)};
 
-  // Sigsegv.
-  // Allocate memory for a local integer variable test.
-  // llvm::AllocaInst* alloca{
-  // new llvm::AllocaInst(val->getType(), 0, var_id, last_bblock())};
+  // Load value and update the locals.
+  llvm::Value* loaded{
+    m_builder->CreateLoad(alloca->getAllocatedType(), alloca)};
 
-  // Store in memory.
-  m_builder->CreateStore(val, alloca);
-
-  m_locals.emplace(result_id, alloca);
+  m_locals.emplace(result_id, loaded);
 }
 
 auto LlvmBackend::on_store(Instruction& t_instr) -> void
 {
   const auto& [id, opcode, operands, result, comment] = t_instr;
 
-  auto& first{operands.at(0)};
+  const auto result_id{result->m_id};
+  const auto stack_id{std::get<StackVarPtr>(operands.at(0))->m_id};
+  const auto second{operands.at(1)};
 
   llvm::Value* val{nullptr};
-  if(std::holds_alternative<LocalVarPtr>(first)) {
-    auto local_var(std::get<LocalVarPtr>(first));
+  if(std::holds_alternative<LocalVarPtr>(second)) {
+    auto local_var(std::get<LocalVarPtr>(second));
 
     val = m_locals.at(local_var->m_id);
   }
 
-  auto result_id{result->m_id};
-  m_locals.emplace(result_id, val);
+  // Retrieve.
+  llvm::Value* alloca{m_stack.at(stack_id)};
+
+  // Load value and update the locals.
+  llvm::Value* stored{m_builder->CreateStore(val, alloca)};
 }
 
 auto LlvmBackend::on_cond_jmp(Instruction& t_instr) -> void
@@ -741,7 +772,8 @@ auto LlvmBackend::on_instruction(Instruction& t_instr) -> void
       break;
 
 
-    case Opcode::ALLOC:
+    case Opcode::ALLOCA:
+      on_alloca(t_instr);
       break;
     case Opcode::LOAD:
       on_load(t_instr);
@@ -843,29 +875,30 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
     m_bblocks.emplace(block_label, bblock);
   }
 
+  // Set insertion point right after blocks were made.
+  m_builder->SetInsertPoint(m_entry_bblock);
+
   const auto stack{t_fn->m_stack};
-  for(const auto& local : stack) {
+  for(const auto& stack_entry : stack) {
     // TODO: Make work with TypeVariant.
-    const auto opt{local->m_type.native_type()};
+    const auto opt{stack_entry->m_type.native_type()};
     if(!opt) {
       DBG_ERROR(
-        "Cancelling function LLVM IR generation, cause  type of local is "
+        "Cancelling function LLVM IR generation, cause  type of stack_entry is "
         "not resolvalbe to native type.");
       return;
     }
 
-    auto* type{native_type2llvm(opt.value())};
+    const auto stack_id{stack_entry->m_id};
+    const NativeType native_type{opt.value()};
+    auto* type{native_type2llvm(native_type)};
 
-    const auto local_id{local->m_id};
-    const auto var_id{std::format("v{}", local_id)};
+    auto label{std::format("{}.alloca", stack_id)};
+    llvm::AllocaInst* alloca{m_builder->CreateAlloca(type, nullptr, label)};
 
-    llvm::AllocaInst* alloc{
-      new llvm::AllocaInst(type, 0, var_id, m_entry_bblock)};
-
-    m_locals.emplace(local_id, (llvm::Value*)alloc);
+    m_stack.emplace(stack_id, alloca);
   }
 
-  m_builder->SetInsertPoint(m_entry_bblock);
 
   for(const auto& param : params) {
     auto arg{fn->args().begin()};
@@ -877,6 +910,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
 
     m_builder->CreateStore(arg, alloca);
 
+    // FIXME: Treat parameters as a local for now.
     m_locals.emplace(param->m_id, alloca);
 
     arg++;
@@ -898,6 +932,7 @@ auto LlvmBackend::on_function(FunctionPtr& t_fn) -> void
 
   // Cleanup resources.
   m_locals.clear();
+  m_stack.clear();
   m_bblocks.clear();
   m_entry_bblock = nullptr;
 }
@@ -994,7 +1029,7 @@ auto LlvmBackend::run_mem2reg() -> void
       func_pass_manager.run(func, func_analyser);
     }
   }
-	*/
+  */
 }
 
 auto LlvmBackend::requires_mir() -> bool

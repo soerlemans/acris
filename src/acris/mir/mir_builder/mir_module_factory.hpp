@@ -144,21 +144,20 @@ class MirModuleFactory {
                    BasicBlock& t_target) -> Instruction&;
   auto insert_jump(BasicBlock& t_block, BasicBlock& t_target) -> Instruction&;
 
-  auto create_local(std::string_view t_name, TypeVariant t_type) -> void;
+  auto stack_alloca(std::string_view t_name, TypeVariant t_type) -> void;
 
   /*!
    * Bind a source variable name to an IR var.
    * For later reference/usage.
    */
-  auto local_load(std::string_view t_name) -> Instruction&;
+  auto load(std::string_view t_name) -> Instruction&;
 
   /*!
    * Adds an instruction, which returns a result to reference the variable by.
    * This instruction is always an update instruction.
    * So we can reference the last SSA var.
    */
-  auto local_store(std::string_view t_name, LocalVarPtr t_prev_var)
-    -> Instruction&;
+  auto store(std::string_view t_name, LocalVarPtr t_prev_var) -> Instruction&;
 
   [[nodiscard("Must use created global.")]]
   auto create_global(std::string_view t_name, TypeVariant t_type)
@@ -216,7 +215,6 @@ class MirModuleFactory {
   auto last_block() -> BasicBlock&;
 
   // Function operations:
-  // auto add_local(StackVarPtr& t_var) -> void;
   auto add_function_declaration(FunctionPtr t_fn) -> void;
   auto add_function_definition(FunctionPtr t_fn) -> void;
 

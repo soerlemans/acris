@@ -140,9 +140,9 @@ enum class Opcode : u32 {
   BIND,      // %<dest> = bind <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
   UPDATE,    // %<dest> = update <src> ; dest = src. Adds a comment of the in source variable referenced.
 
-  LOAD,      // %<dest> = load <src mem> ; dest = *src.
-  STORE,     // %<dest> = store <src mem> ; *dest = src.
-  ALLOC,    // %<dest> = alloca <count>; Allocate memory on the heap.
+  ALLOCA,    // alloca <type> <count>; Allocate memory on the heap.
+  LOAD,      // %<dest> = load <stack var> ; TODO:
+  STORE,     // store <stack var> <value> ; TODO:
   LEA,       // %<dest> = lea <src> ; dest = &src Load a calculated address, like load effective address.
   // clang-format on
 

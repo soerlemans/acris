@@ -30,7 +30,7 @@ MirModuleFactory::MirModuleFactory()
     m_instr_id{0},
     m_global_id{0},
     m_var_id{0},
-		m_stack_id{0}
+    m_stack_id{0}
 {}
 
 auto MirModuleFactory::push_env() -> void
@@ -49,7 +49,7 @@ auto MirModuleFactory::pop_env() -> void
   m_fn_env.pop_env();
 
   // TODO: LLVM IR backend should also reset this for every function.
-	m_instr_id = 0;
+  m_instr_id = 0;
   m_var_id = 0;
   m_stack_id = 0;
 }
@@ -225,10 +225,9 @@ auto MirModuleFactory::insert_jump(BasicBlock& t_block, BasicBlock& t_target)
   return insert_jump(jmp_instr, t_block, t_target);
 }
 
-auto MirModuleFactory::create_local(std::string_view t_name, TypeVariant t_type)
+auto MirModuleFactory::stack_alloca(std::string_view t_name, TypeVariant t_type)
   -> void
 {
-  // TODO: Check for errors.
   auto& fn{last_function()};
 
   // Create stack var entry.
@@ -236,11 +235,8 @@ auto MirModuleFactory::create_local(std::string_view t_name, TypeVariant t_type)
   m_stack_id++;
 
   // Construct load instruction.
-  auto& instr{add_instruction(Opcode::LOAD)};
-  add_result_var(t_type);
+  auto& instr{add_instruction(Opcode::ALLOCA)};
   instr.add_operand(stack_var);
-
-  // add_local(stack_var);
 
   const auto [iter, inserted] =
     m_stack_map.emplace(std::string{t_name}, stack_var);
@@ -255,7 +251,7 @@ auto MirModuleFactory::create_local(std::string_view t_name, TypeVariant t_type)
   fn->m_stack.push_back(stack_var);
 }
 
-auto MirModuleFactory::local_load(std::string_view t_name) -> Instruction&
+auto MirModuleFactory::load(std::string_view t_name) -> Instruction&
 {
   // TODO: Check for errors.
   auto& fn{last_function()};
@@ -280,8 +276,8 @@ auto MirModuleFactory::local_load(std::string_view t_name) -> Instruction&
   return instr;
 }
 
-auto MirModuleFactory::local_store(std::string_view t_name,
-                                   LocalVarPtr t_prev_var) -> Instruction&
+auto MirModuleFactory::store(std::string_view t_name, LocalVarPtr t_prev_var)
+  -> Instruction&
 {
   auto& fn{last_function()};
 
@@ -301,6 +297,8 @@ auto MirModuleFactory::local_store(std::string_view t_name,
 
   const auto idx{iter->second->m_id};
   instr.add_operand(fn->m_stack.at(idx));
+  instr.add_operand(t_prev_var);
+
   add_result_var(type);
 
   return instr;
@@ -354,7 +352,7 @@ auto MirModuleFactory::add_variable_ref(const std::string_view t_name)
 
     return load_instr;
   } else {
-    return local_load(t_name);
+    return load(t_name);
   }
 }
 
@@ -462,13 +460,6 @@ auto MirModuleFactory::last_block() -> BasicBlock&
 
   return fn->m_blocks.back();
 }
-
-// auto MirModuleFactory::add_local(StackVarPtr& t_var) -> void
-// {
-//   auto& fn{last_function()};
-
-//   fn->m_locals.emplace_back(std::move(t_var));
-// }
 
 auto MirModuleFactory::add_function_declaration(FunctionPtr t_fn) -> void
 {

@@ -42,6 +42,8 @@ using mir::Literal;
 using mir::LocalVar;
 using mir::LocalVarHandle;
 using mir::LocalVarPtr;
+using mir::StackVarPtr;
+using mir::StackVarHandle;
 using mir::ModulePtr;
 using mir::Operand;
 using mir::PhiArg;
@@ -63,6 +65,7 @@ using LiteralMap = std::unordered_map<VarHandle, llvm::Value*>;
 
 using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::GlobalVariable*>;
 using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
+using StackMap = std::unordered_map<StackVarHandle, llvm::AllocaInst*>;
 
 using BasicBlockMap = std::unordered_map<BasicBlockHandle, llvm::BasicBlock*>;
 using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
@@ -80,6 +83,7 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
+	StackMap m_stack;
 
   BasicBlockMap m_bblocks;
 
@@ -118,8 +122,9 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto on_icmp_gt(Instruction& t_instr) -> void;
   auto on_icmp_gte(Instruction& t_instr) -> void;
 
-  auto on_store(Instruction& t_instr) -> void;
+	auto on_alloca(Instruction& t_instr) -> void;
   auto on_load(Instruction& t_instr) -> void;
+  auto on_store(Instruction& t_instr) -> void;
 
   auto on_cond_jmp(Instruction& t_instr) -> void;
   auto on_jmp(Instruction& t_instr) -> void;
