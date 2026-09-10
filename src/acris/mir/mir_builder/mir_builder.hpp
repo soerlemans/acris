@@ -5,6 +5,12 @@
 #include "acris/ast/visitor/node_visitor.hpp"
 #include "acris/mir/mir_builder/mir_module_factory.hpp"
 
+// TODO: Move from an SSA to a stackslot based approach so that I wont want to
+// end my life.
+// And then use mem2reg pass to have LLVM backend sort out the phi node.
+// Dominance frontier stuff, cause I need to have free time and compilers are
+// hard.
+
 namespace mir::mir_builder {
 // Aliases:
 namespace node = ast::node;
@@ -30,11 +36,6 @@ struct MirTranslateParams {
 class MirBuilder : public NodeVisitor {
   private:
   MirModuleFactoryPtr m_factory;
-
-  /*!
-   * Traverse a node in a new environemnt
-   */
-  auto traverse_in_new_env(NodePtr t_node) -> LocalVarEnvState;
 
   public:
   MirBuilder();
@@ -104,7 +105,7 @@ class MirBuilder : public NodeVisitor {
 
   // Implementation:
   //! Return all the SSA vars that are needed for a call.
-  auto get_call_args(node::NodeListPtr t_list) -> LocalVarVec;
+  auto get_call_args(node::NodeListPtr t_list) -> ValueVec;
 
   //! Translate the AST to a CLIR module.
   auto translate(NodePtr t_ast) -> ModulePtr;

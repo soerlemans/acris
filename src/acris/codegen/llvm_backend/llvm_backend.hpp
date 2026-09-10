@@ -39,14 +39,14 @@ using mir::GlobalVarPtr;
 using mir::Instruction;
 using mir::InstructionHandle;
 using mir::Literal;
-using mir::LocalVar;
-using mir::LocalVarHandle;
-using mir::LocalVarPtr;
+using mir::Value;
+using mir::ValueHandle;
+using mir::ValuePtr;
+using mir::StackSlotPtr;
+using mir::StackSlotHandle;
 using mir::ModulePtr;
 using mir::Operand;
-using mir::PhiArg;
-using mir::PhiArgValue;
-using mir::VarHandle;
+using mir::FunctionLabel;
 using mir::mir_pass::MirPass;
 using types::core::NativeType;
 using types::core::TypeVariant;
@@ -59,10 +59,11 @@ using LlvmTypePtr = std::unique_ptr<llvm::Type>;
 
 // Literals are assigned.
 // FIXME: Globals and such share id/handle space in this case watchout.
-using LiteralMap = std::unordered_map<VarHandle, llvm::Value*>;
+using LiteralMap = std::unordered_map<ValueHandle, llvm::Value*>;
 
 using GlobalVarMap = std::unordered_map<GlobalVarHandle, llvm::GlobalVariable*>;
-using LocalVarMap = std::unordered_map<LocalVarHandle, llvm::Value*>;
+using LocalVarMap = std::unordered_map<ValueHandle, llvm::Value*>;
+using StackMap = std::unordered_map<StackSlotHandle, llvm::AllocaInst*>;
 
 using BasicBlockMap = std::unordered_map<BasicBlockHandle, llvm::BasicBlock*>;
 using FunctionMap = std::unordered_map<FunctionHandle, llvm::Function*>;
@@ -80,6 +81,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   GlobalVarMap m_globals;
   LocalVarMap m_locals;
+	StackMap m_stack;
+	FunctionMap m_functions;
 
   BasicBlockMap m_bblocks;
 
@@ -98,8 +101,6 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto type2llvm(TypeVariant& t_type) -> llvm::Value*;
   auto operand2llvm(const Operand& t_operand, std::string_view t_id = "")
     -> llvm::Value*;
-  auto phi_arg_val2llvm(const PhiArgValue& t_phi_arg,
-                        std::string_view t_id = "phi") -> llvm::Value*;
 
 	// Opcodes:
   auto on_const_int(Instruction& t_instr) -> void;
@@ -118,12 +119,14 @@ class LlvmBackend : public MirPass, public BackendInterface {
   auto on_icmp_gt(Instruction& t_instr) -> void;
   auto on_icmp_gte(Instruction& t_instr) -> void;
 
-  auto on_bind(Instruction& t_instr) -> void;
-  auto on_update(Instruction& t_instr) -> void;
+	auto on_alloca(Instruction& t_instr) -> void;
+  auto on_load(Instruction& t_instr) -> void;
+  auto on_store(Instruction& t_instr) -> void;
+
+	auto on_call(Instruction& t_instr) -> void;
   auto on_cond_jmp(Instruction& t_instr) -> void;
   auto on_jmp(Instruction& t_instr) -> void;
   auto on_return(Instruction& t_instr) -> void;
-  auto on_phi(Instruction& t_instr) -> void;
 
   auto on_instruction(Instruction& t_instr) -> void override;
   auto on_block(BasicBlock& t_block) -> void override;
@@ -142,6 +145,8 @@ class LlvmBackend : public MirPass, public BackendInterface {
 
   auto set_optimize(Optimize t_olevel) -> void override;
   auto set_passess() -> void;
+
+	auto run_mem2reg() -> void;
 
   auto requires_mir() -> bool override;
 

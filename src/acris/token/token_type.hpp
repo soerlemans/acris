@@ -60,13 +60,16 @@ enum class TokenType {
   MATCH,
   SWITCH,
   CASE,
-  FALLTHROUGH,
   IF,
   ELSE,
   ELIF,
   LOOP,
   DO,
   IN,
+
+  FALLTHROUGH,
+  UNREACHABLE,
+	PANIC,
 
   // Jump:
   BREAK,

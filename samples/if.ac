@@ -1,5 +1,6 @@
 module if_module
 
+/*
 func branch(t_cond: int) -> bool {
   var someVar: int = -1
 
@@ -11,19 +12,32 @@ func branch(t_cond: int) -> bool {
 
   return someVar
 }
+*/
 
-func branch2(t_cond: int) -> bool {
-  var someVar: int = -1
+func branch2() -> bool {
+  var someVar = false
+  let cond = 11
 
-  if t_cond > 10 {
-    someVar = 1
+  if cond > 10 {
+    someVar = true
   }
 
   return someVar
 }
 
+/*
+func identity(t_var: bool) -> bool {
+  return t_var
+}
+*/
+
 func main() -> int {
-  branch(0)
+  let val = branch2()
+	if val {
+    return 10
+  } else {
+    return 200
+  }
 
   return 0
 }

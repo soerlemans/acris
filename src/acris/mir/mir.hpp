@@ -24,8 +24,8 @@ namespace mir {
 // Forward Declarations:
 struct Literal;
 struct GlobalVar;
-struct LocalVar;
-struct PhiArg;
+struct StackSlot;
+struct Value;
 struct Label;
 struct FunctionLabel;
 struct Instruction;
@@ -38,13 +38,15 @@ using types::core::NativeType;
 using types::core::TypeVariant;
 
 using VarHandle = u64;
-using LocalVarHandle = VarHandle;
+using StackSlotHandle = VarHandle;
+using ValueHandle = VarHandle;
 using GlobalVarHandle = VarHandle;
 using InstructionHandle = u64;
 using BasicBlockHandle = std::string;
 using FunctionHandle = std::string;
 
-using LocalVarPtr = std::shared_ptr<LocalVar>;
+using StackSlotPtr = std::shared_ptr<StackSlot>;
+using ValuePtr = std::shared_ptr<Value>;
 using GlobalVarPtr = std::shared_ptr<GlobalVar>;
 // using BasicBlockPtr = std::shared_ptr<BasicBlock>;
 // using BasicBlockWeakPtr = std::weak_ptr<BasicBlock>;
@@ -56,7 +58,8 @@ using ModulePtr = std::shared_ptr<Module>;
 // This is to prevent any iterator or reference invalidation.
 // During the building of the IR.
 // Or the modifying of it afterwards.
-using LocalVarVec = std::vector<LocalVarPtr>;
+using ValueVec = std::vector<ValuePtr>;
+using StackSlotVec = std::vector<StackSlotPtr>;
 using GlobalVarVec = std::vector<GlobalVarPtr>;
 using InstructionSeq = std::list<Instruction>;
 using BasicBlockSeq = std::list<BasicBlock>;
@@ -69,16 +72,15 @@ using ModuleSeq = std::list<Module>;
 //! Variant containing all supported literal types.
 using LiteralValue = std::variant<f64, int, uint, std::string, bool>;
 
-using PhiArgValue = std::variant<GlobalVarPtr, LocalVarPtr, Literal>;
-
 /*!
  * The @ref FunctionPtr is needed for resolving function calls.
- * The @ref LocalVarPtr is needed for obtaining references to SSA variables.
+ * The @ref StackSlotPtr is needed to refer to .
+ * The @ref ValuePtr is needed for obtaining references to SSA variables.
  * The @ref Literal is needed for obtaining references to literals.
  * The @ref Label is needed for obtaining references to basic blocks.
  */
-using Operand = std::variant<GlobalVarPtr, LocalVarPtr, Literal, Label,
-                             FunctionLabel, PhiArg>;
+using Operand = std::variant<GlobalVarPtr, StackSlotPtr, ValuePtr, Literal,
+                             Label, FunctionLabel>;
 using OperandSeq = std::vector<Operand>;
 
 using BasicBlockIter = BasicBlockSeq::iterator;
@@ -109,7 +111,7 @@ enum class Opcode : u32 {
   ICMP_LT,  // %<dest> = icmp_lt <lhs> <rhs>
   ICMP_LTE, // %<dest> = icmp_lte <lhs> <rhs>
   ICMP_EQ,  // %<dest> = icmp_eq <lhs> <rhs>
-	ICMP_NE,  // %<dest> = icmp_ne <lhs> <rhs>
+  ICMP_NE,  // %<dest> = icmp_ne <lhs> <rhs>
   ICMP_GT,  // %<dest> = icmp_gt <lhs> <rhs>
   ICMP_GTE, // %<dest> = icmp_gte <lhs> <rhs>
 
@@ -135,9 +137,9 @@ enum class Opcode : u32 {
   BIND,      // %<dest> = bind <src> ; dest = src. Adds a comment For the in source variable that is instantiated.
   UPDATE,    // %<dest> = update <src> ; dest = src. Adds a comment of the in source variable referenced.
 
-  LOAD,      // %<dest> = load <src> ; dest = *src.
-  STORE,     // %<dest> = store <src> ; *dest = src.
-  ALLOC,    // %<dest> = alloca <count>; Allocate memory on the heap.
+  ALLOCA,    // alloca <type> <count>; Allocate memory on the heap.
+  LOAD,      // %<dest> = load <stack var> ; TODO:
+  STORE,     // store <stack var> <value> ; TODO:
   LEA,       // %<dest> = lea <src> ; dest = &src Load a calculated address, like load effective address.
   // clang-format on
 
@@ -147,9 +149,6 @@ enum class Opcode : u32 {
   CONTINUE,  // continue
   BREAK,     // break
   RETURN,    // ret %<var>
-
-  // SSA specific, select value based on the control path.
-  PHI, // %<dest> = phi <condition> <value_true> <value_false>
 
   // High level control flow:
   LOOP, // loop <cond>.
@@ -196,16 +195,26 @@ struct GlobalVar {
   virtual ~GlobalVar() = default;
 };
 
-// Rename to LocalVar.
-struct LocalVar {
-  LocalVarHandle m_id;
+struct StackSlot {
+  StackSlotHandle m_id;
   TypeVariant m_type;
 
-  LocalVar(LocalVarHandle t_id, TypeVariant t_type)
+  StackSlot(StackSlotHandle t_id, TypeVariant t_type)
     : m_id{t_id}, m_type{std::move(t_type)}
   {}
 
-  virtual ~LocalVar() = default;
+  virtual ~StackSlot() = default;
+};
+
+struct Value {
+  ValueHandle m_id;
+  TypeVariant m_type;
+
+  Value(ValueHandle t_id, TypeVariant t_type)
+    : m_id{t_id}, m_type{std::move(t_type)}
+  {}
+
+  virtual ~Value() = default;
 };
 
 //! Used for jump operations.
@@ -227,20 +236,9 @@ struct FunctionLabel {
   {}
 
   auto label() const -> std::string_view;
-  auto handle() -> FunctionPtr;
+  auto handle() const -> FunctionPtr;
 
   virtual ~FunctionLabel() = default;
-};
-
-//! Used for keeping track of which.
-struct PhiArg {
-  Label m_label;
-  PhiArgValue m_value; // Literal/global var/ssa var to prefer.
-
-  PhiArg(Label t_label, PhiArgValue t_value): m_label{t_label}, m_value{t_value}
-  {}
-
-  virtual ~PhiArg() = default;
 };
 
 struct Instruction {
@@ -248,7 +246,7 @@ struct Instruction {
   Opcode m_opcode;
   OperandSeq m_operands;
 
-  LocalVarPtr m_result;
+  ValuePtr m_result;
 
   std::string m_comment;
 
@@ -275,9 +273,9 @@ struct BasicBlock {
 
 struct Function {
   std::string m_name;
-  LocalVarVec m_params;
+  ValueVec m_params;
   TypeVariant m_return_type;
-  LocalVarVec m_locals;
+  StackSlotVec m_stack;
   BasicBlockSeq m_blocks;
 
   Function() = default;
@@ -313,12 +311,12 @@ auto operator<<(std::ostream& t_os, const mir::Literal& t_lit) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVar& t_var) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarPtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::GlobalVarVec& t_vec) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::LocalVar& t_var) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::LocalVarPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::StackSlot& t_var) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::StackSlotPtr& t_ptr) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::Value& t_val) -> std::ostream&;
+auto operator<<(std::ostream& t_os, const mir::ValuePtr& t_ptr) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Label& t_label) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::FunctionLabel& t_label) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::PhiArgValue& t_val) -> std::ostream&;
-auto operator<<(std::ostream& t_os, const mir::PhiArg& t_arg) -> std::ostream&;
 auto operator<<(std::ostream& t_os, const mir::Operand& t_operand) -> std::ostream&;
 
 auto operator<<(std::ostream& t_os, const mir::Instruction& t_inst) -> std::ostream&;
@@ -331,11 +329,25 @@ auto operator<<(std::ostream& t_os, const mir::ModulePtr& t_mod) -> std::ostream
 // clang-format on
 
 // Format specializations:
-// struct std::formatter<mir::LocalVar> { // Doesnt work for MacOS.
 template<>
-struct std::formatter<mir::LocalVar> : std::formatter<std::string_view> {
+struct std::formatter<mir::StackSlot> : std::formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const mir::LocalVar& t_var, FormatContext& ctx)
+  auto format(const mir::StackSlot& t_var, FormatContext& ctx)
+    -> std::formatter<std::string_view>
+  {
+    // Reuse operator<<()
+    std::ostringstream oss{};
+    oss << t_var.m_id;
+
+    return std::formatter<std::string_view>::format(oss.view(), ctx);
+  }
+};
+
+// struct std::formatter<mir::Value> { // Doesnt work for MacOS.
+template<>
+struct std::formatter<mir::Value> : std::formatter<std::string_view> {
+  template<typename FormatContext>
+  auto format(const mir::Value& t_var, FormatContext& ctx)
     -> std::formatter<std::string_view>
   {
     // Reuse operator<<()
